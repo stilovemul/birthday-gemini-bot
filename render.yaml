@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: birthday-gemini-bot
+    env: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /healthz
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_USER_ID
+        value: "157236577"
+      - key: GEMINI_API_KEY
+        sync: false
