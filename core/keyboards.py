@@ -6,14 +6,14 @@ def get_main_menu() -> ReplyKeyboardMarkup:
     kb = [
         [
             KeyboardButton(text="🤖 Gemini AI"),
+            KeyboardButton(text="🎨 Генерация картинок")
+        ],
+        [
+            KeyboardButton(text="⏰ Напоминания"),
             KeyboardButton(text="🎂 Дни рождения")
         ],
         [
             KeyboardButton(text="📝 Заметки"),
-            KeyboardButton(text="🔔 Проверить ДР")
-        ],
-        [
-            KeyboardButton(text="📋 Все дни рождения"),
             KeyboardButton(text="❓ Справка")
         ]
     ]

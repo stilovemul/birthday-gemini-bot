@@ -13,6 +13,9 @@ from core.scheduler import run_scheduler
 from modules.birthdays.handlers import router as birthdays_router
 from modules.birthdays.storage import get_sorted_birthdays, format_date_entry, format_age_word
 from modules.notes.handlers import router as notes_router, load_notes
+from modules.smart_reminders.handlers import router as reminders_router
+from modules.smart_reminders.storage import get_active_reminders
+from modules.image_gen.handlers import router as image_gen_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -26,16 +29,17 @@ bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher()
 
 # Register modular routers in logical order:
-# Specific command routers first, AI catch-all router last!
+dp.include_router(image_gen_router)
+dp.include_router(reminders_router)
 dp.include_router(birthdays_router)
 dp.include_router(notes_router)
-dp.include_router(ai_router)
+dp.include_router(ai_router)  # Catch-all AI router last
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Запуск супер-бота в облаке 24/7...")
-    scheduler_task = asyncio.create_task(run_scheduler())
+    logger.info("Запуск супер-бота в облаке 24/7 (AI + Картинки + Напоминания + ДР + Заметки)...")
+    scheduler_task = asyncio.create_task(run_scheduler(bot))
     polling_task = asyncio.create_task(dp.start_polling(bot, handle_signals=False))
     yield
     logger.info("Остановка приложения...")
@@ -53,6 +57,7 @@ async def index():
     now_msk = datetime.now(MSK_TZ).strftime("%Y-%m-%d %H:%M:%S MSK")
     birthdays = get_sorted_birthdays()
     notes = load_notes()
+    reminders = get_active_reminders()
 
     b_rows = ""
     for idx, item in enumerate(birthdays, 1):
@@ -63,9 +68,9 @@ async def index():
         note = item.get("note", "")
         b_rows += f"<tr><td>{idx}</td><td><b>{name}</b></td><td>{d_str}</td><td>{age}</td><td>через {days} дн.</td><td>{note}</td></tr>"
 
-    n_rows = ""
-    for idx, n in enumerate(notes, 1):
-        n_rows += f"<tr><td>{idx}</td><td>{n['text']}</td><td>{n['created_at']}</td><td><code>{n['id']}</code></td></tr>"
+    r_rows = ""
+    for idx, r in enumerate(reminders, 1):
+        r_rows += f"<tr><td>{idx}</td><td><b>{r['text']}</b></td><td>{r['target_display']}</td><td><code>{r['id']}</code></td></tr>"
 
     html = f"""
     <!DOCTYPE html>
@@ -78,9 +83,9 @@ async def index():
             .container {{ max-width: 900px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }}
             h1 {{ color: #38bdf8; margin-top: 0; }}
             .badge {{ display: inline-block; padding: 6px 14px; background: #10b981; color: white; border-radius: 20px; font-weight: bold; font-size: 14px; margin-bottom: 20px; }}
-            .modules {{ display: flex; gap: 15px; margin-bottom: 25px; }}
-            .card {{ flex: 1; background: #0f172a; padding: 15px; border-radius: 12px; border-left: 4px solid #38bdf8; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }}
+            .modules {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 25px; }}
+            .card {{ background: #0f172a; padding: 14px; border-radius: 12px; border-left: 4px solid #38bdf8; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 25px; }}
             th, td {{ padding: 10px 12px; text-align: left; border-bottom: 1px solid #334155; }}
             th {{ background: #0f172a; color: #94a3b8; font-size: 13px; text-transform: uppercase; }}
             h2 {{ color: #93c5fd; font-size: 18px; margin-top: 25px; border-bottom: 1px solid #334155; padding-bottom: 8px; }}
@@ -94,15 +99,28 @@ async def index():
             
             <div class="modules">
                 <div class="card">
-                    <b>🤖 Gemini AI</b><br><span style="color:#94a3b8">Диалог, фото, память</span>
+                    <b>🤖 Gemini AI</b><br><span style="color:#94a3b8">Умный диалог, зрение</span>
                 </div>
                 <div class="card">
-                    <b>🎂 Дни рождения</b><br><span style="color:#94a3b8">{len(birthdays)} записей (09:00 MSK)</span>
+                    <b>🎨 Генератор картинок</b><br><span style="color:#94a3b8">Flux / SDXL AI</span>
                 </div>
                 <div class="card">
-                    <b>📝 Заметки / Задачи</b><br><span style="color:#94a3b8">{len(notes)} сохраненных</span>
+                    <b>⏰ Напоминания</b><br><span style="color:#94a3b8">{len(reminders)} активных</span>
+                </div>
+                <div class="card">
+                    <b>🎂 Дни рождения</b><br><span style="color:#94a3b8">{len(birthdays)} записей</span>
                 </div>
             </div>
+
+            <h2>⏰ Активные напоминания ({len(reminders)})</h2>
+            <table>
+                <thead>
+                    <tr><th>#</th><th>Задача</th><th>Время срабатывания</th><th>ID</th></tr>
+                </thead>
+                <tbody>
+                    {r_rows if r_rows else '<tr><td colspan="4">Напоминаний нет</td></tr>'}
+                </tbody>
+            </table>
 
             <h2>🎂 Дни рождения ({len(birthdays)})</h2>
             <table>
@@ -111,16 +129,6 @@ async def index():
                 </thead>
                 <tbody>
                     {b_rows if b_rows else '<tr><td colspan="6">Список пуст</td></tr>'}
-                </tbody>
-            </table>
-
-            <h2>📝 Быстрые заметки ({len(notes)})</h2>
-            <table>
-                <thead>
-                    <tr><th>#</th><th>Текст</th><th>Создано</th><th>ID</th></tr>
-                </thead>
-                <tbody>
-                    {n_rows if n_rows else '<tr><td colspan="4">Заметок пока нет</td></tr>'}
                 </tbody>
             </table>
         </div>
