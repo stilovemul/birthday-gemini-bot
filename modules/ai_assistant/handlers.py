@@ -89,10 +89,14 @@ async def handle_photo(message: types.Message, bot: Bot):
 @router.message(F.text)
 async def handle_generic_text(message: types.Message, bot: Bot):
     text = (message.text or "").strip()
+    logger.info(f"📥 Message from user {message.from_user.id}: {text[:50]}...")
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     
     ai_reply = await ask_gemini(message.from_user.id, text)
+    logger.info(f"📤 Gemini response generated ({len(ai_reply)} chars)")
+    
     try:
         await message.answer(ai_reply, parse_mode=ParseMode.MARKDOWN, reply_markup=get_main_menu())
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Markdown send failed: {e}. Sending plain text...")
         await message.answer(ai_reply, reply_markup=get_main_menu())

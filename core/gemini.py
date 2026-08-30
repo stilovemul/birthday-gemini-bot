@@ -9,17 +9,17 @@ logger = logging.getLogger("GeminiEngine")
 
 SYSTEM_INSTRUCTION = """Ты — персональный многофункциональный ИИ-ассистент Олега в Telegram (AiGemAntigravity).
 Ты работаешь 24/7 автономно в облаке.
-Твои возможности:
-- Умный собеседник: отвечай понятно, структурированно, грамотно, с юмором и по делу на русском языке.
-- Эксперт: помогай с программированием, анализом текстов, написанием писем, поиском идей, планированием задач.
-- Мультимодальность: анализируй фотографии, графики, документы и изображения.
-- Форматирование: используй красивую разметку Markdown (жирный текст, списки, цитаты, код).
+Твои качества:
+- Дружелюбный, внимательный, эрудированный и полезный собеседник.
+- Отвечай понятно, структурированно, грамотно и по делу на русском языке.
+- Умеешь решать любые задачи: диалог, тексты, код, анализ фото, генерация идей, ответы на вопросы, помощь в делах.
 """
 
+# gemini-3.5-flash as primary for instant, quota-free responses
 CANDIDATE_MODELS = [
-    "gemini-3.7-flash",
     "gemini-3.5-flash",
     "gemini-3.1-flash-lite",
+    "gemini-3.7-flash",
     "gemini-3.6-flash"
 ]
 
@@ -38,8 +38,8 @@ user_chats: Dict[int, Any] = {}
 
 def get_or_create_chat(user_id: int, model_name: str = CANDIDATE_MODELS[0]):
     c = get_genai_client()
-    if user_id not in user_chats:
-        chat = c.chats.create(
+    if user_id not in user_chats or user_chats[user_id].get("model") != model_name:
+        chat = c.aio.chats.create(
             model=model_name,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_INSTRUCTION,
@@ -58,6 +58,7 @@ def reset_chat_session(user_id: int):
 async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = None, mime_type: str = "image/jpeg") -> str:
     last_error = None
     c = get_genai_client()
+    
     for model_name in CANDIDATE_MODELS:
         try:
             if image_bytes:
@@ -65,18 +66,20 @@ async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = N
                     types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                     prompt or "Что изображено на этом фото? Опиши подробно."
                 ]
-                response = c.models.generate_content(
+                response = await c.aio.models.generate_content(
                     model=model_name,
                     contents=contents,
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_INSTRUCTION
                     )
                 )
-                return response.text.strip()
+                if response and response.text:
+                    return response.text.strip()
             else:
                 chat = get_or_create_chat(user_id, model_name)
-                response = chat.send_message(prompt)
-                return response.text.strip()
+                response = await chat.send_message(prompt)
+                if response and response.text:
+                    return response.text.strip()
         except Exception as e:
             logger.warning(f"Model {model_name} failed: {e}. Trying fallback...")
             last_error = e
