@@ -9,7 +9,12 @@ from core.keyboards import get_main_menu
 from core.gemini import ask_gemini, reset_chat_session
 from modules.smart_reminders.parser import parse_natural_reminder
 from modules.smart_reminders.storage import add_reminder
-from modules.image_gen.generator import generate_image_bytes
+from modules.image_gen.generator import (
+    generate_image_bytes,
+    get_last_image_prompt,
+    refine_prompt_with_ai
+)
+from modules.image_gen.handlers import get_image_action_keyboard
 
 logger = logging.getLogger("AIAssistantHandler")
 router = Router(name="ai_assistant")
@@ -23,6 +28,7 @@ async def cmd_start(message: types.Message):
         "✨ <b>Что я умею прямо сейчас:</b>\n"
         "• 🤖 <b>Gemini AI</b>: живой умный диалог, решение любых задач\n"
         "• 🎨 <b>Генерация картинок</b>: напишите <code>/image описание</code> или просто <i>«Нарисуй кота в космосе»</i>\n"
+        "  └ <i>Правки: если картинка не понравилась, просто напишите: «Сделай фон темнее» или «Добавь шляпу»</i>\n"
         "• ⏰ <b>Умные напоминания</b>: <i>«Напомни завтра в 15:00 позвонить в банк»</i> или <i>«Напомни через 40 мин выключить духовку»</i>\n"
         "• 🎂 <b>Дни рождения</b>: напоминания в 09:00 MSK (за 7, 3, 1 день и в праздник)\n"
         "• 📝 <b>Заметки</b>: <code>/note Текст</code>\n\n"
@@ -37,7 +43,8 @@ async def cmd_help(message: types.Message):
     help_text = (
         "📖 <b>Справка по возможностям бота:</b>\n\n"
         "🎨 <b>Генерация картинок:</b>\n"
-        "• <code>/image спорткар на закате</code> или <i>«Нарисуй кота в очках»</i>\n\n"
+        "• <code>/image спорткар на закате</code> или <i>«Нарисуй кота в очках»</i>\n"
+        "• <b>Доработка:</b> просто напишите в ответ <i>«Сделай фон зеленым»</i> или <i>«Переделай в стиле киберпанк»</i>\n\n"
         "⏰ <b>Умные напоминания:</b>\n"
         "• <i>«Напомни завтра в 15:00 позвонить врачу»</i>\n"
         "• <i>«Напомни через 30 минут выпить таблетку»</i>\n"
@@ -95,32 +102,63 @@ async def handle_photo(message: types.Message, bot: Bot):
 @router.message(F.text)
 async def handle_generic_text(message: types.Message, bot: Bot):
     text = (message.text or "").strip()
-    
-    # 1. Check if user asks to draw / generate an image naturally
+    user_id = message.from_user.id
+
+    # 1. Direct Image Generation: "нарисуй...", "сгенерируй картинку..."
     draw_match = re.match(r"^(?:нарисуй|сгенерируй\s+картинку|сделай\s+картинку|нарисуй\s+мне|нарисуйте)\s+(.+)", text, re.IGNORECASE)
     if draw_match:
         prompt = draw_match.group(1).strip()
-        status_msg = await message.answer("🎨 <i>Генерирую изображение через нейросеть Flux...</i>", parse_mode=ParseMode.HTML)
+        status_msg = await message.answer(f"🎨 <i>Генерирую «{prompt}» через нейросеть Flux...</i>", parse_mode=ParseMode.HTML)
         await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
-        success, img_bytes, p_res = await generate_image_bytes(prompt)
+        success, img_bytes, p_res = await generate_image_bytes(prompt, user_id=user_id)
         try:
             await status_msg.delete()
         except Exception:
             pass
         if success and img_bytes:
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
-            await message.answer_photo(photo_file, caption=f"✨ <b>{p_res}</b>", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+            caption = (
+                f"✨ <b>Промпт:</b> «<i>{p_res}</i>»\n\n"
+                "💡 <i>Хотите доработать? Напишите пожелание (например: «Сделай ярче» или «Добавь луну»).</i>"
+            )
+            await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
         else:
             await message.answer(f"❌ {p_res}", reply_markup=get_main_menu())
             return
 
-    # 2. Check if user asks to set a reminder naturally
+    # 2. Image Refinement / Modification of previous image
+    last_prompt = get_last_image_prompt(user_id)
+    refine_pattern = r"^(?:перерисуй|переделай|измени|добавь|убери|сделай\s+фон|поменяй|не\s+нравится|сделай\s+его|сделай\s+ее|сделай\s+их|сделай\s+по-другому|замени|сделай\s+вместо)\b"
+    if last_prompt and re.search(refine_pattern, text, re.IGNORECASE):
+        status_msg = await message.answer("🎨 <i>Учитываю ваши правки и перерисовываю картинку...</i>", parse_mode=ParseMode.HTML)
+        await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
+        
+        refined_prompt = await refine_prompt_with_ai(last_prompt, text)
+        success, img_bytes, p_res = await generate_image_bytes(refined_prompt, user_id=user_id)
+        
+        try:
+            await status_msg.delete()
+        except Exception:
+            pass
+        if success and img_bytes:
+            photo_file = BufferedInputFile(img_bytes, filename="refined.jpg")
+            caption = (
+                f"✨ <b>Обновленный вариант:</b> «<i>{p_res}</i>»\n\n"
+                f"📝 <i>Учтено пожелание:</i> «{text}»"
+            )
+            await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
+            return
+        else:
+            await message.answer(f"❌ {p_res}", reply_markup=get_main_menu())
+            return
+
+    # 3. Smart Reminders: "напомни...", "поставь напоминание..."
     if re.match(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s+", text, re.IGNORECASE):
         raw = re.sub(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s*", "", text, flags=re.IGNORECASE).strip()
         success, target_dt, task_text, info = await parse_natural_reminder(raw)
         if success and target_dt:
-            item = add_reminder(message.from_user.id, task_text, target_dt)
+            item = add_reminder(user_id, task_text, target_dt)
             time_formatted = target_dt.strftime("%d.%m.%Y в %H:%M MSK")
             reply = (
                 f"✅ <b>Напоминание установлено!</b>\n\n"
@@ -131,11 +169,12 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
             return
 
-    # 3. Default: General Gemini AI conversation
+    # 4. Default: General Gemini AI conversation
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    ai_reply = await ask_gemini(message.from_user.id, text)
+    ai_reply = await ask_gemini(user_id, text)
     
     try:
         await message.answer(ai_reply, parse_mode=ParseMode.MARKDOWN, reply_markup=get_main_menu())
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Markdown send failed: {e}. Sending plain text...")
         await message.answer(ai_reply, reply_markup=get_main_menu())
