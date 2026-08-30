@@ -12,7 +12,7 @@ logger = logging.getLogger("ImageGenerator")
 # In-memory store for last generated prompts: {user_id: {"prompt": str, "en_prompt": str, "timestamp": float}}
 user_last_prompts: Dict[int, Dict[str, Any]] = {}
 
-# In-memory store for user engine preference: {user_id: "flux-realism" | "turbo" | "flux-anime" | "flux-3d"}
+# In-memory store for user engine preference: {user_id: "flux" | "turbo" | "flux-anime" | "flux-3d"}
 user_engines: Dict[int, str] = {}
 
 # Active prompt awaiting mode: {user_id: True}
@@ -32,7 +32,7 @@ def set_user_engine(user_id: int, engine: str) -> None:
 
 
 def get_user_engine(user_id: int) -> str:
-    return user_engines.get(user_id, "flux-realism")
+    return user_engines.get(user_id, "flux")
 
 
 def set_last_image_prompt(user_id: int, prompt: str, en_prompt: str = "") -> None:
@@ -51,54 +51,48 @@ def get_last_image_info(user_id: int) -> Optional[Dict[str, Any]]:
 
 
 def apply_heuristic_enrichment(raw_prompt: str) -> str:
-    """Applies high-grade camera tags to eliminate doll/3D looks and force authentic raw photography."""
+    """Applies pure photography tokens with authentic Slavic features without anime bleeding."""
     p_lower = raw_prompt.lower()
     tags = []
 
-    # Photography & anti-doll realism tokens
-    camera_tags = (
-        "authentic candid raw photograph, shot on Sony A7 IV 85mm f/1.8 lens, "
-        "natural realistic skin texture with visible pores and natural imperfections, "
-        "detailed realistic eyes and fine hair strands, authentic natural lighting, "
-        "no 3D render, no anime, no plastic doll skin, no airbrushing, no digital painting, "
-        "unedited real-life photo, high resolution 8k"
-    )
-
     if any(k in p_lower for k in ["девушк", "женщин", "красавиц", "модель", "girl", "woman"]):
         if any(r in p_lower for r in ["русск", "росси", "славян"]):
-            tags.append(f"close-up candid raw photograph of a 22-year-old beautiful natural Russian woman, {camera_tags}")
+            tags.append("candid 35mm portrait photography of a beautiful 23-year-old natural Slavic Russian woman with authentic Slavic facial features, light brown hair, natural skin texture, authentic human eyes and smile, soft daylight, high resolution real photograph")
         else:
-            tags.append(f"candid raw portrait of a beautiful natural woman, {camera_tags}")
+            tags.append("candid 35mm portrait photography of a beautiful natural woman, authentic human features, natural daylight, real photograph")
     elif any(k in p_lower for k in ["парен", "мужчин", "человек", "man", "guy"]):
-        tags.append(f"candid raw portrait of a man, {camera_tags}")
+        tags.append("candid portrait photograph of a man, authentic human facial features, natural lighting, real photography")
     elif any(k in p_lower for k in ["кот", "кошк", "котен", "котик", "cat"]):
-        tags.append("adorable realistic cat, highly detailed fluffy fur, clear eyes, natural daylight, candid pet photography")
+        tags.append("adorable realistic cat, fluffy fur, natural daylight, real pet photography")
     elif any(k in p_lower for k in ["машин", "авто", "спорткар", "автомобил", "car"]):
-        tags.append("real-life automotive photography of a sports car, glossy reflections, natural ambient daylight, 8k raw photo")
+        tags.append("real-life automotive photography of a sleek sports car, glossy reflections, natural ambient daylight, 8k raw photo")
+
+    if any(k in p_lower for k in ["постел", "кроват", "утром", "утро", "bed", "morning"]):
+        tags.append("relaxing in cozy white morning bed sheets, soft morning natural sunlight from bedroom window, peaceful authentic lifestyle photo")
 
     if tags:
-        return f"{raw_prompt}, {', '.join(tags)}"
-    return f"{raw_prompt}, {camera_tags}"
+        return f"{', '.join(tags)}"
+    return f"{raw_prompt}, candid 35mm photography, natural lighting, authentic real life photo"
 
 
 async def translate_and_enrich_prompt(user_prompt: str) -> str:
     """
-    Translates Russian prompt into rich, realistic English prompt optimized for Flux-Realism.
+    Translates Russian prompt into clean, photorealistic English photography prompt.
     """
-    enrich_system = """You are an expert AI photographer and prompt engineer for photorealistic diffusion models (Flux Realism).
-Translate the user's image request from Russian into an authentic, raw, unedited English photograph prompt.
-CRITICAL RULES TO AVOID DOLL/ANIME LOOK:
-- Ensure the subject looks like a 100% REAL human being, NOT an anime character, NOT a plastic doll, NOT a smooth 3D render.
-- Add camera specs: 'candid authentic photograph, shot on Sony A7 IV 85mm f/1.8 lens, natural daylight, real human skin texture with pores, realistic eyes and natural messy hair, unedited real life photo, 8k'.
-- If the setting is 'в постели утром' (in bed morning), describe: 'cozy morning bed sheets, soft morning daylight filtering through bedroom window, relaxed natural pose'.
-- Output ONLY the final English prompt in 1-2 sentences."""
+    enrich_system = """You are an expert realistic photographer and prompt engineer for Flux.
+Translate the user's prompt into a clean English photography prompt.
+IMPORTANT RULES:
+- If user asks for a Russian / Slavic woman, describe her explicitly: 'candid 35mm photo of an authentic 23-year-old Slavic Russian woman with natural light brown or blonde hair, expressive eyes, realistic skin texture with pores and natural makeup, real human portrait'.
+- If in bed in morning: 'resting peacefully in cozy morning bed with white linen, gentle window sunlight'.
+- DO NOT use negative words like 'no anime, no doll' (they cause token bleed). Instead describe ONLY desired positive real-life photographic elements!
+- Output ONLY 1-2 concise English sentences."""
 
     c = get_genai_client()
     for model in CANDIDATE_MODELS:
         try:
             resp = await c.aio.models.generate_content(
                 model=model,
-                contents=f"User request: '{user_prompt}'\n\nPhotorealistic English Camera Prompt:",
+                contents=f"User request: '{user_prompt}'\n\nPhotographic English Prompt:",
                 config={"system_instruction": enrich_system, "temperature": 0.2}
             )
             if resp and resp.text:
@@ -108,7 +102,6 @@ CRITICAL RULES TO AVOID DOLL/ANIME LOOK:
         except Exception as e:
             logger.warning(f"Model {model} failed for prompt enrichment: {e}")
 
-    # Fallback to local heuristic enrichment
     return apply_heuristic_enrichment(user_prompt)
 
 
@@ -122,10 +115,9 @@ async def refine_prompt_with_ai(old_prompt: str, user_feedback: str) -> str:
 User feedback / complaint:
 "{user_feedback}"
 
-Generate a new detailed English diffusion prompt for Flux-Realism that directly addresses the user's feedback.
-If user says 'нереалистично' (unrealistic), 'кукла' (doll-like), or 'пластик' (plastic):
-- Strongly enforce: 'raw authentic 35mm candid photo, real human face, detailed skin pores, realistic imperfect texture, soft morning natural lighting, no plastic doll skin, no 3d render, no anime'.
-Output ONLY the resulting English prompt."""
+Generate a new detailed English photography prompt for Flux that directly fixes the issue.
+Emphasize: authentic real-life Slavic Russian facial features, natural skin texture with fine pores, candid 35mm photography, natural sunlight.
+Output ONLY the resulting English prompt in 1-2 sentences."""
 
     c = get_genai_client()
     for model in CANDIDATE_MODELS:
@@ -141,13 +133,12 @@ Output ONLY the resulting English prompt."""
         except Exception as e:
             logger.warning(f"Model {model} failed for prompt refinement: {e}")
 
-    # Fallback heuristic
     return apply_heuristic_enrichment(f"{old_prompt}, {user_feedback}")
 
 
 async def generate_image_bytes(prompt: str, user_id: Optional[int] = None, is_already_en: bool = False, force_engine: Optional[str] = None) -> Tuple[bool, Optional[bytes], str, str]:
     """
-    Generates image based on text prompt using high-speed Flux-Realism / Turbo AI model.
+    Generates image based on text prompt using Flux AI with enhance=false to avoid cartoon/anime filters.
     Returns (success, image_bytes, original_prompt, enriched_en_prompt).
     """
     clean_prompt = prompt.strip()
@@ -161,7 +152,7 @@ async def generate_image_bytes(prompt: str, user_id: Optional[int] = None, is_al
     else:
         en_prompt = clean_prompt
 
-    engine = force_engine or "flux-realism"
+    engine = force_engine or "flux"
     if user_id:
         set_last_image_prompt(user_id, clean_prompt, en_prompt)
         set_user_awaiting_image(user_id, False)
@@ -169,9 +160,10 @@ async def generate_image_bytes(prompt: str, user_id: Optional[int] = None, is_al
             engine = get_user_engine(user_id)
 
     encoded = urllib.parse.quote(en_prompt)
-    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&nologo=true&model={engine}&seed={int(time.time()*1000)%100000}"
+    # enhance=false prevents Pollinations from injecting anime/k-pop tokens
+    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&nologo=true&model={engine}&enhance=false&seed={int(time.time()*1000)%100000}"
 
-    logger.info(f"Generating image via {engine} for: '{en_prompt}'")
+    logger.info(f"Generating image via {engine} (enhance=false) for: '{en_prompt}'")
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=55)) as resp:
