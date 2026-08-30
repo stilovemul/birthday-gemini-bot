@@ -39,6 +39,26 @@ dp.include_router(ai_router)  # Catch-all AI router last
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Запуск супер-бота в облаке 24/7 (AI + Картинки + Напоминания + ДР + Заметки)...")
+    
+    # Register official Telegram menu commands
+    try:
+        commands = [
+            types.BotCommand(command="start", description="🏠 Главное меню"),
+            types.BotCommand(command="image", description="🎨 Сгенерировать картинку"),
+            types.BotCommand(command="remind", description="⏰ Умное напоминание"),
+            types.BotCommand(command="reminders", description="📋 Мои напоминания"),
+            types.BotCommand(command="clear", description="🧹 Очистить диалог с ИИ"),
+            types.BotCommand(command="add", description="🎂 Добавить день рождения"),
+            types.BotCommand(command="list", description="🎂 Список дней рождения"),
+            types.BotCommand(command="note", description="📝 Быстрая заметка"),
+            types.BotCommand(command="notes", description="📝 Список всех заметок"),
+            types.BotCommand(command="help", description="❓ Справка по командам")
+        ]
+        await bot.set_my_commands(commands)
+        logger.info("Команды Telegram успешно зарегистрированы в меню!")
+    except Exception as e:
+        logger.error(f"Не удалось установить команды бота: {e}")
+
     scheduler_task = asyncio.create_task(run_scheduler(bot))
     polling_task = asyncio.create_task(dp.start_polling(bot, handle_signals=False))
     yield
