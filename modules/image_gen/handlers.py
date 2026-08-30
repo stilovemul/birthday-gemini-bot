@@ -10,7 +10,8 @@ from modules.image_gen.generator import (
     set_last_image_prompt,
     set_user_awaiting_image,
     set_user_engine,
-    get_user_engine
+    get_user_engine,
+    refine_prompt_with_ai
 )
 
 router = Router(name="image_gen")
@@ -21,15 +22,18 @@ def get_image_action_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
+                InlineKeyboardButton(text="📸 Сделать максимальный реализм", callback_data="img_make_realistic")
+            ],
+            [
                 InlineKeyboardButton(text="🔄 Сгенерировать другой вариант", callback_data="img_redraw")
             ]
         ]
     )
 
 
-def get_engine_selection_keyboard(current_engine: str = "flux") -> InlineKeyboardMarkup:
+def get_engine_selection_keyboard(current_engine: str = "flux-realism") -> InlineKeyboardMarkup:
     """Returns inline keyboard for selecting AI image generation model."""
-    btn_flux = "✅ 📸 Фотореализм (Flux)" if current_engine == "flux" else "📸 Фотореализм (Flux)"
+    btn_flux = "✅ 📸 Фотореализм (Flux)" if "realism" in current_engine or current_engine == "flux" else "📸 Фотореализм (Flux)"
     btn_turbo = "✅ ⚡ Nano / Turbo" if current_engine == "turbo" else "⚡ Nano / Turbo"
     btn_anime = "✅ 🎨 Anime & Art" if current_engine == "flux-anime" else "🎨 Anime & Art"
     btn_3d = "✅ 🌌 3D Render" if current_engine == "flux-3d" else "🌌 3D Render"
@@ -62,10 +66,10 @@ async def cmd_generate_image(message: types.Message, bot: Bot):
         help_text = (
             "🎨 <b>Режим генерации картинок активен!</b>\n\n"
             "Выберите желаемый движок/стиль ниже и <b>просто напишите в чат описание</b> того, что нужно нарисовать:\n\n"
-            "• <i>«Русская девушка в зимнем парке, реальное фото»</i>\n"
+            "• <i>«Русская девушка в постели утром, реальное фото»</i>\n"
             "• <i>«Спорткар будущего на фоне ночного города»</i>\n"
             "• <i>«Милый пушистый кот в очках»</i>\n\n"
-            "👇 <i>Выберите движок или сразу отправьте текст:</i>"
+            "👇 <i>Выберите стиль или сразу отправьте текст:</i>"
         )
         await message.answer(
             help_text,
@@ -74,7 +78,7 @@ async def cmd_generate_image(message: types.Message, bot: Bot):
         )
         return
 
-    status_msg = await message.answer("🎨 <i>Генерирую изображение через нейросеть... (5-10 сек)</i>", parse_mode=ParseMode.HTML)
+    status_msg = await message.answer("🎨 <i>Генерирую фотореалистичное изображение... (5-10 сек)</i>", parse_mode=ParseMode.HTML)
     await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
 
     success, img_bytes, orig_p, en_p = await generate_image_bytes(prompt, user_id=user_id)
@@ -88,7 +92,7 @@ async def cmd_generate_image(message: types.Message, bot: Bot):
         photo_file = BufferedInputFile(img_bytes, filename="generated.jpg")
         caption = (
             f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-            "💡 <i>Хотите изменить? Просто напишите замечание (например: «Сделай лицо крупнее» или «Смени фон на закат»).</i>"
+            "💡 <i>Если результат нужно изменить — напишите замечание (например: «Сделай лицо крупнее» или «Смени фон»).</i>"
         )
         await message.answer_photo(
             photo_file,
@@ -105,23 +109,60 @@ async def callback_set_engine(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     code = callback.data.replace("engine_", "")
     engine_map = {
-        "flux": ("flux", "📸 Фотореализм (Flux)"),
+        "flux": ("flux-realism", "📸 Фотореализм (Flux)"),
         "turbo": ("turbo", "⚡ Nano / Turbo"),
         "anime": ("flux-anime", "🎨 Anime & Art"),
         "3d": ("flux-3d", "🌌 3D Render")
     }
     
-    eng_val, eng_name = engine_map.get(code, ("flux", "📸 Фотореализм (Flux)"))
+    eng_val, eng_name = engine_map.get(code, ("flux-realism", "📸 Фотореализм (Flux)"))
     set_user_engine(user_id, eng_val)
     set_user_awaiting_image(user_id, True)
 
-    await callback.answer(f"Выбран движок: {eng_name}")
+    await callback.answer(f"Выбран стиль: {eng_name}")
     try:
         await callback.message.edit_reply_markup(
             reply_markup=get_engine_selection_keyboard(eng_val)
         )
     except Exception:
         pass
+
+
+@router.callback_query(F.data == "img_make_realistic")
+async def callback_make_realistic(callback: types.CallbackQuery, bot: Bot):
+    user_id = callback.from_user.id
+    info = get_last_image_info(user_id)
+    if not info:
+        await callback.answer("Предыдущий запрос устарел.", show_alert=True)
+        return
+
+    last_prompt = info["prompt"]
+    await callback.answer("Перерисовываю в максимальном фотореализме...")
+    status_msg = await callback.message.answer(f"📸 <i>Усиливаю фотореализм и убираю глянец для «{last_prompt}»...</i>", parse_mode=ParseMode.HTML)
+    await bot.send_chat_action(callback.message.chat.id, ChatAction.UPLOAD_PHOTO)
+
+    refined_prompt = await refine_prompt_with_ai(last_prompt, "максимальный фотореализм, настоящее живое фото с реальной текстурой кожи, порами, естественным светом, без 3D, без кукольности, без глянца")
+    success, img_bytes, orig_p, _ = await generate_image_bytes(refined_prompt, user_id=user_id, force_engine="flux-realism")
+
+    try:
+        await status_msg.delete()
+    except Exception:
+        pass
+
+    if success and img_bytes:
+        photo_file = BufferedInputFile(img_bytes, filename="realism.jpg")
+        caption = (
+            f"📸 <b>Максимальный фотореализм:</b> «<i>{orig_p}</i>»\n\n"
+            "💡 <i>Напишите любые пожелания, если хотите что-то скорректировать!</i>"
+        )
+        await callback.message.answer_photo(
+            photo_file,
+            caption=caption,
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_image_action_keyboard()
+        )
+    else:
+        await callback.message.answer("❌ Не удалось перерисовать.")
 
 
 @router.callback_query(F.data == "img_redraw")
@@ -169,7 +210,7 @@ async def cmd_image_button(message: types.Message):
     text = (
         "🎨 <b>Режим генерации картинок активен!</b>\n\n"
         "Выберите движок/стиль ниже и <b>просто напишите в ответ, что нарисовать</b>:\n\n"
-        "• <i>«Русская девушка, реальное фото на прогулке»</i>\n"
+        "• <i>«Русская девушка в постели утром, реальное фото»</i>\n"
         "• <i>«Спорткар будущего на улицах ночного города»</i>\n"
         "• <i>«Милый щенок корги в космосе»</i>\n\n"
         "👇 <i>Отправьте текст картинки:</i>"
