@@ -12,7 +12,9 @@ from modules.smart_reminders.storage import add_reminder
 from modules.image_gen.generator import (
     generate_image_bytes,
     get_last_image_info,
-    refine_prompt_with_ai
+    refine_prompt_with_ai,
+    is_user_awaiting_image,
+    set_user_awaiting_image
 )
 from modules.image_gen.handlers import get_image_action_keyboard
 
@@ -22,6 +24,7 @@ router = Router(name="ai_assistant")
 
 @router.message(CommandStart())
 async def cmd_start(message: types.Message):
+    set_user_awaiting_image(message.from_user.id, False)
     welcome_text = (
         "👋 <b>Привет, Олег! Супер-бот AiGemAntigravity активен 24/7!</b> 🚀\n\n"
         "Я твой персональный ИИ-ассистент в облаке с кучей полезных функций:\n\n"
@@ -40,12 +43,13 @@ async def cmd_start(message: types.Message):
 @router.message(Command("help"))
 @router.message(F.text == "❓ Справка")
 async def cmd_help(message: types.Message):
+    set_user_awaiting_image(message.from_user.id, False)
     help_text = (
         "📖 <b>Справка по возможностям бота:</b>\n\n"
         "🎨 <b>Генерация картинок:</b>\n"
-        "• <code>/image красивая русская девушка, портрет</code>\n"
-        "• <i>«Нарисуй спорткар будущего на закате»</i>\n"
-        "• <b>Доработка:</b> просто напишите в чат: <i>«Тут нет человека, сделай крупный план лица»</i> или <i>«Сделай фон темнее»</i>\n\n"
+        "• Кнопка «🎨 Генерация картинок» или <code>/image описание</code>\n"
+        "• Просто фразы: <i>«Русская девушка, реальное фото»</i> или <i>«Нарисуй спорткар»</i>\n"
+        "• <b>Доработка:</b> напишите в чат: <i>«Тут нет человека, сделай крупный план лица»</i> или <i>«Сделай фон темнее»</i>\n\n"
         "⏰ <b>Умные напоминания:</b>\n"
         "• <i>«Напомни завтра в 15:00 позвонить врачу»</i>\n"
         "• <i>«Напомни через 30 минут выпить таблетку»</i>\n"
@@ -66,11 +70,13 @@ async def cmd_help(message: types.Message):
 @router.message(Command("reset"))
 async def cmd_clear(message: types.Message):
     reset_chat_session(message.from_user.id)
+    set_user_awaiting_image(message.from_user.id, False)
     await message.answer("🧹 <b>Контекст диалога очищен!</b> О чем поговорим дальше?", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
 
 @router.message(F.text == "🤖 Gemini AI")
 async def cmd_gemini_info(message: types.Message):
+    set_user_awaiting_image(message.from_user.id, False)
     await message.answer(
         "🤖 <b>Режим общения с Gemini AI активен.</b>\n\n"
         "Просто напишите мне любой вопрос, попросите написать код, текст, план или пришлите фото — я сразу отвечу!",
@@ -81,6 +87,7 @@ async def cmd_gemini_info(message: types.Message):
 
 @router.message(F.photo)
 async def handle_photo(message: types.Message, bot: Bot):
+    set_user_awaiting_image(message.from_user.id, False)
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     try:
         photo = message.photo[-1]
@@ -105,11 +112,45 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     text = (message.text or "").strip()
     user_id = message.from_user.id
 
-    # 1. Direct Image Generation: "нарисуй...", "сгенерируй картинку..."
+    # 1. Check if user is in "Awaiting Image Prompt" mode (after clicking button)
+    if is_user_awaiting_image(user_id):
+        set_user_awaiting_image(user_id, False)
+        status_msg = await message.answer(f"🎨 <i>Генерирую «{text}» через нейросеть...</i>", parse_mode=ParseMode.HTML)
+        await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
+        success, img_bytes, orig_p, en_p = await generate_image_bytes(text, user_id=user_id)
+        try:
+            await status_msg.delete()
+        except Exception:
+            pass
+        if success and img_bytes:
+            photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
+            caption = (
+                f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
+                "💡 <i>Хотите изменить? Напишите правки (например: «Сделай лицо крупнее» или «Смени фон на закат»).</i>"
+            )
+            await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
+            return
+        else:
+            await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
+            return
+
+    # 2. Check if message has direct image prefix or command format:
+    # "Изображение: ...", "Картинка: ...", "Фото: ...", "нарисуй ...", "сделай фото ..."
+    image_prefix_match = re.match(r"^(?:изображение|картинка|фото|арт|рисунок):\s*(.+)", text, re.IGNORECASE)
     draw_match = re.match(r"^(?:нарисуй|сгенерируй\s+картинку|сделай\s+картинку|нарисуй\s+мне|нарисуйте|нарисуй\s+пожалуйста)\s+(.+)", text, re.IGNORECASE)
-    if draw_match:
-        prompt = draw_match.group(1).strip()
-        status_msg = await message.answer(f"🎨 <i>Генерирую «{prompt}» через нейросеть Flux...</i>", parse_mode=ParseMode.HTML)
+    
+    # Or matches standalone prompt ending with "реальное фото" / "портрет"
+    is_standalone_photo_prompt = bool(re.search(r"\b(?:реальное\s+фото|портрет|фотография|digital\s+art|арт)\b", text, re.IGNORECASE) and len(text) < 120 and not text.endswith("?"))
+
+    if image_prefix_match or draw_match or is_standalone_photo_prompt:
+        if image_prefix_match:
+            prompt = image_prefix_match.group(1).strip()
+        elif draw_match:
+            prompt = draw_match.group(1).strip()
+        else:
+            prompt = text
+
+        status_msg = await message.answer(f"🎨 <i>Генерирую «{prompt}» через нейросеть...</i>", parse_mode=ParseMode.HTML)
         await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
         success, img_bytes, orig_p, en_p = await generate_image_bytes(prompt, user_id=user_id)
         try:
@@ -120,7 +161,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
             caption = (
                 f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-                "💡 <i>Если результат нужно изменить — напишите замечание (например: «Тут нет человека, добавь девушку» или «Сделай фон темнее»).</i>"
+                "💡 <i>Хотите изменить? Напишите замечание (например: «Тут нет человека, сделай крупный план лица» или «Сделай фон темнее»).</i>"
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
@@ -128,7 +169,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
             return
 
-    # 2. Image Refinement / Modification of recent image
+    # 3. Image Refinement / Modification of recent image
     info = get_last_image_info(user_id)
     refine_pattern = (
         r"(?:тут\s+нет|здесь\s+нет|нет\s+|где\s+|не\s+вижу|не\s+то|не\s+похоже|"
@@ -138,7 +179,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     )
     if info and re.search(refine_pattern, text, re.IGNORECASE):
         last_prompt = info["prompt"]
-        status_msg = await message.answer(f"🎨 <i>Учитываю замечание: «{text}» и перерисовываю картинку...</i>", parse_mode=ParseMode.HTML)
+        status_msg = await message.answer(f"🎨 <i>Учитываю замечание: «{text}» и перерисовываю...</i>", parse_mode=ParseMode.HTML)
         await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
         
         refined_prompt = await refine_prompt_with_ai(last_prompt, text)
@@ -161,7 +202,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
             return
 
-    # 3. Smart Reminders: "напомни...", "поставь напоминание..."
+    # 4. Smart Reminders: "напомни...", "поставь напоминание..."
     if re.match(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s+", text, re.IGNORECASE):
         raw = re.sub(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s*", "", text, flags=re.IGNORECASE).strip()
         success, target_dt, task_text, info_remind = await parse_natural_reminder(raw)
@@ -177,7 +218,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
             return
 
-    # 4. Default: General Gemini AI conversation
+    # 5. Default: General Gemini AI conversation
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     ai_reply = await ask_gemini(user_id, text)
     

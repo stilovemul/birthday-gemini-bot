@@ -12,6 +12,28 @@ logger = logging.getLogger("ImageGenerator")
 # In-memory store for last generated prompts: {user_id: {"prompt": str, "timestamp": float}}
 user_last_prompts: Dict[int, Dict[str, Any]] = {}
 
+# In-memory store for user engine preference: {user_id: "flux" | "turbo" | "flux-anime" | "flux-3d"}
+user_engines: Dict[int, str] = {}
+
+# Active prompt awaiting mode: {user_id: True}
+user_awaiting_image_prompt: Dict[int, bool] = {}
+
+
+def set_user_awaiting_image(user_id: int, status: bool = True) -> None:
+    user_awaiting_image_prompt[user_id] = status
+
+
+def is_user_awaiting_image(user_id: int) -> bool:
+    return user_awaiting_image_prompt.get(user_id, False)
+
+
+def set_user_engine(user_id: int, engine: str) -> None:
+    user_engines[user_id] = engine
+
+
+def get_user_engine(user_id: int) -> str:
+    return user_engines.get(user_id, "flux")
+
 
 def set_last_image_prompt(user_id: int, prompt: str) -> None:
     user_last_prompts[user_id] = {
@@ -116,10 +138,12 @@ Output ONLY the resulting English prompt."""
 
 async def generate_image_bytes(prompt: str, user_id: Optional[int] = None, is_already_en: bool = False) -> Tuple[bool, Optional[bytes], str, str]:
     """
-    Generates image based on text prompt using high-speed Flux AI model.
+    Generates image based on text prompt using high-speed Flux / Turbo AI model.
     Returns (success, image_bytes, original_prompt, enriched_en_prompt).
     """
     clean_prompt = prompt.strip()
+    clean_prompt = re.sub(r"^(?:изображение|картинка|фото|арт|рисунок):\s*", "", clean_prompt, flags=re.IGNORECASE).strip()
+    
     if not clean_prompt:
         return False, None, "", "Укажите описание картинки."
 
@@ -128,13 +152,16 @@ async def generate_image_bytes(prompt: str, user_id: Optional[int] = None, is_al
     else:
         en_prompt = clean_prompt
 
+    engine = "flux"
     if user_id:
         set_last_image_prompt(user_id, clean_prompt)
+        set_user_awaiting_image(user_id, False)
+        engine = get_user_engine(user_id)
 
     encoded = urllib.parse.quote(en_prompt)
-    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&nologo=true&model=flux&seed={int(time.time()*1000)%100000}"
+    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&nologo=true&model={engine}&seed={int(time.time()*1000)%100000}"
 
-    logger.info(f"Generating image via Flux for: '{en_prompt}'")
+    logger.info(f"Generating image via {engine} for: '{en_prompt}'")
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=50)) as resp:
