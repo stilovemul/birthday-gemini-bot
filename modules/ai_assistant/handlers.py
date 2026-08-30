@@ -11,7 +11,7 @@ from modules.smart_reminders.parser import parse_natural_reminder
 from modules.smart_reminders.storage import add_reminder
 from modules.image_gen.generator import (
     generate_image_bytes,
-    get_last_image_prompt,
+    get_last_image_info,
     refine_prompt_with_ai
 )
 from modules.image_gen.handlers import get_image_action_keyboard
@@ -27,8 +27,8 @@ async def cmd_start(message: types.Message):
         "Я твой персональный ИИ-ассистент в облаке с кучей полезных функций:\n\n"
         "✨ <b>Что я умею прямо сейчас:</b>\n"
         "• 🤖 <b>Gemini AI</b>: живой умный диалог, решение любых задач\n"
-        "• 🎨 <b>Генерация картинок</b>: напишите <code>/image описание</code> или просто <i>«Нарисуй кота в космосе»</i>\n"
-        "  └ <i>Правки: если картинка не понравилась, просто напишите: «Сделай фон темнее» или «Добавь шляпу»</i>\n"
+        "• 🎨 <b>Генерация картинок</b>: напишите <code>/image описание</code> или просто <i>«Нарисуй русскую девушку, реальное фото»</i>\n"
+        "  └ <i>Правки: если что-то не так, просто напишите: «Тут нет девушки, добавь крупным планом» или «Сделай фон ярче»</i>\n"
         "• ⏰ <b>Умные напоминания</b>: <i>«Напомни завтра в 15:00 позвонить в банк»</i> или <i>«Напомни через 40 мин выключить духовку»</i>\n"
         "• 🎂 <b>Дни рождения</b>: напоминания в 09:00 MSK (за 7, 3, 1 день и в праздник)\n"
         "• 📝 <b>Заметки</b>: <code>/note Текст</code>\n\n"
@@ -43,8 +43,9 @@ async def cmd_help(message: types.Message):
     help_text = (
         "📖 <b>Справка по возможностям бота:</b>\n\n"
         "🎨 <b>Генерация картинок:</b>\n"
-        "• <code>/image спорткар на закате</code> или <i>«Нарисуй кота в очках»</i>\n"
-        "• <b>Доработка:</b> просто напишите в ответ <i>«Сделай фон зеленым»</i> или <i>«Переделай в стиле киберпанк»</i>\n\n"
+        "• <code>/image красивая русская девушка, портрет</code>\n"
+        "• <i>«Нарисуй спорткар будущего на закате»</i>\n"
+        "• <b>Доработка:</b> просто напишите в чат: <i>«Тут нет человека, сделай крупный план лица»</i> или <i>«Сделай фон темнее»</i>\n\n"
         "⏰ <b>Умные напоминания:</b>\n"
         "• <i>«Напомни завтра в 15:00 позвонить врачу»</i>\n"
         "• <i>«Напомни через 30 минут выпить таблетку»</i>\n"
@@ -105,12 +106,12 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     user_id = message.from_user.id
 
     # 1. Direct Image Generation: "нарисуй...", "сгенерируй картинку..."
-    draw_match = re.match(r"^(?:нарисуй|сгенерируй\s+картинку|сделай\s+картинку|нарисуй\s+мне|нарисуйте)\s+(.+)", text, re.IGNORECASE)
+    draw_match = re.match(r"^(?:нарисуй|сгенерируй\s+картинку|сделай\s+картинку|нарисуй\s+мне|нарисуйте|нарисуй\s+пожалуйста)\s+(.+)", text, re.IGNORECASE)
     if draw_match:
         prompt = draw_match.group(1).strip()
         status_msg = await message.answer(f"🎨 <i>Генерирую «{prompt}» через нейросеть Flux...</i>", parse_mode=ParseMode.HTML)
         await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
-        success, img_bytes, p_res = await generate_image_bytes(prompt, user_id=user_id)
+        success, img_bytes, orig_p, en_p = await generate_image_bytes(prompt, user_id=user_id)
         try:
             await status_msg.delete()
         except Exception:
@@ -118,24 +119,30 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         if success and img_bytes:
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
             caption = (
-                f"✨ <b>Промпт:</b> «<i>{p_res}</i>»\n\n"
-                "💡 <i>Хотите доработать? Напишите пожелание (например: «Сделай ярче» или «Добавь луну»).</i>"
+                f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
+                "💡 <i>Если результат нужно изменить — напишите замечание (например: «Тут нет человека, добавь девушку» или «Сделай фон темнее»).</i>"
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
         else:
-            await message.answer(f"❌ {p_res}", reply_markup=get_main_menu())
+            await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
             return
 
-    # 2. Image Refinement / Modification of previous image
-    last_prompt = get_last_image_prompt(user_id)
-    refine_pattern = r"^(?:перерисуй|переделай|измени|добавь|убери|сделай\s+фон|поменяй|не\s+нравится|сделай\s+его|сделай\s+ее|сделай\s+их|сделай\s+по-другому|замени|сделай\s+вместо)\b"
-    if last_prompt and re.search(refine_pattern, text, re.IGNORECASE):
-        status_msg = await message.answer("🎨 <i>Учитываю ваши правки и перерисовываю картинку...</i>", parse_mode=ParseMode.HTML)
+    # 2. Image Refinement / Modification of recent image
+    info = get_last_image_info(user_id)
+    refine_pattern = (
+        r"(?:тут\s+нет|здесь\s+нет|нет\s+|где\s+|не\s+вижу|не\s+то|не\s+похоже|"
+        r"перерисуй|переделай|измени|добавь|убери|сделай\s+фон|поменяй|не\s+нравится|"
+        r"сделай\s+е[гоеё]|сделай\s+их|сделай\s+по-другому|замени|сделай\s+вместо|исправь|"
+        r"про\s+картинку|картинк|фотографи)"
+    )
+    if info and re.search(refine_pattern, text, re.IGNORECASE):
+        last_prompt = info["prompt"]
+        status_msg = await message.answer(f"🎨 <i>Учитываю замечание: «{text}» и перерисовываю картинку...</i>", parse_mode=ParseMode.HTML)
         await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
         
         refined_prompt = await refine_prompt_with_ai(last_prompt, text)
-        success, img_bytes, p_res = await generate_image_bytes(refined_prompt, user_id=user_id)
+        success, img_bytes, orig_p, en_p = await generate_image_bytes(refined_prompt, user_id=user_id)
         
         try:
             await status_msg.delete()
@@ -144,19 +151,20 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         if success and img_bytes:
             photo_file = BufferedInputFile(img_bytes, filename="refined.jpg")
             caption = (
-                f"✨ <b>Обновленный вариант:</b> «<i>{p_res}</i>»\n\n"
-                f"📝 <i>Учтено пожелание:</i> «{text}»"
+                f"✨ <b>Обновлённая картинка:</b>\n"
+                f"📝 <i>Учтено замечание:</i> «{text}»\n\n"
+                "💡 <i>Хотите ещё что-то изменить? Просто напишите!</i>"
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
         else:
-            await message.answer(f"❌ {p_res}", reply_markup=get_main_menu())
+            await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
             return
 
     # 3. Smart Reminders: "напомни...", "поставь напоминание..."
     if re.match(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s+", text, re.IGNORECASE):
         raw = re.sub(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s*", "", text, flags=re.IGNORECASE).strip()
-        success, target_dt, task_text, info = await parse_natural_reminder(raw)
+        success, target_dt, task_text, info_remind = await parse_natural_reminder(raw)
         if success and target_dt:
             item = add_reminder(user_id, task_text, target_dt)
             time_formatted = target_dt.strftime("%d.%m.%Y в %H:%M MSK")

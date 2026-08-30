@@ -15,12 +15,11 @@ SYSTEM_INSTRUCTION = """Ты — персональный многофункци
 - Умеешь решать любые задачи: диалог, тексты, код, анализ фото, генерация идей, ответы на вопросы, помощь в делах.
 """
 
-# gemini-3.5-flash as primary for instant, quota-free responses
 CANDIDATE_MODELS = [
-    "gemini-3.5-flash",
+    "gemini-3.6-flash",
     "gemini-3.1-flash-lite",
     "gemini-3.7-flash",
-    "gemini-3.6-flash"
+    "gemini-3.5-flash"
 ]
 
 client = None
@@ -32,7 +31,6 @@ def get_genai_client():
         client = genai.Client(api_key=api_key)
     return client
 
-# User chat contexts: {user_id: {"model": str, "chat": ChatInstance}}
 user_chats: Dict[int, Any] = {}
 
 
