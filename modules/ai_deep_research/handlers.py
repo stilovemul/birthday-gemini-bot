@@ -2,8 +2,11 @@ import logging
 from aiogram import Router, types, F
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from core.keyboards import get_main_menu, get_mode_keyboard
+from core.states import ActiveModeStates
 from modules.ai_deep_research.researcher import conduct_deep_research
 from modules.ai_deep_research.fact_checker import verify_claim_or_news
 
@@ -33,6 +36,7 @@ def format_research_card(data: dict) -> str:
     if data.get("verdict"):
         lines.append(f"\n🎯 <b>Итоговая рекомендация:</b>\n{data['verdict']}")
 
+    lines.append("\n💬 <i>Вы находитесь в режиме исследования. Можете задавать уточняющие вопросы или прислать новую тему!</i>")
     return "\n".join(lines)
 
 
@@ -51,35 +55,83 @@ def format_factcheck_card(data: dict) -> str:
         for m in mans:
             lines.append(f"  • {m}")
 
+    lines.append("\n💬 <i>Режим фактчека активен. Присылайте любые утверждения или ссылки для проверки!</i>")
     return "\n".join(lines)
 
 
 @router.message(Command("research"))
-@router.message(F.text.startswith("🔬 Исследуй"))
-@router.message(F.text.startswith("/research"))
-async def cmd_research(message: types.Message):
+@router.message(F.text.in_(["🔬 Deep Research & 🛡 Фактчек", "🔬 Deep Research", "🔬 Исследования"]))
+async def cmd_research_menu(message: types.Message, state: FSMContext):
+    await state.clear()
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🔬 Начать глубокое исследование", callback_data="mode_start_research")],
+            [InlineKeyboardButton(text="🛡 Проверить новость на фейк", callback_data="mode_start_factcheck")]
+        ]
+    )
+    await message.answer(
+        "🔬 <b>Аналитический центр Deep Research & Fact-Checker:</b>\n\n"
+        "Выберите режим работы:\n"
+        "• <b>Deep Research</b> — автономный сбор данных, сравнение вариантов, плюсы/минусы и итоговый вердикт.\n"
+        "• <b>Фактчекер</b> — проверка новостей и слухов на достоверность, манипуляции и кликбейт.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=kb
+    )
+
+
+@router.callback_query(F.data == "mode_start_research")
+async def cb_start_research(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.research_mode)
+    text = (
+        "🔬 <b>Режим «Deep Research» активирован!</b>\n\n"
+        "Напишите любую тему для глубокого анализа (техника, автомобили, бизнес, научные вопросы):\n"
+        "👉 <i>«Сравни лучшие зимние шины для СПб 2026: шипы vs липучка»</i>\n"
+        "👉 <i>«Какой роутер с поддержкой Wi-Fi 7 и VLESS выбрать для дома?»</i>\n\n"
+        "💡 <i>Все сообщения будут обрабатываться как запросы на исследование, пока вы не нажмете кнопку завершения ниже.</i>"
+    )
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Deep Research"))
+    await callback.answer()
+
+
+@router.callback_query(F.data == "mode_start_factcheck")
+async def cb_start_factcheck(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.factcheck_mode)
+    text = (
+        "🛡 <b>Режим «Фактчекинг новостей» активирован!</b>\n\n"
+        "Пришлите заголовок новости, цитату или слух:\n"
+        "👉 <i>«В СПб вводят налог на кондиционеры с 1 сентября»</i>\n"
+        "👉 <i>«Правда ли, что с 2026 года отменяют скидку 50% на штрафы ГИБДД?»</i>\n\n"
+        "💡 <i>Бот проверит первоисточники и вынесет вердикт достоверности.</i>"
+    )
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Фактчек"))
+    await callback.answer()
+
+
+@router.message(ActiveModeStates.research_mode)
+async def handle_research_dialog(message: types.Message, state: FSMContext):
+    text = message.text or ""
+    if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
+        await state.clear()
+        await message.answer("🏁 <b>Режим «Deep Research» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        return
+
     user_id = message.from_user.id
-    topic = message.text.replace("/research", "").replace("🔬 Исследуй", "").strip()
-    if not topic:
-        topic = "Тренды зимних шин с шипами и липучки для СПб 2026: что надежнее и тише"
-
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    data = await conduct_deep_research(user_id, topic)
-    text = format_research_card(data)
-    await message.answer(text, parse_mode=ParseMode.HTML)
+    data = await conduct_deep_research(user_id, text)
+    reply = format_research_card(data)
+    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Deep Research"))
 
 
-@router.message(Command("factcheck"))
-@router.message(Command("checknews"))
-@router.message(F.text.startswith("🛡 Проверь новость"))
-@router.message(F.text.startswith("/factcheck"))
-async def cmd_factcheck(message: types.Message):
+@router.message(ActiveModeStates.factcheck_mode)
+async def handle_factcheck_dialog(message: types.Message, state: FSMContext):
+    text = message.text or ""
+    if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
+        await state.clear()
+        await message.answer("🏁 <b>Режим «Фактчекинг» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        return
+
     user_id = message.from_user.id
-    claim = message.text.replace("/factcheck", "").replace("/checknews", "").replace("🛡 Проверь новость", "").strip()
-    if not claim:
-        claim = "В РФ ввели обязательный налог на установку домашних кондиционеров и балконов с 1 сентября"
-
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    data = await verify_claim_or_news(user_id, claim)
-    text = format_factcheck_card(data)
-    await message.answer(text, parse_mode=ParseMode.HTML)
+    data = await verify_claim_or_news(user_id, text)
+    reply = format_factcheck_card(data)
+    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Фактчек"))

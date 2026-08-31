@@ -1,32 +1,17 @@
 import logging
-from aiogram import Router, types, F, Bot
+from aiogram import Router, types, F
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from core.keyboards import get_main_menu
-from core.states import SubTrackerStates
+from core.keyboards import get_main_menu, get_mode_keyboard
+from core.states import ActiveModeStates
 from modules.gourmet_assistant.breakfast import generate_express_breakfast
 from modules.gourmet_assistant.barman import craft_cocktail
 
 logger = logging.getLogger("GourmetHandlers")
 router = Router(name="gourmet_assistant")
-
-
-def get_gourmet_main_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🍳 Быстрый завтрак (10 мин)", callback_data="gourmet_bf_quick"),
-                InlineKeyboardButton(text="🥚 Завтрак из моих продуктов", callback_data="gourmet_bf_custom")
-            ],
-            [
-                InlineKeyboardButton(text="🍸 Авторский коктейль", callback_data="gourmet_bar_cocktail"),
-                InlineKeyboardButton(text="🍹 Безалкогольный моктейль", callback_data="gourmet_bar_mocktail")
-            ]
-        ]
-    )
 
 
 def format_breakfast_message(data: dict) -> str:
@@ -45,6 +30,7 @@ def format_breakfast_message(data: dict) -> str:
     if data.get("chef_tip"):
         lines.append(f"\n{data['chef_tip']}")
 
+    lines.append("\n💬 <i>Напишите пожелания (например: «без яиц», «больше белка», «из творога») или примените кнопку ниже:</i>")
     return "\n".join(lines)
 
 
@@ -65,85 +51,79 @@ def format_cocktail_message(data: dict) -> str:
     if data.get("barman_secret"):
         lines.append(f"\n{data['barman_secret']}")
 
+    lines.append("\n💬 <i>Напишите ваши напитки или пожелание (например: «хочу покислее», «добавь виски»):</i>")
     return "\n".join(lines)
 
 
 @router.message(Command("breakfast"))
-@router.message(F.text.in_(["🍳 Экспресс-Завтраки", "🍳 Завтрак", "🍳 Завтраки"]))
-async def cmd_breakfast(message: types.Message):
-    user_id = message.from_user.id
-    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    data = await generate_express_breakfast(user_id, ingredients="", mood="бодрый и энергичный")
-    text = format_breakfast_message(data)
+@router.message(Command("barman"))
+@router.message(F.text.in_(["🍳 Завтрак & 🍸 Бармен", "🍳 Экспресс-Завтраки", "🍸 AI-Бармен"]))
+async def cmd_gourmet_menu(message: types.Message, state: FSMContext):
+    await state.clear()
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🔄 Сгенерировать другой завтрак", callback_data="gourmet_bf_quick")],
-            [InlineKeyboardButton(text="🍸 Перейти в AI-Бармен", callback_data="gourmet_bar_cocktail")]
+            [InlineKeyboardButton(text="🍳 Режим: Экспресс-Завтрак (10 мин)", callback_data="mode_start_breakfast")],
+            [InlineKeyboardButton(text="🍸 Режим: AI-Бармен & Коктейли", callback_data="mode_start_barman")]
         ]
     )
-    await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb)
+    await message.answer(
+        "🍳 <b>Кулинарный шеф & 🍸 AI-Бармен:</b>\n\n"
+        "Выберите режим работы:\n"
+        "• <b>Завтраки за 10 минут</b> — сытные сбалансированные блюда с расчетом КБЖУ.\n"
+        "• <b>AI-Бармен</b> — авторские коктейли и моктейли по напиткам из вашего бара.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=kb
+    )
 
 
-@router.message(Command("barman"))
-@router.message(Command("cocktail"))
-@router.message(F.text.in_(["🍸 AI-Бармен", "🍸 Бармен", "🍸 Коктейли"]))
-async def cmd_barman(message: types.Message):
-    user_id = message.from_user.id
-    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+@router.callback_query(F.data == "mode_start_breakfast")
+async def cb_start_breakfast(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.breakfast_mode)
+    user_id = callback.from_user.id
+    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    data = await generate_express_breakfast(user_id, ingredients="", mood="бодрый и сытный")
+    text = format_breakfast_message(data)
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Завтрак"))
+    await callback.answer()
+
+
+@router.callback_query(F.data == "mode_start_barman")
+async def cb_start_barman(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.barman_mode)
+    user_id = callback.from_user.id
+    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await craft_cocktail(user_id, bar_stock="джин, виски, ром, тоник, сок, цитрусовые, мята, лед", non_alcoholic=False)
     text = format_cocktail_message(data)
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🎲 Еще коктейль", callback_data="gourmet_bar_cocktail")],
-            [InlineKeyboardButton(text="🍹 Безалкогольный", callback_data="gourmet_bar_mocktail")]
-        ]
-    )
-    await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb)
-
-
-@router.callback_query(F.data == "gourmet_bf_quick")
-async def cb_bf_quick(callback: types.CallbackQuery):
-    user_id = callback.from_user.id
-    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    data = await generate_express_breakfast(user_id, mood="разнообразный и быстрый")
-    text = format_breakfast_message(data)
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🔄 Сгенерировать другой", callback_data="gourmet_bf_quick")],
-            [InlineKeyboardButton(text="🍸 AI-Бармен", callback_data="gourmet_bar_cocktail")]
-        ]
-    )
-    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb)
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("AI-Бармен"))
     await callback.answer()
 
 
-@router.callback_query(F.data == "gourmet_bar_cocktail")
-async def cb_bar_cocktail(callback: types.CallbackQuery):
-    user_id = callback.from_user.id
-    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    data = await craft_cocktail(user_id, bar_stock="", non_alcoholic=False)
-    text = format_cocktail_message(data)
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🎲 Еще коктейль", callback_data="gourmet_bar_cocktail")],
-            [InlineKeyboardButton(text="🍹 Безалкогольный моктейль", callback_data="gourmet_bar_mocktail")]
-        ]
-    )
-    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb)
-    await callback.answer()
+@router.message(ActiveModeStates.breakfast_mode)
+async def handle_breakfast_dialog(message: types.Message, state: FSMContext):
+    text = message.text or ""
+    if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
+        await state.clear()
+        await message.answer("🏁 <b>Режим «Завтрак» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        return
+
+    user_id = message.from_user.id
+    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+    data = await generate_express_breakfast(user_id, ingredients=text, mood="по запросу пользователя")
+    reply = format_breakfast_message(data)
+    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Завтрак"))
 
 
-@router.callback_query(F.data == "gourmet_bar_mocktail")
-async def cb_bar_mocktail(callback: types.CallbackQuery):
-    user_id = callback.from_user.id
-    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    data = await craft_cocktail(user_id, bar_stock="сок, тоник, ягоды, мята, цитрусовые, лед", non_alcoholic=True)
-    text = format_cocktail_message(data)
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🎲 Еще безалкогольный", callback_data="gourmet_bar_mocktail")],
-            [InlineKeyboardButton(text="🍸 Алкогольный коктейль", callback_data="gourmet_bar_cocktail")]
-        ]
-    )
-    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb)
-    await callback.answer()
+@router.message(ActiveModeStates.barman_mode)
+async def handle_barman_dialog(message: types.Message, state: FSMContext):
+    text = message.text or ""
+    if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
+        await state.clear()
+        await message.answer("🏁 <b>Режим «AI-Бармен» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        return
+
+    user_id = message.from_user.id
+    is_non_alcol = "безалк" in text.lower() or "моктейл" in text.lower()
+    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+    data = await craft_cocktail(user_id, bar_stock=text, non_alcoholic=is_non_alcol)
+    reply = format_cocktail_message(data)
+    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("AI-Бармен"))

@@ -1,10 +1,16 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import (
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+    WebAppInfo,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton
+)
 
 WEBAPP_URL = "https://birthday-gemini-bot.onrender.com/app"
 
 
 def get_main_menu() -> ReplyKeyboardMarkup:
-    """Returns main multi-functional keyboard."""
+    """Returns main multi-functional keyboard with collapsible layout."""
     kb = [
         [
             KeyboardButton(text="📱 Открыть Дашборд (App)", web_app=WebAppInfo(url=WEBAPP_URL))
@@ -55,7 +61,38 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="❓ Справка")
         ]
     ]
-    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, is_persistent=True)
+    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, is_persistent=False)
+
+
+def get_mode_keyboard(mode_title: str = "Режим диалога") -> ReplyKeyboardMarkup:
+    """
+    Returns a sleek single-button keyboard to replace the big menu while user is in active category mode.
+    """
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🏁 Закончить режим (Главное меню)")]
+        ],
+        resize_keyboard=True,
+        is_persistent=False
+    )
+
+
+def get_birthday_submenu() -> ReplyKeyboardMarkup:
+    """Returns birthday management submenu keyboard."""
+    kb = [
+        [KeyboardButton(text="➕ Добавить день рождения"), KeyboardButton(text="📋 Список всех ДР")],
+        [KeyboardButton(text="🔍 Поиск ДР"), KeyboardButton(text="🔙 Главное меню")]
+    ]
+    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, is_persistent=False)
+
+
+def get_notes_keyboard() -> ReplyKeyboardMarkup:
+    """Returns notes management keyboard."""
+    kb = [
+        [KeyboardButton(text="➕ Новая заметка"), KeyboardButton(text="📋 Все заметки")],
+        [KeyboardButton(text="🔙 Главное меню")]
+    ]
+    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, is_persistent=False)
 
 
 def get_webapp_inline_keyboard() -> InlineKeyboardMarkup:
@@ -70,21 +107,3 @@ def get_webapp_inline_keyboard() -> InlineKeyboardMarkup:
             ]
         ]
     )
-
-
-def get_birthday_submenu() -> ReplyKeyboardMarkup:
-    """Submenu for birthdays."""
-    kb = [
-        [
-            KeyboardButton(text="🎂 Сегодня"),
-            KeyboardButton(text="📅 Ближайшие ДР")
-        ],
-        [
-            KeyboardButton(text="📋 Все дни рождения"),
-            KeyboardButton(text="➕ Как добавить")
-        ],
-        [
-            KeyboardButton(text="🔙 Главное меню")
-        ]
-    ]
-    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, is_persistent=True)

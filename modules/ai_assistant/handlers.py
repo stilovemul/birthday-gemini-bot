@@ -1,3 +1,4 @@
+from aiogram.fsm.context import FSMContext
 import io
 import re
 import logging
@@ -97,22 +98,27 @@ async def cmd_help(message: types.Message):
 
 @router.message(Command("clear"))
 @router.message(Command("reset"))
-async def cmd_clear(message: types.Message):
+@router.message(F.text.in_(["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit"]))
+async def cmd_clear(message: types.Message, state: FSMContext):
+    await state.clear()
     end_image_session(message.from_user.id)
     reset_chat_session(message.from_user.id)
     set_user_awaiting_image(message.from_user.id, False)
-    await message.answer("🧹 <b>Контекст очищен!</b> О чем поговорим дальше?", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+    await message.answer("🏁 <b>Режим завершен.</b> Вы вернулись в главное меню!", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
 
 @router.message(F.text == "🤖 Gemini AI")
-async def cmd_gemini_info(message: types.Message):
+async def cmd_gemini_info(message: types.Message, state: FSMContext):
+    await state.clear()
+    from core.keyboards import get_mode_keyboard
     end_image_session(message.from_user.id)
     set_user_awaiting_image(message.from_user.id, False)
     await message.answer(
-        "🤖 <b>Режим общения с Gemini AI активен.</b>\n\n"
-        "Просто напишите мне любой вопрос, попросите написать код, текст, план или пришлите фото — я сразу отвечу!",
+        "🤖 <b>Режим прямого диалога с Gemini AI:</b>\n\n"
+        "Задавайте любые вопросы, просите написать код, составить план или проанализировать данные.\n"
+        "<i>(Огромная панель кнопок скрыта для удобного чтения. Когда захотите выйти — нажмите кнопку завершения ниже)</i>",
         parse_mode=ParseMode.HTML,
-        reply_markup=get_main_menu()
+        reply_markup=get_mode_keyboard("Gemini AI")
     )
 
 
