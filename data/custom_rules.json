@@ -12,7 +12,7 @@
     "days_of_week": [],
     "action_text": "Пора передать показания счетчиков воды (ХВС/ГВС) и электричества в Петроэлектросбыт/УК!",
     "is_active": false,
-    "last_completed_period": "2026-09",
+    "last_completed_period": "",
     "last_notified_date": ""
   }
 ]
