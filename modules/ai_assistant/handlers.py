@@ -36,7 +36,7 @@ async def cmd_start(message: types.Message):
         "✨ <b>Что я умею:</b>\n"
         "• 🤖 <b>Gemini AI</b>: живой умный диалог, ответы на любые вопросы\n"
         "• 🎨 <b>Генератор фото (RealVisXL)</b>: напишите <code>/image описание</code> или нажмите кнопку в меню\n"
-        "  └ <i>Правки без ограничений: пока активна сессия, пишите любые пожелания («давай блондинку», «одеяло ниже») — бот будет менять фото, пока вы не нажмете кнопку «⏹ Закончить генерацию»!</i>\n"
+        "  └ <i>Точечные правки: пока активна сессия, пишите любые правки — бот будет изменять именно текущее фото, не меняя человека, пока вы не нажмете кнопку «🔄 Сгенерировать НОВОЕ изображение» или «⏹ Закончить»!</i>\n"
         "• ⏰ <b>Умные напоминания</b>: <i>«Напомни завтра в 15:00 позвонить в банк»</i>\n"
         "• 🎂 <b>Дни рождения</b>: авто-напоминания в 09:00 MSK\n"
         "• 📝 <b>Заметки</b>: <code>/note Текст</code>\n\n"
@@ -52,9 +52,9 @@ async def cmd_help(message: types.Message):
     set_user_awaiting_image(message.from_user.id, False)
     help_text = (
         "📖 <b>Справка по возможностям бота:</b>\n\n"
-        "🎨 <b>Генерация и доработка фото:</b>\n"
+        "🎨 <b>Генерация и точечная доработка фото:</b>\n"
         "• Кнопка «🎨 Генерация картинок» или <code>/image описание</code>\n"
-        "• <b>Непрерывные правки:</b> пишите любые изменения в чат подряд. Бот будет перерисовывать фото, пока вы не нажмете «⏹ Закончить генерацию».\n\n"
+        "• <b>Правки:</b> пишите любые изменения в чат подряд. Бот будет модифицировать то же самое фото (с сохранением внешности), пока вы не нажмете «⏹ Закончить генерацию» или «🔄 Сгенерировать НОВОЕ изображение».\n\n"
         "⏰ <b>Умные напоминания:</b>\n"
         "• <i>«Напомни завтра в 15:00 позвонить врачу»</i>\n"
         "• <i>«Напомни через 30 минут выпить таблетку»</i>\n"
@@ -135,17 +135,22 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         # Menu buttons exit session and continue to menu
         if text in ["🤖 Gemini AI", "🎨 Генерация картинок", "⏰ Напоминания", "🎂 Дни рождения", "📝 Заметки", "❓ Справка"]:
             end_image_session(user_id)
-            # Will be handled by next handlers or falls through
         else:
-            # 100% of user text in this mode is treated as an image refinement / edit!
+            # Modify the EXACT same image preserving Seed!
             sess = get_image_session(user_id)
             last_prompt = sess["current_en_prompt"] if sess else text
+            locked_seed = sess.get("seed") if sess else None
             
-            status_msg = await message.answer(f"🎨 <i>Вношу правку: «{text}» и перерисовываю фото...</i>", parse_mode=ParseMode.HTML)
+            status_msg = await message.answer(f"🎨 <i>Вношу правку: «{text}» в текущее фото...</i>", parse_mode=ParseMode.HTML)
             await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
             
             refined_prompt = await refine_prompt_with_ai(last_prompt, text)
-            success, img_bytes, orig_p, en_p = await generate_image_bytes(refined_prompt, user_id=user_id, is_already_en=True)
+            success, img_bytes, orig_p, en_p, seed_used = await generate_image_bytes(
+                refined_prompt,
+                user_id=user_id,
+                is_already_en=True,
+                seed=locked_seed
+            )
             
             try:
                 await status_msg.delete()
@@ -158,7 +163,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
                 caption = (
                     f"🎨 <b>Фото обновлено!</b>\n"
                     f"📝 <i>Правка:</i> «{text}»\n\n"
-                    "💡 <i>Продолжайте писать любые изменения текстом или нажмите кнопку ниже для завершения:</i>"
+                    "💡 <i>Продолжайте писать точечные правки в чат или нажмите кнопку ниже для завершения:</i>"
                 )
                 await message.answer_photo(
                     photo_file,
@@ -176,18 +181,18 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         set_user_awaiting_image(user_id, False)
         status_msg = await message.answer(f"🎨 <i>Генерирую фото «{text}»... (3-5 сек)</i>", parse_mode=ParseMode.HTML)
         await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
-        success, img_bytes, orig_p, en_p = await generate_image_bytes(text, user_id=user_id)
+        success, img_bytes, orig_p, en_p, seed_used = await generate_image_bytes(text, user_id=user_id)
         try:
             await status_msg.delete()
         except Exception:
             pass
         if success and img_bytes:
-            start_image_session(user_id, orig_p, en_p)
+            start_image_session(user_id, orig_p, en_p, seed=seed_used)
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
             caption = (
                 f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-                "💡 <b>Режим фотостудии активен:</b> пишите любые изменения в чат (например: <i>«давай рыженькую»</i>, <i>«одеяло ниже»</i>).\n"
-                "Для завершения нажмите <b>«⏹ Закончить генерацию»</b>."
+                "💡 <b>Режим точечных правок:</b> пишите любые изменения в чат.\n"
+                "<i>(Бот правит это фото без сброса внешности, пока вы не нажмете «Сгенерировать НОВОЕ изображение» или «Закончить»).</i>"
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
@@ -210,18 +215,18 @@ async def handle_generic_text(message: types.Message, bot: Bot):
 
         status_msg = await message.answer(f"🎨 <i>Генерирую фото «{prompt}»...</i>", parse_mode=ParseMode.HTML)
         await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
-        success, img_bytes, orig_p, en_p = await generate_image_bytes(prompt, user_id=user_id)
+        success, img_bytes, orig_p, en_p, seed_used = await generate_image_bytes(prompt, user_id=user_id)
         try:
             await status_msg.delete()
         except Exception:
             pass
         if success and img_bytes:
-            start_image_session(user_id, orig_p, en_p)
+            start_image_session(user_id, orig_p, en_p, seed=seed_used)
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
             caption = (
                 f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-                "💡 <b>Режим фотостудии активен:</b> пишите любые изменения в чат.\n"
-                "Для завершения нажмите <b>«⏹ Закончить генерацию»</b>."
+                "💡 <b>Режим точечных правок активен:</b> пишите любые изменения в чат.\n"
+                "<i>(Бот правит это фото без сброса внешности, пока вы не нажмете «Сгенерировать НОВОЕ изображение» или «Закончить»).</i>"
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return

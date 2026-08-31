@@ -7,12 +7,14 @@ import asyncio
 import time
 import json
 import re
+import random
 from typing import Optional, Tuple, Dict, Any
 from core.gemini import get_genai_client, CANDIDATE_MODELS
 
 logger = logging.getLogger("ImageGenerator")
 
-# Active Image Studio Sessions: {user_id: {"active": True, "history": [str], "current_en_prompt": str, "last_ru_prompt": str, "updated_at": float}}
+# Active Image Studio Sessions:
+# {user_id: {"active": True, "seed": int, "history": [str], "current_en_prompt": str, "last_ru_prompt": str, "updated_at": float}}
 active_image_sessions: Dict[int, Dict[str, Any]] = {}
 
 # In-memory store for user engine preference: {user_id: "realvis" | "flux" | "turbo" | "flux-anime"}
@@ -22,27 +24,42 @@ user_engines: Dict[int, str] = {}
 user_awaiting_image_prompt: Dict[int, bool] = {}
 
 
-def start_image_session(user_id: int, initial_prompt: str, en_prompt: str) -> None:
+def start_image_session(user_id: int, initial_prompt: str, en_prompt: str, seed: Optional[int] = None) -> int:
+    if seed is None:
+        seed = random.randint(100000, 2147483640)
+    
     active_image_sessions[user_id] = {
         "active": True,
+        "seed": seed,
         "history": [initial_prompt],
         "current_en_prompt": en_prompt.strip(),
         "last_ru_prompt": initial_prompt.strip(),
         "updated_at": time.time()
     }
     user_awaiting_image_prompt[user_id] = False
-    logger.info(f"Image session STARTED for user {user_id}: '{initial_prompt}'")
+    logger.info(f"Image session STARTED for user {user_id} with locked seed {seed}: '{initial_prompt}'")
+    return seed
 
 
-def update_image_session(user_id: int, new_ru_prompt: str, new_en_prompt: str) -> None:
+def update_image_session(user_id: int, new_ru_prompt: str, new_en_prompt: str) -> int:
     if user_id in active_image_sessions:
-        active_image_sessions[user_id]["history"].append(new_ru_prompt)
-        active_image_sessions[user_id]["current_en_prompt"] = new_en_prompt.strip()
-        active_image_sessions[user_id]["last_ru_prompt"] = new_ru_prompt.strip()
-        active_image_sessions[user_id]["updated_at"] = time.time()
-        logger.info(f"Image session UPDATED for user {user_id}: '{new_ru_prompt}'")
+        sess = active_image_sessions[user_id]
+        sess["history"].append(new_ru_prompt)
+        sess["current_en_prompt"] = new_en_prompt.strip()
+        sess["last_ru_prompt"] = new_ru_prompt.strip()
+        sess["updated_at"] = time.time()
+        logger.info(f"Image session UPDATED for user {user_id} (preserving seed {sess['seed']}): '{new_ru_prompt}'")
+        return sess["seed"]
     else:
-        start_image_session(user_id, new_ru_prompt, new_en_prompt)
+        return start_image_session(user_id, new_ru_prompt, new_en_prompt)
+
+
+def reset_session_seed(user_id: int) -> int:
+    new_seed = random.randint(100000, 2147483640)
+    if user_id in active_image_sessions:
+        active_image_sessions[user_id]["seed"] = new_seed
+        logger.info(f"New seed generated for user {user_id}: {new_seed}")
+    return new_seed
 
 
 def end_image_session(user_id: int) -> bool:
@@ -86,6 +103,7 @@ def get_last_image_info(user_id: int) -> Optional[Dict[str, Any]]:
         return {
             "prompt": sess["last_ru_prompt"],
             "en_prompt": sess["current_en_prompt"],
+            "seed": sess["seed"],
             "timestamp": sess["updated_at"]
         }
     return None
@@ -96,7 +114,6 @@ def apply_heuristic_enrichment(raw_prompt: str) -> str:
     p_lower = raw_prompt.lower()
     tags = []
 
-    # Hair color
     hair_token = "natural blonde hair"
     if any(k in p_lower for k in ["рыж", "рыженьк", "redhead", "ginger"]):
         hair_token = "vibrant natural ginger red hair"
@@ -105,10 +122,9 @@ def apply_heuristic_enrichment(raw_prompt: str) -> str:
     elif any(k in p_lower for k in ["блондинк", "светл", "blonde"]):
         hair_token = "platinum blonde hair with soft waves"
 
-    # Framing / Body
     framing = "candid raw 35mm photograph"
     if any(k in p_lower for k in ["пресс", "живот", "кубик", "фигур", "тел", "abs", "stomach"]):
-        framing = "medium shot showing her fit toned athletic torso, visible defined six-pack abs on flat stomach"
+        framing = "medium seated shot showing her fit toned athletic torso, visible defined six-pack abs on flat stomach"
 
     if any(k in p_lower for k in ["девушк", "женщин", "красавиц", "модель", "girl", "woman"]):
         tags.append(f"{framing} of an exceptionally gorgeous and attractive 22-year-old Russian woman with a stunningly beautiful, tender, and youthful feminine face, {hair_token}, captivating eyes, radiant glowing skin texture, gentle warm smile, real life photograph")
@@ -130,8 +146,8 @@ async def translate_and_enrich_prompt(user_prompt: str) -> str:
     enrich_system = """You are an expert realistic photographer and prompt engineer.
 Translate the user's prompt into an English photography prompt for RealVisXL.
 IMPORTANT RULES:
-- Ensure the female face is STUNNINGLY GORGEOUS, young (21-23yo), highly feminine, attractive, with soft delicate facial features and a warm lovely smile (avoid harsh, tired, or masculine jawline).
-- If user requests abs/stomach/body (e.g. 'пресс на живот', 'кубики', 'фигура'): make sure the camera framing is a 'medium shot showing her toned flat stomach and defined fit abs'.
+- Ensure the female face is STUNNINGLY GORGEOUS, young (21-23yo), highly feminine, attractive, with soft delicate facial features and a warm lovely smile.
+- If user requests abs/stomach/body (e.g. 'пресс на живот', 'кубики', 'фигура'): make sure the camera framing is a 'medium seated shot showing her toned flat stomach and defined fit abs'.
 - Output ONLY 1-2 concise English sentences without negative prompt words."""
 
     c = get_genai_client()
@@ -154,20 +170,20 @@ IMPORTANT RULES:
 
 async def refine_prompt_with_ai(old_prompt: str, user_feedback: str) -> str:
     """
-    Combines previous prompt with user's feedback into an updated realistic prompt.
+    Carefully updates ONLY the requested delta changes while strictly preserving the existing subject, lighting, and composition.
     """
-    prompt_to_gemini = f"""Previous image prompt:
+    prompt_to_gemini = f"""You are an expert image inpainting and modification prompt engineer.
+EXISTING BASE IMAGE DESCRIPTION:
 "{old_prompt}"
 
-User modification:
+USER'S SPECIFIC MODIFICATION REQUEST:
 "{user_feedback}"
 
-Generate an updated, detailed English photography prompt for RealVisXL that merges the user's modification.
-CRITICAL INSTRUCTIONS:
-- If user asks for abs/stomach/body ('пресс на живот', 'кубики', 'фигура'): adjust framing to 'medium shot or seated in bed, clearly showing her fit athletic flat stomach with defined six-pack abs and toned torso'. Do NOT do a tight headshot!
-- ALWAYS enforce: stunningly beautiful, young (22yo), charming and feminine face with delicate features, radiant skin, and attractive smile (never tired or masculine).
-- Preserve previous features (e.g. hair color, morning bed) unless the user explicitly asks to change them!
-Output ONLY the resulting English prompt in 1-2 sentences."""
+TASK:
+Produce an updated English prompt that makes ONLY the exact modification requested by the user, while STRICTLY KEEPING all other details from the base image unchanged (e.g. same woman, same face attractiveness, same hair color unless changed, same bedroom lighting and background).
+- If user asks for abs on stomach: add 'fit toned flat stomach with visible defined six-pack abs' while preserving her beautiful feminine face and pose.
+- If user changes hair color: change ONLY the hair color descriptor.
+Output ONLY the resulting 1-2 sentence English prompt."""
 
     c = get_genai_client()
     for model in CANDIDATE_MODELS:
@@ -186,25 +202,29 @@ Output ONLY the resulting English prompt in 1-2 sentences."""
     return apply_heuristic_enrichment(f"{old_prompt}, {user_feedback}")
 
 
-async def generate_via_realvis_horde(prompt: str) -> Optional[bytes]:
-    """Generates 100% photorealistic human photo via RealVisXL V4.0 / Juggernaut XL with beauty filters."""
-    # Explicit negative prompt to eliminate masculine jaw, tired eyes, wrinkled skin, or wrong cropping
+async def generate_via_realvis_horde(prompt: str, seed: Optional[int] = None) -> Optional[bytes]:
+    """Generates 100% photorealistic human photo via RealVisXL V4.0 with locked seed support."""
     negative_prompt = (
         "anime, 3d, doll, drawing, painting, cartoon, asian, smooth plastic, artificial, airbrush, render, "
         "harsh masculine face, masculine jawline, aged, tired eyes, dark circles under eyes, wrinkles, "
         "close-up head crop when stomach/body requested, bad anatomy, deformed body, unnatural abs"
     )
     full_prompt = f"{prompt} ### {negative_prompt}"
+    
+    params: Dict[str, Any] = {
+        "sampler_name": "k_dpmpp_2m",
+        "cfg_scale": 7,
+        "steps": 25,
+        "width": 1024,
+        "height": 1024,
+        "n": 1
+    }
+    if seed is not None:
+        params["seed"] = str(seed)
+
     payload = {
         "prompt": full_prompt,
-        "params": {
-            "sampler_name": "k_dpmpp_2m",
-            "cfg_scale": 7,
-            "steps": 25,
-            "width": 1024,
-            "height": 1024,
-            "n": 1
-        },
+        "params": params,
         "models": ["RealVisXL V4.0", "Juggernaut XL", "ICBINP - I Can't Believe It's Not Photography", "SDXL 1.0"]
     }
     
@@ -242,7 +262,7 @@ async def generate_via_realvis_horde(prompt: str) -> Optional[bytes]:
                                 async with session.get(img_url, timeout=aiohttp.ClientTimeout(total=15)) as img_resp:
                                     if img_resp.status == 200:
                                         img_bytes = await img_resp.read()
-                                        logger.info(f"RealVisXL successfully generated photo ({len(img_bytes)} bytes)")
+                                        logger.info(f"RealVisXL (seed {seed}) successfully generated photo ({len(img_bytes)} bytes)")
                                         return img_bytes
                         break
     except Exception as e:
@@ -250,16 +270,22 @@ async def generate_via_realvis_horde(prompt: str) -> Optional[bytes]:
     return None
 
 
-async def generate_image_bytes(prompt: str, user_id: Optional[int] = None, is_already_en: bool = False, force_engine: Optional[str] = None) -> Tuple[bool, Optional[bytes], str, str]:
+async def generate_image_bytes(
+    prompt: str,
+    user_id: Optional[int] = None,
+    is_already_en: bool = False,
+    force_engine: Optional[str] = None,
+    seed: Optional[int] = None
+) -> Tuple[bool, Optional[bytes], str, str, int]:
     """
-    Generates image based on text prompt with RealVisXL high-fidelity photorealism.
-    Returns (success, image_bytes, original_prompt, enriched_en_prompt).
+    Generates image based on text prompt with consistent seed preservation.
+    Returns (success, image_bytes, original_prompt, enriched_en_prompt, seed_used).
     """
     clean_prompt = prompt.strip()
     clean_prompt = re.sub(r"^(?:изображение|картинка|фото|арт|рисунок):\s*", "", clean_prompt, flags=re.IGNORECASE).strip()
     
     if not clean_prompt:
-        return False, None, "", "Укажите описание картинки."
+        return False, None, "", "Укажите описание картинки.", 0
 
     if not is_already_en:
         en_prompt = await translate_and_enrich_prompt(clean_prompt)
@@ -267,33 +293,43 @@ async def generate_image_bytes(prompt: str, user_id: Optional[int] = None, is_al
         en_prompt = clean_prompt
 
     engine = force_engine or "realvis"
+    current_seed = seed
     if user_id:
         user_awaiting_image_prompt[user_id] = False
         if not force_engine:
             engine = get_user_engine(user_id)
+        if current_seed is None:
+            sess = get_image_session(user_id)
+            if sess:
+                current_seed = sess["seed"]
+            else:
+                current_seed = random.randint(100000, 2147483640)
 
-    # 1. Try RealVisXL Photorealism first
+    if current_seed is None:
+        current_seed = random.randint(100000, 2147483640)
+
+    # 1. Try RealVisXL Photorealism first with locked seed
     if engine == "realvis" or "real" in engine:
-        img_bytes = await generate_via_realvis_horde(en_prompt)
+        img_bytes = await generate_via_realvis_horde(en_prompt, seed=current_seed)
         if img_bytes and len(img_bytes) > 5000:
-            return True, img_bytes, clean_prompt, en_prompt
+            return True, img_bytes, clean_prompt, en_prompt, current_seed
 
-    # 2. Fast Fallback via Clean Flux with enhance=false
+    # 2. Fast Fallback via Clean Flux with enhance=false and same seed
     encoded = urllib.parse.quote(en_prompt)
-    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&nologo=true&model=flux&enhance=false&seed={int(time.time()*1000)%100000}"
+    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&nologo=true&model=flux&enhance=false&seed={current_seed}"
 
-    logger.info(f"Generating image via Flux (enhance=false) for: '{en_prompt}'")
+    logger.info(f"Generating image via Flux (seed {current_seed}) for: '{en_prompt}'")
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=45)) as resp:
                 if resp.status == 200:
                     data = await resp.read()
                     if len(data) > 5000:
-                        return True, data, clean_prompt, en_prompt
+                        return True, data, clean_prompt, en_prompt, current_seed
                     else:
-                        return False, None, clean_prompt, "Сгенерированное изображение повреждено."
+                        return False, None, clean_prompt, "Сгенерированное изображение повреждено.", current_seed
                 else:
-                    return False, None, clean_prompt, f"Ошибка генерации: HTTP {resp.status}"
+                    return False, None, clean_prompt, f"Ошибка генерации: HTTP {resp.status}", current_seed
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
-        return False, None, clean_prompt, f"Ошибка генерации: {e}"
+        return False, None, clean_prompt, f"Ошибка генерации: {e}", current_seed
