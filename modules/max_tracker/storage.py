@@ -10,9 +10,9 @@ MAX_FILE = os.path.join(DATA_DIR, "max_config.json")
 
 DEFAULT_CONFIGS: Dict[str, Dict[str, Any]] = {
     "157236577": {
-        "token": "",
-        "viewer_id": "",
-        "user_name": "Олег Уринев",
+        "token": "An_Sx6HQ9HDiLYUJxdtvyI0epKaSQqcEeeSMdTiICYbbr2z_P6QNdX0fEQSXflCBCdzSTddlE7BdJqslyP63fgU6kVILbgpOikJMOOpeE4U8SM71QxAs_L9mcmu8n8eeqaqhCfkFiixnOl04h0EkAZDXGtEvCoYtE9hY3dcNi9pCx_eMY3bcovH4qN4iw3UefBSn1bNYoZ7thVLQPYL8mC5Z3NkOBPle8d-hEjsXC2Lfa-3cvFPKACy0VNN-Lu-S6iu_eVxO968iFjxaQUBjYtUIDS4llrzXat01CFaEvRMLVt8zvN9UwLpczbjJL98kwD6R1MRGN9FHbRSWtAoIrJVvwpVsksrkJanQSc4_JnQThYGWemgEl5VDOcoTdzbmMGkBnB-NVqDRRMRz_Lt-4c3jEIYw7uOe3-Ahu676xc1NRfadN0xYBigeK3RKKB59YQmpoN9OCBYAzo4KxGs35YID8usvBaakI64Fcgke_H_SxRRCmDzf1A9DhCas4j_ro_7Kn6Y5I8kb8cmE6r0SJaDHKZ1KSY-j6th50uZhpHUp7eTcyD5-KWNhUbK7tdKItT1bU2G6v6wS0Z56UAPB9U2owWeWfkjRo3Bm28NDeJFB4AJZz8ZhUNP0XyDeLySHsjFuTkBlYSO-OnMKUIAo4aFGalM_YkRK9ys6LypY7JSopAsrudIPCKvmzWEZ6WZiHe3vMQU",
+        "viewer_id": "161195674",
+        "user_name": "Олег",
         "enabled": True,
         "last_messages": 0,
         "last_unread_chats": 0,
