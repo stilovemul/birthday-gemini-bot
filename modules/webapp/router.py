@@ -278,7 +278,9 @@ async def get_dashboard_aggregated_data():
         "weather": weather_info,
         "birthdays": birthdays_data,
         "reminders": reminders_data,
-        "food": food_data
+        "food": food_data,
+        "subscriptions": get_subscription_stats(user_id),
+        "custom_rules": get_user_rules(user_id)
     }
 
 
