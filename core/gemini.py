@@ -83,7 +83,7 @@ def build_full_user_context(user_id: int = 157236577) -> str:
         age = f", исполнится {format_age_word(b['turning_age'])}" if b.get("turning_age") else ""
         left_str = "СЕГОДНЯ!" if days == 0 else (f"завтра" if days == 1 else f"через {days} дн.")
         b_lines.append(f"• {name}: {d_str}{age} (до ДР: {left_str})")
-    birthdays_section = "\n".join(b_lines) if b_lines else "Список дней рождения пуст."
+    birthdays_section = f"Всего в базе {len(birthdays)} записей:\n" + "\n".join(b_lines) if b_lines else "Список дней рождения пуст."
 
     # 3. Food / Calories Today
     food = get_daily_summary(user_id)
@@ -133,7 +133,7 @@ def build_full_user_context(user_id: int = 157236577) -> str:
 ⏰ НАПОМИНАНИЯ:
 {reminders_section}
 
-🎂 ДНИ РОЖДЕНИЯ БЛИЗКИХ:
+🎂 ДНИ РОЖДЕНИЯ БЛИЗКИХ ({len(birthdays)} записей):
 {birthdays_section}
 
 🥗 ПИТАНИЕ И КБЖУ СЕГОДНЯ:
@@ -156,6 +156,8 @@ def build_full_user_context(user_id: int = 157236577) -> str:
 
 def get_system_instruction(user_id: int = 157236577) -> str:
     ctx = build_full_user_context(user_id)
+    birthdays = get_sorted_birthdays()
+    b_count = len(birthdays)
     return f"""Ты — персональный всезнающий ИИ-ассистент Олега в Telegram (AiGemAntigravity).
 Ты работаешь 24/7 автономно в облаке и имеешь прямой доступ ко всем модулям и данным бота.
 
@@ -163,9 +165,10 @@ def get_system_instruction(user_id: int = 157236577) -> str:
 
 ТВОИ ПРАВИЛА:
 1. Когда Олег спрашивает про свои данные (например: "Есть ли напоминания на сегодня?", "Когда день рождения у мамы?", "Сколько калорий съел?", "Что на Drive2?", "Что в VK или MAX?"), ВСЕГДА бери точные факты и цифры из блока данных выше и отвечай четко, дружелюбно и по делу.
-2. Если напоминания на сегодня есть — перечисли их с точным временем. Если нет — прямо скажи, что на сегодня задач нет, и упомяни ближайшие.
-3. Отвечай на чистом русском языке, форматируй ключевые моменты жирным шрифтом и смайликами.
-4. Ты умеешь поддерживать диалог на любые темы: авто, программирование, спорт, планирование, расчеты, идеи.
+2. ВНИМАНИЕ: Количество дней рождения в базе ВСЕГДА строго равно {b_count}. Никогда не придумывай и не называй людей, которых нет в разделе '🎂 ДНИ РОЖДЕНИЯ БЛИЗКИХ'!
+3. Если напоминания на сегодня есть — перечисли их с точным временем. Если нет — прямо скажи, что на сегодня задач нет, и упомяни ближайшие.
+4. Отвечай на чистом русском языке, форматируй ключевые моменты жирным шрифтом и смайликами.
+5. Ты умеешь поддерживать диалог на любые темы: авто, программирование, спорт, планирование, расчеты, идеи.
 """
 
 
@@ -213,6 +216,8 @@ async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = N
                 if response and response.text:
                     return response.text.strip()
             else:
+                # Dynamic injection to ensure model always uses fresh context snapshot
+                reset_chat_session(user_id)
                 chat = get_or_create_chat(user_id, model_name)
                 response = await chat.send_message(prompt)
                 if response and response.text:
