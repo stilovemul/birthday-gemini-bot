@@ -17,7 +17,6 @@ from modules.birthdays.handlers import router as birthdays_router
 from modules.birthdays.storage import get_sorted_birthdays, format_date_entry, format_age_word
 from modules.notes.handlers import router as notes_router, load_notes
 from modules.smart_reminders.handlers import router as reminders_router
-from modules.smart_reminders.handlers import router as reminders_router
 from modules.smart_reminders.storage import get_active_reminders
 from modules.image_gen.handlers import router as image_gen_router
 from modules.food_tracker.handlers import router as food_router
