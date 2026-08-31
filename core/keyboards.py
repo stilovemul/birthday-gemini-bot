@@ -14,14 +14,17 @@ def get_main_menu() -> ReplyKeyboardMarkup:
         ],
         [
             KeyboardButton(text="🌤 Погода & Осадки"),
-            KeyboardButton(text="🔐 Секретный сейф")
+            KeyboardButton(text="😴 Калькулятор сна")
         ],
         [
-            KeyboardButton(text="⏰ Напоминания"),
-            KeyboardButton(text="🎂 Дни рождения")
+            KeyboardButton(text="🔐 Секретный сейф"),
+            KeyboardButton(text="⏰ Напоминания")
         ],
         [
-            KeyboardButton(text="📝 Заметки"),
+            KeyboardButton(text="🎂 Дни рождения"),
+            KeyboardButton(text="📝 Заметки")
+        ],
+        [
             KeyboardButton(text="❓ Справка")
         ]
     ]
