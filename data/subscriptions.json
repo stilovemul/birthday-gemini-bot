@@ -56,20 +56,6 @@
     "last_notified": ""
   },
   {
-    "id": "sub_d33f5c4c",
-    "user_id": 157236577,
-    "name": "Мегафон",
-    "amount": 163,
-    "currency": "₽",
-    "billing_cycle": "monthly",
-    "payment_day": 25,
-    "next_payment_date": "2026-09-25",
-    "category": "Связь & Интернет",
-    "card_comment": "Карта",
-    "auto_renew": true,
-    "last_notified": ""
-  },
-  {
     "id": "sub_f1c7b647",
     "user_id": 157236577,
     "name": "Квартира",
