@@ -17,6 +17,7 @@ from modules.birthdays.handlers import router as birthdays_router
 from modules.birthdays.storage import get_sorted_birthdays, format_date_entry, format_age_word
 from modules.notes.handlers import router as notes_router, load_notes
 from modules.smart_reminders.handlers import router as reminders_router
+from modules.smart_reminders.handlers import router as reminders_router
 from modules.smart_reminders.storage import get_active_reminders
 from modules.image_gen.handlers import router as image_gen_router
 from modules.food_tracker.handlers import router as food_router
@@ -27,6 +28,8 @@ from modules.secret_vault.handlers import router as vault_router
 from modules.weather_synoptic.handlers import router as weather_router
 from modules.sleep_calculator.handlers import router as sleep_router
 from modules.loan_calculator.handlers import router as loan_router
+from modules.webapp.router import router as webapp_router
+from modules.webapp.handlers import router as webapp_bot_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -54,6 +57,7 @@ dp.include_router(image_gen_router)
 dp.include_router(reminders_router)
 dp.include_router(birthdays_router)
 dp.include_router(notes_router)
+dp.include_router(webapp_bot_router)
 dp.include_router(ai_router)  # Catch-all AI router last
 
 
@@ -92,6 +96,7 @@ async def lifespan(app: FastAPI):
     try:
         commands = [
             types.BotCommand(command="start", description="🏠 Главное меню"),
+            types.BotCommand(command="app", description="📱 Открыть Mini App дашборд"),
             types.BotCommand(command="digest", description="🌅 Утренний персональный дайджест"),
             types.BotCommand(command="home", description="🏠 Управление Умным домом"),
             types.BotCommand(command="drive2", description="🚗 Мониторинг Drive2.ru"),
@@ -116,8 +121,17 @@ async def lifespan(app: FastAPI):
         ]
         await bot.set_my_commands(commands)
         logger.info("Команды Telegram успешно зарегистрированы в меню!")
+
+        # Setup Telegram Menu Button (WebApp)
+        await bot.set_chat_menu_button(
+            menu_button=types.MenuButtonWebApp(
+                text="📱 Дашборд",
+                web_app=types.WebAppInfo(url="https://birthday-gemini-bot.onrender.com/app")
+            )
+        )
+        logger.info("Кнопка MenuButtonWebApp успешно установлена!")
     except Exception as e:
-        logger.error(f"Не удалось установить команды бота: {e}")
+        logger.error(f"Не удалось установить команды/MenuButton бота: {e}")
 
     scheduler_task = asyncio.create_task(run_scheduler(bot))
     polling_task = asyncio.create_task(run_resilient_polling())
@@ -133,6 +147,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(webapp_router)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -179,9 +194,13 @@ async def index():
         <div class="container">
             <h1>🤖 AiGemAntigravity Super-Bot</h1>
             <div class="badge">🟢 СТАТУС: ОНЛАЙН В ОБЛАКЕ 24/7</div>
+            <a href="/app" style="display:inline-block; margin-bottom: 20px; margin-left: 10px; padding: 6px 14px; background: #06b6d4; color: #0b0f19; border-radius: 20px; font-weight: bold; font-size: 14px; text-decoration: none; box-shadow: 0 0 15px rgba(6,182,212,0.4);">📱 Открыть Telegram Mini App (TMA)</a>
             <p>🕒 Время сервера: <b>{now_msk}</b> | Бот: <b>@MyAiGem_bot</b></p>
             
             <div class="modules">
+                <div class="card">
+                    <b>📱 Telegram Mini App</b><br><span style="color:#94a3b8">Живой мобильный пульт</span>
+                </div>
                 <div class="card">
                     <b>🌅 Утренний Дайджест</b><br><span style="color:#94a3b8">Ежедневно в 09:00 MSK</span>
                 </div>

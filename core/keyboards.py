@@ -1,9 +1,14 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
+
+WEBAPP_URL = "https://birthday-gemini-bot.onrender.com/app"
 
 
 def get_main_menu() -> ReplyKeyboardMarkup:
     """Returns main multi-functional keyboard."""
     kb = [
+        [
+            KeyboardButton(text="📱 Открыть Дашборд (App)", web_app=WebAppInfo(url=WEBAPP_URL))
+        ],
         [
             KeyboardButton(text="🏠 Умный дом"),
             KeyboardButton(text="🌅 Утренний дайджест")
@@ -38,6 +43,20 @@ def get_main_menu() -> ReplyKeyboardMarkup:
         ]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, is_persistent=True)
+
+
+def get_webapp_inline_keyboard() -> InlineKeyboardMarkup:
+    """Returns inline button to launch the WebApp dashboard."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📱 Открыть интерактивный Дашборд",
+                    web_app=WebAppInfo(url=WEBAPP_URL)
+                )
+            ]
+        ]
+    )
 
 
 def get_birthday_submenu() -> ReplyKeyboardMarkup:
