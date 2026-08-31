@@ -101,14 +101,20 @@ async def check_user_drive2(user_id: int, bot: Bot, notify_if_no_change: bool = 
                 
                 html = await resp.text()
 
-                # Check if session expired
-                is_logged_out = (
-                    "<title>Вход</title>" in html
-                    or "/reception/" in html
-                    or ("Доступно только для зарегистрированных" in html)
+                # Reliable check if session is active
+                has_user_session = (
+                    "/reception/logout" in html
+                    or "c-top__userpic" in html
+                    or "data-slot=\"notifications.container\"" in html
+                    or "manofftoday" in html
+                )
+                is_login_form = (
+                    "<title>Вход" in html
+                    or 'action="/reception/login"' in html
+                    or resp.url.path.startswith("/reception/login")
                 )
 
-                if cookies_str and is_logged_out:
+                if cookies_str and (is_login_form or not has_user_session):
                     err_text = (
                         "⚠️ <b>Сессия Drive2.ru устарела!</b>\n\n"
                         "Сайт Drive2 сбросил авторизацию. Пожалуйста, скопируйте свежее значение куки <code>.AST</code> из браузера и отправьте команду:\n"
