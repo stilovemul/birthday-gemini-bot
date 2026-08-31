@@ -10,6 +10,8 @@ from modules.vk_tracker.checker import check_all_vk_users
 from modules.max_tracker.checker import check_all_max_users
 from modules.weather_synoptic.service import check_all_weather_alerts
 from modules.morning_digest.digest import send_morning_digest_to_user
+from modules.subscription_tracker.checker import check_all_subscription_notifications
+from modules.custom_rules.engine import evaluate_and_run_custom_rules
 
 logger = logging.getLogger("AppScheduler")
 
@@ -47,16 +49,18 @@ async def run_scheduler(bot: Bot):
 
     while True:
         try:
-            # 1. Check minute-level smart reminders (every 20s)
+            # 1. Check minute-level smart reminders & custom rules (every 20s)
             await check_and_send_smart_reminders(bot)
+            await evaluate_and_run_custom_rules(bot)
 
-            # 2. Check Drive2, VK & MAX events (every ~60s = 3 ticks of 20s)
+            # 2. Check Drive2, VK, MAX events & subscriptions (every ~60s = 3 ticks of 20s)
             tick_60s += 1
             if tick_60s >= 3:
                 tick_60s = 0
                 asyncio.create_task(check_all_drive2_users(bot))
                 asyncio.create_task(check_all_vk_users(bot))
                 asyncio.create_task(check_all_max_users(bot))
+                asyncio.create_task(check_all_subscription_notifications(bot))
 
             # 3. Check impending precipitation radar (every ~10 mins = 30 ticks of 20s)
             weather_tick += 1

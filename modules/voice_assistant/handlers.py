@@ -20,6 +20,8 @@ from modules.smart_home.storage import get_user_smart_home_config
 from modules.smart_home.client import toggle_device_by_name, execute_scenario, turn_off_all_lights
 from modules.weather_synoptic.service import get_weather_report
 from modules.weather_synoptic.storage import get_user_weather_config
+from modules.subscription_tracker.storage import add_subscription, get_subscription_stats
+from modules.custom_rules.storage import add_custom_rule, get_user_rules
 
 logger = logging.getLogger("VoiceAssistantHandler")
 router = Router(name="voice_assistant")
@@ -142,7 +144,84 @@ async def _process_voice_text_action(message: types.Message, bot: Bot, text: str
         except Exception as e:
             logger.warning(f"Voice food parse error: {e}")
 
-    # 6. Default: Intelligent Gemini Chat Answer
+    # 6. Subscriptions Voice Log (e.g. "Добавь подписку Яндекс Плюс 299 рублей 15 числа", "Сколько плачу за подписки")
+    if "подписк" in t_lower:
+        if any(w in t_lower for w in ["добавь", "запиши", "сохрани", "внеси"]):
+            prompt = (
+                f"Пользователь хочет добавить регулярную подписку голосом: '{text}'. "
+                "Извлеки название сервиса, сумму в рублях, число месяца (день списания от 1 до 31) и категорию. "
+                "Верни ТОЛЬКО валидный JSON в формате: "
+                '{"name": "Яндекс Плюс", "amount": 299, "payment_day": 15, "category": "Медиа"}'
+            )
+            ai_resp = await ask_gemini(user_id, prompt)
+            try:
+                m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
+                if m:
+                    data = json.loads(m.group(0))
+                    name = data.get("name", "Подписка")
+                    amount = float(data.get("amount", 300))
+                    day = int(data.get("payment_day", 1))
+                    cat = data.get("category", "Сервисы")
+                    item = add_subscription(user_id, name, amount, day, category=cat)
+                    reply = (
+                        f"🎤 <b>Вы сказали:</b> «<i>{text}</i>»\n\n"
+                        f"💳 <b>Подписка успешно сохранена!</b>\n"
+                        f"• <b>{item['name']}</b> — <b>{item['amount']} ₽/мес</b>\n"
+                        f"• День списания: <b>{item['payment_day']}-е число</b> (след: <i>{item['next_payment_date']}</i>)\n\n"
+                        f"🔔 Бот предупредит за 2 дня и за 1 день до списания!"
+                    )
+                    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                    return
+            except Exception as e:
+                logger.warning(f"Voice sub parse error: {e}")
+        else:
+            stats = get_subscription_stats(user_id)
+            reply = (
+                f"🎤 <b>Вы сказали:</b> «<i>{text}</i>»\n\n"
+                f"💳 <b>Ваши регулярные подписки:</b>\n"
+                f"• Всего сервисов: <b>{stats['total_count']} шт.</b>\n"
+                f"• Общая сумма: <b>{stats['monthly_total']} ₽/мес</b> (<b>{stats['yearly_total']} ₽/год</b>)"
+            )
+            await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+            return
+
+    # 7. Custom Rules Voice Log (e.g. "Каждую пятницу в 18:00 напоминай...", "Каждое 20 число...")
+    if any(t_lower.startswith(k) for k in ["создай правило", "добавь правило", "каждое ", "каждый ", "каждую "]):
+        prompt = (
+            f"Пользователь хочет создать периодическое автоматическое правило голосом: '{text}'. "
+            "Определи: title (заголовок с эмодзи), trigger_type ('daily_time', 'monthly_day', 'weekly_day'), "
+            "day_of_month (1-31 или 0), days_of_week (массив 0-6 где 0=Пн), hour (0-23), minute (0-59), action_text. "
+            "Верни ТОЛЬКО валидный JSON: "
+            '{"title": "💧 Показания счетчиков", "trigger_type": "monthly_day", "day_of_month": 20, "days_of_week": [], "hour": 12, "minute": 0, "action_text": "Пора передать показания счетчиков!"}'
+        )
+        ai_resp = await ask_gemini(user_id, prompt)
+        try:
+            m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
+            if m:
+                data = json.loads(m.group(0))
+                item = add_custom_rule(
+                    user_id=user_id,
+                    title=data.get("title", "Персональное правило"),
+                    trigger_type=data.get("trigger_type", "daily_time"),
+                    action_text=data.get("action_text", text),
+                    hour=int(data.get("hour", 12)),
+                    minute=int(data.get("minute", 0)),
+                    day_of_month=int(data.get("day_of_month", 0)),
+                    days_of_week=data.get("days_of_week", [])
+                )
+                reply = (
+                    f"🎤 <b>Вы сказали:</b> «<i>{text}</i>»\n\n"
+                    f"🧩 <b>Персональное правило создано и активно!</b>\n"
+                    f"📌 <b>{item['title']}</b>\n"
+                    f"⏰ Время: в <b>{item['hour']:02d}:{item['minute']:02d} MSK</b>\n"
+                    f"💬 Действие: {item['action_text']}"
+                )
+                await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                return
+        except Exception as e:
+            logger.warning(f"Voice rule parse error: {e}")
+
+    # 8. Default: Intelligent Gemini Chat Answer
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     ai_reply = await ask_gemini(user_id, text)
     full_reply = f"🎤 <b>Вы сказали:</b> «<i>{text}</i>»\n\n{ai_reply}"

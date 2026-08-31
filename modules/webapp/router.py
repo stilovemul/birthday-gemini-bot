@@ -46,6 +46,17 @@ from modules.loan_calculator.calculator import (
     calculate_annuity_loan,
     calculate_early_repayment_savings
 )
+from modules.subscription_tracker.storage import (
+    get_subscription_stats,
+    add_subscription,
+    delete_subscription
+)
+from modules.custom_rules.storage import (
+    get_user_rules,
+    add_custom_rule,
+    toggle_rule_state,
+    delete_custom_rule
+)
 
 logger = logging.getLogger("MiniAppRouter")
 router = APIRouter()
@@ -377,3 +388,92 @@ async def api_calc_loan(req: LoanCalcRequest):
 async def serve_mini_app():
     from modules.webapp.dashboard_html import TMA_DASHBOARD_HTML
     return HTMLResponse(content=TMA_DASHBOARD_HTML)
+
+
+class SubAddRequest(BaseModel):
+    name: str
+    amount: float
+    payment_day: int
+    category: str = "Сервисы"
+
+
+class SubDelRequest(BaseModel):
+    sub_id: str
+
+
+@router.post("/api/subscriptions/add")
+async def api_sub_add(req: SubAddRequest):
+    try:
+        item = add_subscription(
+            user_id=TELEGRAM_USER_ID,
+            name=req.name,
+            amount=req.amount,
+            payment_day=req.payment_day,
+            category=req.category
+        )
+        return {"success": True, "item": item}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/api/subscriptions/delete")
+async def api_sub_del(req: SubDelRequest):
+    try:
+        ok = delete_subscription(user_id=TELEGRAM_USER_ID, sub_id=req.sub_id)
+        return {"success": ok}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+class RuleToggleRequest(BaseModel):
+    rule_id: str
+
+
+class RuleAddRequest(BaseModel):
+    title: str
+    trigger_type: str = "daily_time"
+    action_text: str
+    hour: int = 12
+    minute: int = 0
+    day_of_month: int = 0
+    days_of_week: List[int] = []
+
+
+class RuleDelRequest(BaseModel):
+    rule_id: str
+
+
+@router.post("/api/rules/toggle")
+async def api_rule_toggle(req: RuleToggleRequest):
+    try:
+        new_st = toggle_rule_state(user_id=TELEGRAM_USER_ID, rule_id=req.rule_id)
+        return {"success": new_st is not None, "is_active": new_st}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/api/rules/add")
+async def api_rule_add(req: RuleAddRequest):
+    try:
+        item = add_custom_rule(
+            user_id=TELEGRAM_USER_ID,
+            title=req.title,
+            trigger_type=req.trigger_type,
+            action_text=req.action_text,
+            hour=req.hour,
+            minute=req.minute,
+            day_of_month=req.day_of_month,
+            days_of_week=req.days_of_week
+        )
+        return {"success": True, "item": item}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/api/rules/delete")
+async def api_rule_del(req: RuleDelRequest):
+    try:
+        ok = delete_custom_rule(user_id=TELEGRAM_USER_ID, rule_id=req.rule_id)
+        return {"success": ok}
+    except Exception as e:
+        return {"success": False, "error": str(e)}

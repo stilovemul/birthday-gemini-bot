@@ -30,6 +30,8 @@ from modules.loan_calculator.handlers import router as loan_router
 from modules.webapp.router import router as webapp_router
 from modules.webapp.handlers import router as webapp_bot_router
 from modules.voice_assistant.handlers import router as voice_router
+from modules.subscription_tracker.handlers import router as subs_router
+from modules.custom_rules.handlers import router as rules_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -58,6 +60,8 @@ dp.include_router(image_gen_router)
 dp.include_router(reminders_router)
 dp.include_router(birthdays_router)
 dp.include_router(notes_router)
+dp.include_router(subs_router)
+dp.include_router(rules_router)
 dp.include_router(webapp_bot_router)
 dp.include_router(ai_router)  # Catch-all AI router last
 

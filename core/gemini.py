@@ -15,6 +15,8 @@ from modules.vk_tracker.storage import get_user_vk_config
 from modules.max_tracker.storage import get_user_max_config
 from modules.weather_synoptic.storage import get_user_weather_config
 from modules.smart_home.storage import get_user_smart_home_config
+from modules.subscription_tracker.storage import get_subscription_stats
+from modules.custom_rules.storage import get_user_rules
 
 logger = logging.getLogger("GeminiEngine")
 
@@ -132,7 +134,25 @@ def build_full_user_context(user_id: int = 157236577) -> str:
     else:
         notes_section = "Заметок нет."
 
-    # 9. Weather
+    # 9. Subscriptions
+    sub_stats = get_subscription_stats(user_id)
+    sub_items = sub_stats.get("items", [])
+    if sub_items:
+        s_lines = [f"• {s['name']}: {s['amount']} ₽/мес (след. списание: {s.get('next_payment_date')}, через {s.get('days_left')} дн.)" for s in sub_items[:5]]
+        subs_section = f"Всего {len(sub_items)} подписок на сумму {sub_stats['monthly_total']} ₽/мес:\n" + "\n".join(s_lines)
+    else:
+        subs_section = "Активных подписок нет."
+
+    # 10. Custom Rules
+    rules = get_user_rules(user_id)
+    active_r = [r for r in rules if r.get("is_active", True)]
+    if active_r:
+        r_lines = [f"• {r['title']}: {r['action_text']}" for r in active_r[:5]]
+        rules_section = f"Активных правил ({len(active_r)}):\n" + "\n".join(r_lines)
+    else:
+        rules_section = "Правил нет."
+
+    # 11. Weather
     w_cfg = get_user_weather_config(user_id)
     w_loc = f"{w_cfg.get('city', 'Санкт-Петербург')} ({w_cfg.get('district', 'Приморский р-н')})"
 
@@ -144,6 +164,12 @@ def build_full_user_context(user_id: int = 157236577) -> str:
 
 🎂 ДНИ РОЖДЕНИЯ БЛИЗКИХ ({len(birthdays)} записей):
 {birthdays_section}
+
+💳 ПОДПИСКИ И РАСХОДЫ:
+{subs_section}
+
+🧩 АКТИВНЫЕ ПЕРСОНАЛЬНЫЕ ПРАВИЛА:
+{rules_section}
 
 🥗 ПИТАНИЕ И КБЖУ СЕГОДНЯ:
 {food_section}
