@@ -136,6 +136,14 @@ def _async_push_subs(items: List[Dict[str, Any]]):
         _push_to_github(items)
 
 
+
+def reload_from_cloud() -> List[Dict[str, Any]]:
+    """Forces fresh pull from GitHub repo to memory/disk."""
+    pulled = _pull_from_github()
+    if pulled:
+        return pulled
+    return _load_raw()
+
 def _load_raw() -> List[Dict[str, Any]]:
     if not SUBS_FILE.exists():
         pulled = _pull_from_github()

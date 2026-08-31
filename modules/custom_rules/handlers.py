@@ -9,6 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from core.keyboards import get_main_menu
 from core.gemini import ask_gemini, reset_chat_session
 from modules.custom_rules.storage import (
+    reload_from_cloud,
     get_user_rules,
     add_custom_rule,
     toggle_rule_state,
@@ -99,6 +100,7 @@ async def cmd_custom_rules(message: types.Message):
 @router.callback_query(F.data == "rule_refresh")
 async def cb_rule_refresh(callback: types.CallbackQuery):
     user_id = callback.from_user.id
+    reload_from_cloud()
     text = format_rules_card(user_id)
     kb = get_rules_keyboard(get_user_rules(user_id))
     try:

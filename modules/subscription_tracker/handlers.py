@@ -9,6 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from core.keyboards import get_main_menu
 from core.gemini import ask_gemini, reset_chat_session
 from modules.subscription_tracker.storage import (
+    reload_from_cloud,
     get_user_subscriptions,
     add_subscription,
     delete_subscription,
@@ -88,6 +89,7 @@ async def cmd_subscriptions(message: types.Message):
 @router.callback_query(F.data == "sub_refresh")
 async def cb_sub_refresh(callback: types.CallbackQuery):
     user_id = callback.from_user.id
+    reload_from_cloud()
     text = format_subscriptions_card(user_id)
     kb = get_subs_overview_keyboard()
     try:
