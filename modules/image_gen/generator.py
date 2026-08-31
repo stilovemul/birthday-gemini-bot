@@ -12,14 +12,56 @@ from core.gemini import get_genai_client, CANDIDATE_MODELS
 
 logger = logging.getLogger("ImageGenerator")
 
-# In-memory store for last generated prompts: {user_id: {"prompt": str, "en_prompt": str, "timestamp": float}}
-user_last_prompts: Dict[int, Dict[str, Any]] = {}
+# Active Image Studio Sessions: {user_id: {"active": True, "history": [str], "current_en_prompt": str, "last_ru_prompt": str, "updated_at": float}}
+active_image_sessions: Dict[int, Dict[str, Any]] = {}
 
 # In-memory store for user engine preference: {user_id: "realvis" | "flux" | "turbo" | "flux-anime"}
 user_engines: Dict[int, str] = {}
 
 # Active prompt awaiting mode: {user_id: True}
 user_awaiting_image_prompt: Dict[int, bool] = {}
+
+
+def start_image_session(user_id: int, initial_prompt: str, en_prompt: str) -> None:
+    active_image_sessions[user_id] = {
+        "active": True,
+        "history": [initial_prompt],
+        "current_en_prompt": en_prompt.strip(),
+        "last_ru_prompt": initial_prompt.strip(),
+        "updated_at": time.time()
+    }
+    user_awaiting_image_prompt[user_id] = False
+    logger.info(f"Image session STARTED for user {user_id}: '{initial_prompt}'")
+
+
+def update_image_session(user_id: int, new_ru_prompt: str, new_en_prompt: str) -> None:
+    if user_id in active_image_sessions:
+        active_image_sessions[user_id]["history"].append(new_ru_prompt)
+        active_image_sessions[user_id]["current_en_prompt"] = new_en_prompt.strip()
+        active_image_sessions[user_id]["last_ru_prompt"] = new_ru_prompt.strip()
+        active_image_sessions[user_id]["updated_at"] = time.time()
+        logger.info(f"Image session UPDATED for user {user_id}: '{new_ru_prompt}'")
+    else:
+        start_image_session(user_id, new_ru_prompt, new_en_prompt)
+
+
+def end_image_session(user_id: int) -> bool:
+    if user_id in active_image_sessions:
+        del active_image_sessions[user_id]
+        logger.info(f"Image session ENDED for user {user_id}")
+        return True
+    return False
+
+
+def is_in_image_session(user_id: int) -> bool:
+    sess = active_image_sessions.get(user_id)
+    if sess and sess.get("active"):
+        return True
+    return False
+
+
+def get_image_session(user_id: int) -> Optional[Dict[str, Any]]:
+    return active_image_sessions.get(user_id)
 
 
 def set_user_awaiting_image(user_id: int, status: bool = True) -> None:
@@ -38,18 +80,14 @@ def get_user_engine(user_id: int) -> str:
     return user_engines.get(user_id, "realvis")
 
 
-def set_last_image_prompt(user_id: int, prompt: str, en_prompt: str = "") -> None:
-    user_last_prompts[user_id] = {
-        "prompt": prompt.strip(),
-        "en_prompt": en_prompt.strip(),
-        "timestamp": time.time()
-    }
-
-
 def get_last_image_info(user_id: int) -> Optional[Dict[str, Any]]:
-    info = user_last_prompts.get(user_id)
-    if info and (time.time() - info["timestamp"] < 900):  # 15 minutes window
-        return info
+    sess = active_image_sessions.get(user_id)
+    if sess:
+        return {
+            "prompt": sess["last_ru_prompt"],
+            "en_prompt": sess["current_en_prompt"],
+            "timestamp": sess["updated_at"]
+        }
     return None
 
 
@@ -58,11 +96,20 @@ def apply_heuristic_enrichment(raw_prompt: str) -> str:
     p_lower = raw_prompt.lower()
     tags = []
 
+    # Hair color heuristics
+    hair_token = "light brown hair"
+    if any(k in p_lower for k in ["рыж", "рыженьк", "redhead", "ginger"]):
+        hair_token = "natural vibrant red/ginger hair with soft waves, freckles"
+    elif any(k in p_lower for k in ["блондинк", "светл", "blonde"]):
+        hair_token = "natural blonde hair, soft golden highlights"
+    elif any(k in p_lower for k in ["брюнетк", "темн", "черн", "brunette"]):
+        hair_token = "rich dark brunette hair"
+
     if any(k in p_lower for k in ["девушк", "женщин", "красавиц", "модель", "girl", "woman"]):
         if any(r in p_lower for r in ["русск", "росси", "славян"]):
-            tags.append("candid raw 35mm portrait photograph of a beautiful 23-year-old natural Slavic Russian woman with authentic Slavic facial features, light brown hair, natural skin texture with pores, gentle smile, real life photograph")
+            tags.append(f"candid raw 35mm portrait photograph of a beautiful 23-year-old natural Slavic Russian woman with authentic Slavic facial features, {hair_token}, natural skin texture with pores, gentle smile, real life photograph")
         else:
-            tags.append("candid 35mm portrait photograph of a natural beautiful woman, authentic human features, realistic skin texture, real photo")
+            tags.append(f"candid 35mm portrait photograph of a natural beautiful woman, {hair_token}, authentic human features, realistic skin texture, real photo")
     elif any(k in p_lower for k in ["парен", "мужчин", "человек", "man", "guy"]):
         tags.append("candid portrait photograph of a man, authentic human facial features, natural lighting, real photography")
     elif any(k in p_lower for k in ["кот", "кошк", "котен", "котик", "cat"]):
@@ -85,7 +132,8 @@ async def translate_and_enrich_prompt(user_prompt: str) -> str:
     enrich_system = """You are an expert realistic photographer and prompt engineer.
 Translate the user's prompt into a clean English photography prompt for RealVisXL.
 IMPORTANT RULES:
-- If user asks for a Russian / Slavic woman: 'candid raw 35mm photo of an authentic 23-year-old Slavic Russian woman with natural light brown hair, expressive eyes, realistic skin texture with pores and natural makeup, real human portrait'.
+- If user asks for a Russian / Slavic woman: 'candid raw 35mm photo of an authentic 23-year-old Slavic Russian woman with natural features, expressive eyes, realistic skin texture with pores and natural makeup, real human portrait'.
+- If hair color specified (e.g. 'рыженькая' / ginger / red hair, 'блондинка' / blonde): specify hair color clearly.
 - If in bed in morning: 'resting in cozy white morning bed under soft duvet, gentle window sunlight'.
 - Output ONLY 1-2 concise English sentences without negative prompt words."""
 
@@ -114,11 +162,14 @@ async def refine_prompt_with_ai(old_prompt: str, user_feedback: str) -> str:
     prompt_to_gemini = f"""Previous image prompt:
 "{old_prompt}"
 
-User feedback / complaint:
+User feedback / modification:
 "{user_feedback}"
 
-Generate a new detailed English photography prompt that directly fixes the issue.
-Emphasize: authentic real-life Slavic Russian facial features, natural skin texture with fine pores, candid 35mm photography, natural sunlight.
+Generate an updated, detailed English photography prompt for RealVisXL that merges the user's modification into the previous scene.
+Examples:
+- If user says 'давай будет рыженькая девушка' -> change hair to natural ginger/red hair with freckles while keeping the rest of the bedroom scene intact!
+- If user says 'одеяло ниже спусти' -> keep the woman and lower the blanket!
+Emphasize: authentic real-life Slavic facial features, natural skin texture with fine pores, candid 35mm photography, natural sunlight.
 Output ONLY the resulting English prompt in 1-2 sentences."""
 
     c = get_genai_client()
@@ -169,7 +220,6 @@ async def generate_via_realvis_horde(prompt: str) -> Optional[bytes]:
                 if not task_id:
                     return None
 
-            # Poll for completion up to 18 seconds
             for _ in range(6):
                 await asyncio.sleep(3)
                 async with session.get(
@@ -215,8 +265,7 @@ async def generate_image_bytes(prompt: str, user_id: Optional[int] = None, is_al
 
     engine = force_engine or "realvis"
     if user_id:
-        set_last_image_prompt(user_id, clean_prompt, en_prompt)
-        set_user_awaiting_image(user_id, False)
+        user_awaiting_image_prompt[user_id] = False
         if not force_engine:
             engine = get_user_engine(user_id)
 

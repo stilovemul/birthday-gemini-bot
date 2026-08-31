@@ -11,10 +11,14 @@ from modules.smart_reminders.parser import parse_natural_reminder
 from modules.smart_reminders.storage import add_reminder
 from modules.image_gen.generator import (
     generate_image_bytes,
-    get_last_image_info,
     refine_prompt_with_ai,
     is_user_awaiting_image,
-    set_user_awaiting_image
+    set_user_awaiting_image,
+    start_image_session,
+    update_image_session,
+    end_image_session,
+    is_in_image_session,
+    get_image_session
 )
 from modules.image_gen.handlers import get_image_action_keyboard
 
@@ -22,58 +26,19 @@ logger = logging.getLogger("AIAssistantHandler")
 router = Router(name="ai_assistant")
 
 
-def is_image_refinement_intent(text: str, last_prompt: str) -> bool:
-    """Checks if the user message is an instruction or critique modifying the last generated image."""
-    t = text.lower().strip()
-    if t.startswith("/"):
-        return False
-    if t in ["🤖 gemini ai", "🎨 генерация картинок", "⏰ напоминания", "🎂 дни рождения", "📝 заметки", "❓ справка"]:
-        return False
-    if t.endswith("?") and not any(k in t for k in ["картинк", "фото", "фон", "плать", "одежд", "волос", "блондинк"]):
-        return False
-
-    edit_verbs = [
-        "спусти", "опусти", "подними", "приподними", "сдвинь", "убери", "добавь", "надень", "одень",
-        "сними", "раздень", "покрой", "закрой", "открой", "поверни", "разверни", "поменяй", "измени",
-        "переделай", "перерисуй", "исправь", "замени", "сделай", "хочу", "дай", "покажи", "дорисуй",
-        "смени", "поставь", "удали", "приоткрой", "нарисуй", "перекрась", "увеличь", "уменьши",
-        "давай", "пусть", "хотелось бы", "хочется", "можно", "лучше"
-    ]
-    modifiers = [
-        "ниже", "выше", "крупнее", "ближе", "дальше", "ярче", "темнее", "светлее", "больше", "меньше",
-        "реалистичнее", "живее", "естественнее", "другой", "другую", "другое", "не то", "не так",
-        "не нравится", "плохо", "ужасно", "кукла", "аниме", "пластик", "глянец", "мыльно", "размыто",
-        "не видно", "не похоже", "где", "нет", "блондинк", "брюнетк", "шатенк", "рыж", "русы",
-        "длинн", "коротк", "прям", "кудряв", "красив", "молод"
-    ]
-    scene_words = [
-        "одеял", "простын", "подушк", "кроват", "постел", "лиц", "глаз", "волос", "улыбк", "взгляд",
-        "поз", "рук", "ног", "груд", "плеч", "тел", "одежд", "плать", "белье", "рубашк", "фон",
-        "свет", "окн", "ракурс", "кадр", "план", "картинк", "фото", "губ", "нос", "бюст", "комнат",
-        "девушк", "женщин", "парен", "мужчин", "человек", "кошк", "кот", "машин", "авто"
-    ]
-
-    if any(v in t for v in edit_verbs):
-        return True
-    if any(m in t for m in modifiers):
-        return True
-    if any(w in t for w in scene_words) and len(t.split()) <= 10:
-        return True
-    return False
-
-
 @router.message(CommandStart())
 async def cmd_start(message: types.Message):
+    end_image_session(message.from_user.id)
     set_user_awaiting_image(message.from_user.id, False)
     welcome_text = (
         "👋 <b>Привет, Олег! Супер-бот AiGemAntigravity активен 24/7!</b> 🚀\n\n"
         "Я твой персональный ИИ-ассистент в облаке с кучей полезных функций:\n\n"
-        "✨ <b>Что я умею прямо сейчас:</b>\n"
-        "• 🤖 <b>Gemini AI</b>: живой умный диалог, решение любых задач\n"
-        "• 🎨 <b>Генерация картинок (RealVisXL)</b>: напишите <code>/image описание</code> или просто <i>«Русская девушка в постели утром, реальное фото»</i>\n"
-        "  └ <i>Правки: просто пишите в чат любые пожелания: «давай девушку блондинку», «одеяло ниже спусти», «смени фон»</i>\n"
-        "• ⏰ <b>Умные напоминания</b>: <i>«Напомни завтра в 15:00 позвонить в банк»</i> или <i>«Напомни через 40 мин выключить духовку»</i>\n"
-        "• 🎂 <b>Дни рождения</b>: напоминания в 09:00 MSK (за 7, 3, 1 день и в праздник)\n"
+        "✨ <b>Что я умею:</b>\n"
+        "• 🤖 <b>Gemini AI</b>: живой умный диалог, ответы на любые вопросы\n"
+        "• 🎨 <b>Генератор фото (RealVisXL)</b>: напишите <code>/image описание</code> или нажмите кнопку в меню\n"
+        "  └ <i>Правки без ограничений: пока активна сессия, пишите любые пожелания («давай блондинку», «одеяло ниже») — бот будет менять фото, пока вы не нажмете кнопку «⏹ Закончить генерацию»!</i>\n"
+        "• ⏰ <b>Умные напоминания</b>: <i>«Напомни завтра в 15:00 позвонить в банк»</i>\n"
+        "• 🎂 <b>Дни рождения</b>: авто-напоминания в 09:00 MSK\n"
         "• 📝 <b>Заметки</b>: <code>/note Текст</code>\n\n"
         "Напишите мне что угодно или воспользуйтесь кнопками ниже 👇"
     )
@@ -83,13 +48,13 @@ async def cmd_start(message: types.Message):
 @router.message(Command("help"))
 @router.message(F.text == "❓ Справка")
 async def cmd_help(message: types.Message):
+    end_image_session(message.from_user.id)
     set_user_awaiting_image(message.from_user.id, False)
     help_text = (
         "📖 <b>Справка по возможностям бота:</b>\n\n"
-        "🎨 <b>Генерация картинок:</b>\n"
+        "🎨 <b>Генерация и доработка фото:</b>\n"
         "• Кнопка «🎨 Генерация картинок» или <code>/image описание</code>\n"
-        "• Просто фразы: <i>«Русская девушка в постели утром, реальное фото»</i>\n"
-        "• <b>Правки:</b> просто пишите: <i>«Давай девушку блондинку»</i>, <i>«Одеяло ниже спусти»</i>\n\n"
+        "• <b>Непрерывные правки:</b> пишите любые изменения в чат подряд. Бот будет перерисовывать фото, пока вы не нажмете «⏹ Закончить генерацию».\n\n"
         "⏰ <b>Умные напоминания:</b>\n"
         "• <i>«Напомни завтра в 15:00 позвонить врачу»</i>\n"
         "• <i>«Напомни через 30 минут выпить таблетку»</i>\n"
@@ -98,10 +63,8 @@ async def cmd_help(message: types.Message):
         "• Просто пишите любые вопросы или присылайте фото\n"
         "• <code>/clear</code> — очистить контекст диалога\n\n"
         "🎂 <b>Дни рождения:</b>\n"
-        "• <code>/add Имя ДД.ММ.ГГГГ [Заметка]</code>\n"
-        "• <code>/list</code> — список всех именинников\n\n"
-        "📝 <b>Быстрые заметки:</b>\n"
-        "• <code>/note Текст</code> | <code>/notes</code>"
+        "• <code>/add Имя ДД.ММ.ГГГГ [Заметка]</code> | <code>/list</code>\n\n"
+        "📝 <b>Заметки:</b> <code>/note Текст</code> | <code>/notes</code>"
     )
     await message.answer(help_text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
@@ -109,13 +72,15 @@ async def cmd_help(message: types.Message):
 @router.message(Command("clear"))
 @router.message(Command("reset"))
 async def cmd_clear(message: types.Message):
+    end_image_session(message.from_user.id)
     reset_chat_session(message.from_user.id)
     set_user_awaiting_image(message.from_user.id, False)
-    await message.answer("🧹 <b>Контекст диалога очищен!</b> О чем поговорим дальше?", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+    await message.answer("🧹 <b>Контекст очищен!</b> О чем поговорим дальше?", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
 
 @router.message(F.text == "🤖 Gemini AI")
 async def cmd_gemini_info(message: types.Message):
+    end_image_session(message.from_user.id)
     set_user_awaiting_image(message.from_user.id, False)
     await message.answer(
         "🤖 <b>Режим общения с Gemini AI активен.</b>\n\n"
@@ -127,6 +92,7 @@ async def cmd_gemini_info(message: types.Message):
 
 @router.message(F.photo)
 async def handle_photo(message: types.Message, bot: Bot):
+    end_image_session(message.from_user.id)
     set_user_awaiting_image(message.from_user.id, False)
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     try:
@@ -151,8 +117,61 @@ async def handle_photo(message: types.Message, bot: Bot):
 async def handle_generic_text(message: types.Message, bot: Bot):
     text = (message.text or "").strip()
     user_id = message.from_user.id
+    t_lower = text.lower()
 
-    # 1. Check if user is in "Awaiting Image Prompt" mode (after clicking button)
+    # 1. Check if user is in an ACTIVE IMAGE STUDIO SESSION
+    if is_in_image_session(user_id):
+        # Exit triggers
+        if t_lower in ["⏹ закончить генерацию", "⏹ завершить", "закончить", "хватит", "стоп", "/done", "/exit", "стоп генерация"]:
+            end_image_session(user_id)
+            await message.answer(
+                "✅ <b>Генерация завершена!</b> Итоговое фото зафиксировано.\n\n"
+                "Бот вернулся в обычный режим. Чем могу помочь дальше?",
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_main_menu()
+            )
+            return
+        
+        # Menu buttons exit session and continue to menu
+        if text in ["🤖 Gemini AI", "🎨 Генерация картинок", "⏰ Напоминания", "🎂 Дни рождения", "📝 Заметки", "❓ Справка"]:
+            end_image_session(user_id)
+            # Will be handled by next handlers or falls through
+        else:
+            # 100% of user text in this mode is treated as an image refinement / edit!
+            sess = get_image_session(user_id)
+            last_prompt = sess["current_en_prompt"] if sess else text
+            
+            status_msg = await message.answer(f"🎨 <i>Вношу правку: «{text}» и перерисовываю фото...</i>", parse_mode=ParseMode.HTML)
+            await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
+            
+            refined_prompt = await refine_prompt_with_ai(last_prompt, text)
+            success, img_bytes, orig_p, en_p = await generate_image_bytes(refined_prompt, user_id=user_id, is_already_en=True)
+            
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
+                
+            if success and img_bytes:
+                update_image_session(user_id, text, refined_prompt)
+                photo_file = BufferedInputFile(img_bytes, filename="studio_edit.jpg")
+                caption = (
+                    f"🎨 <b>Фото обновлено!</b>\n"
+                    f"📝 <i>Правка:</i> «{text}»\n\n"
+                    "💡 <i>Продолжайте писать любые изменения текстом или нажмите кнопку ниже для завершения:</i>"
+                )
+                await message.answer_photo(
+                    photo_file,
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=get_image_action_keyboard()
+                )
+                return
+            else:
+                await message.answer(f"❌ {en_p}", reply_markup=get_image_action_keyboard())
+                return
+
+    # 2. Check if user is in "Awaiting Image Prompt" mode (after clicking button)
     if is_user_awaiting_image(user_id):
         set_user_awaiting_image(user_id, False)
         status_msg = await message.answer(f"🎨 <i>Генерирую фото «{text}»... (3-5 сек)</i>", parse_mode=ParseMode.HTML)
@@ -163,10 +182,12 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         except Exception:
             pass
         if success and img_bytes:
+            start_image_session(user_id, orig_p, en_p)
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
             caption = (
                 f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-                "💡 <i>Хотите изменить? Напишите правки (например: «давай блондинку», «одеяло ниже спусти» или «смени фон»).</i>"
+                "💡 <b>Режим фотостудии активен:</b> пишите любые изменения в чат (например: <i>«давай рыженькую»</i>, <i>«одеяло ниже»</i>).\n"
+                "Для завершения нажмите <b>«⏹ Закончить генерацию»</b>."
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
@@ -174,7 +195,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
             return
 
-    # 2. Check if message has direct image prefix or command format:
+    # 3. Check direct image commands / prefixes
     image_prefix_match = re.match(r"^(?:изображение|картинка|фото|арт|рисунок):\s*(.+)", text, re.IGNORECASE)
     draw_match = re.match(r"^(?:нарисуй|сгенерируй\s+картинку|сделай\s+картинку|нарисуй\s+мне|нарисуйте|нарисуй\s+пожалуйста)\s+(.+)", text, re.IGNORECASE)
     is_standalone_photo_prompt = bool(re.search(r"\b(?:реальное\s+фото|портрет|фотография|digital\s+art|арт)\b", text, re.IGNORECASE) and len(text) < 120 and not text.endswith("?"))
@@ -195,37 +216,12 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         except Exception:
             pass
         if success and img_bytes:
+            start_image_session(user_id, orig_p, en_p)
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
             caption = (
                 f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-                "💡 <i>Хотите изменить? Напишите правки (например: «давай блондинку», «одеяло ниже спусти» или «смени фон»).</i>"
-            )
-            await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
-            return
-        else:
-            await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
-            return
-
-    # 3. Image Refinement / Modification of recent image (Semantic Intent Recognition)
-    info = get_last_image_info(user_id)
-    if info and is_image_refinement_intent(text, info["prompt"]):
-        last_prompt = info["en_prompt"] or info["prompt"]
-        status_msg = await message.answer(f"📸 <i>Учитываю правку: «{text}» и перерисовываю фото...</i>", parse_mode=ParseMode.HTML)
-        await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
-        
-        refined_prompt = await refine_prompt_with_ai(last_prompt, text)
-        success, img_bytes, orig_p, en_p = await generate_image_bytes(refined_prompt, user_id=user_id, is_already_en=True)
-        
-        try:
-            await status_msg.delete()
-        except Exception:
-            pass
-        if success and img_bytes:
-            photo_file = BufferedInputFile(img_bytes, filename="refined.jpg")
-            caption = (
-                f"📸 <b>Обновлённое фото:</b>\n"
-                f"📝 <i>Учтена правка:</i> «{text}»\n\n"
-                "💡 <i>Хотите ещё что-то скорректировать? Просто напишите!</i>"
+                "💡 <b>Режим фотостудии активен:</b> пишите любые изменения в чат.\n"
+                "Для завершения нажмите <b>«⏹ Закончить генерацию»</b>."
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
