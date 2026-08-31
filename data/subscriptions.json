@@ -40,5 +40,19 @@
     "card_comment": "Основная карта",
     "auto_renew": true,
     "last_notified": ""
+  },
+  {
+    "id": "sub_1333fa89",
+    "user_id": 157236577,
+    "name": "Яндекс Плюс",
+    "amount": 449,
+    "currency": "₽",
+    "billing_cycle": "monthly",
+    "payment_day": 10,
+    "next_payment_date": "2026-09-10",
+    "category": "Медиа & Музыка",
+    "card_comment": "Карта",
+    "auto_renew": true,
+    "last_notified": ""
   }
 ]
