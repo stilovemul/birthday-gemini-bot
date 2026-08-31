@@ -15,6 +15,8 @@ from modules.food_tracker.handlers import get_food_meal_keyboard
 from modules.loan_calculator.calculator import parse_loan_query, calculate_early_repayment_savings, calculate_annuity_loan
 from modules.loan_calculator.handlers import format_loan_result
 from modules.birthdays.storage import add_birthday, delete_birthday, get_sorted_birthdays, format_date_entry
+from modules.smart_home.storage import get_user_smart_home_config
+from modules.smart_home.client import toggle_device_by_name, execute_scenario, turn_off_all_lights
 from modules.image_gen.generator import (
     generate_image_bytes,
     refine_prompt_with_ai,
@@ -40,6 +42,7 @@ async def cmd_start(message: types.Message):
         "👋 <b>Привет, Олег! Супер-бот AiGemAntigravity активен 24/7!</b> 🚀\n\n"
         "Я твой персональный ИИ-ассистент в облаке с автоматической синхронизацией данных:\n\n"
         "✨ <b>Что я умею:</b>\n"
+        "• 🏠 <b>Умный дом Яндекса</b>: управление светом, вытяжкой, тёплым полом и сценариями\n"
         "• 🤖 <b>Gemini AI</b>: умный диалог, ответы на любые вопросы\n"
         "• 🎨 <b>Генератор фото (RealVisXL)</b>: создание фото с сохранением внешности\n"
         "• 🥗 <b>Сканер еды & КБЖУ</b>: просто сфотографируйте вашу тарелку — я посчитаю калории, БЖУ и запишу в дневной рацион!\n"
@@ -65,6 +68,9 @@ async def cmd_help(message: types.Message):
     set_user_awaiting_image(message.from_user.id, False)
     help_text = (
         "📖 <b>Справка по возможностям бота:</b>\n\n"
+        "🏠 <b>Умный дом Яндекса:</b>\n"
+        "• Кнопка «🏠 Умный дом» или напишите в чат:\n"
+        "  <i>«Включи свет в ванной»</i>, <i>«Выключи вытяжку»</i>, <i>«Погаси весь свет»</i>\n\n"
         "🎂 <b>Дни рождения:</b>\n"
         "• Кнопка «🎂 Дни рождения» или напишите в чат:\n"
         "  <i>«Добавь день рождения Ивана 15 марта»</i>\n\n"
@@ -203,7 +209,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             )
             return
         
-        if text in ["🤖 Gemini AI", "🎨 Генерация картинок", "🥗 Сканер еды & КБЖУ", "⏰ Напоминания", "🎂 Дни рождения", "📝 Заметки", "❓ Справка", "😴 Калькулятор сна", "🔢 Калькулятор кредитов", "🚗 Drive2 Уведомления", "🔵 VK Уведомления", "💬 MAX Уведомления"]:
+        if text in ["🏠 Умный дом", "🤖 Gemini AI", "🎨 Генерация картинок", "🥗 Сканер еды & КБЖУ", "⏰ Напоминания", "🎂 Дни рождения", "📝 Заметки", "❓ Справка", "😴 Калькулятор сна", "🔢 Калькулятор кредитов", "🚗 Drive2 Уведомления", "🔵 VK Уведомления", "💬 MAX Уведомления"]:
             end_image_session(user_id)
         else:
             sess = get_image_session(user_id)
@@ -301,7 +307,52 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
             return
 
-    # 4. Birthday Natural Language Add/Delete Triggers (Direct Cloud-Synced DB execution)
+    # 4. Smart Home Natural Commands Trigger
+    sh_toggle_match = re.match(r"^(?:включи|выключи|погаси|запусти|выруби|переключи)\s+(.+)", text, re.IGNORECASE)
+    if sh_toggle_match:
+        cfg = get_user_smart_home_config(user_id)
+        sh_token = cfg.get("token") if cfg else None
+        
+        if sh_token:
+            cmd_verb = text.split()[0].lower()
+            target_obj = sh_toggle_match.group(1).strip().lower()
+            is_turn_off = cmd_verb in ["выключи", "погаси", "выруби"]
+            
+            # Turn off all lights
+            if any(w in target_obj for w in ["весь свет", "все лампы", "свет везде", "все приборы"]):
+                ok, res_msg, _ = await turn_off_all_lights(sh_token)
+                await message.answer(f"🏠 {res_msg}", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                return
+            
+            # Scenarios
+            if "гостин" in target_obj:
+                ok, res_msg = await execute_scenario(sh_token, "Свет в гостиной")
+                await message.answer(f"🏠 {res_msg}", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                return
+            elif "барн" in target_obj:
+                ok, res_msg = await execute_scenario(sh_token, "Барная стойка")
+                await message.answer(f"🏠 {res_msg}", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                return
+                
+            # Direct target devices
+            target_dev = None
+            if "ванн" in target_obj and ("свет" in target_obj or "ламп" in target_obj or "выключател" in target_obj):
+                target_dev = "Свет в ванной"
+            elif "вытяжк" in target_obj:
+                target_dev = "Вытяжка"
+            elif "коридор" in target_obj:
+                target_dev = "Свет коридор"
+            elif "пол" in target_obj or "теплый" in target_obj or "тёплый" in target_obj:
+                target_dev = "Теплый пол"
+            else:
+                target_dev = target_obj
+                
+            ok, res_msg, _ = await toggle_device_by_name(sh_token, target_dev, force_state=(not is_turn_off))
+            if ok:
+                await message.answer(f"🏠 {res_msg}", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                return
+
+    # 5. Birthday Natural Language Add/Delete Triggers (Direct Cloud-Synced DB execution)
     bday_add_match = re.match(r"^(?:добавь|запиши|сохрани|внеси)\s+(?:день\s+рождения|др)\s+(.+)", text, re.IGNORECASE)
     if bday_add_match:
         raw_bday = bday_add_match.group(1).strip()
@@ -325,7 +376,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         await message.answer(f"{reply_msg}{cloud_info}", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
         return
 
-    # 5. Smart Reminders Natural NLP
+    # 6. Smart Reminders Natural NLP
     if re.match(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s+", text, re.IGNORECASE):
         raw = re.sub(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s*", "", text, flags=re.IGNORECASE).strip()
         success, target_dt, task_text, info_remind = await parse_natural_reminder(raw)
@@ -341,7 +392,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
             return
 
-    # 6. Loan / Credit Natural Trigger
+    # 7. Loan / Credit Natural Trigger
     if any(k in t_lower for k in ["кредит", "ипотек", "автокредит", "досрочн", "переплат", "посчитай займ"]):
         parsed = parse_loan_query(text)
         if parsed:
@@ -366,7 +417,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=kb)
             return
 
-    # 7. Default: General Gemini AI conversation
+    # 8. Default: General Gemini AI conversation
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     ai_reply = await ask_gemini(user_id, text)
     

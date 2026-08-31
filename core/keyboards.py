@@ -5,6 +5,7 @@ def get_main_menu() -> ReplyKeyboardMarkup:
     """Returns main multi-functional keyboard."""
     kb = [
         [
+            KeyboardButton(text="🏠 Умный дом"),
             KeyboardButton(text="🤖 Gemini AI"),
             KeyboardButton(text="🎨 Генерация картинок")
         ],

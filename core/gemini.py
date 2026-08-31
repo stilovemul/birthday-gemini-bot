@@ -14,6 +14,7 @@ from modules.drive2_tracker.storage import get_user_drive2_config
 from modules.vk_tracker.storage import get_user_vk_config
 from modules.max_tracker.storage import get_user_max_config
 from modules.weather_synoptic.storage import get_user_weather_config
+from modules.smart_home.storage import get_user_smart_home_config
 
 logger = logging.getLogger("GeminiEngine")
 
@@ -45,7 +46,8 @@ def build_full_user_context(user_id: int = 157236577) -> str:
     - Today's and upcoming reminders
     - Family & friends birthdays (with days left and age)
     - Food & calorie intake today
-    - Drive2.ru, VK and MAX messenger monitoring status
+    - Drive2.ru, VK, MAX messenger monitoring status
+    - Smart Home devices & climate status
     - Saved notes
     - Weather location & district
     """
@@ -115,7 +117,14 @@ def build_full_user_context(user_id: int = 157236577) -> str:
     else:
         max_section = "MAX ожидает привязки токена."
 
-    # 7. Notes
+    # 7. Smart Home Status
+    sh_cfg = get_user_smart_home_config(user_id)
+    if sh_cfg and sh_cfg.get("token"):
+        sh_section = "Умный дом Яндекса подключен 🟢 (освещение, вытяжка, теплый пол, датчики климата и протечки)."
+    else:
+        sh_section = "Умный дом не настроен."
+
+    # 8. Notes
     notes = load_notes()
     if notes:
         n_lines = [f"• {n['text']}" for n in notes[:6]]
@@ -123,7 +132,7 @@ def build_full_user_context(user_id: int = 157236577) -> str:
     else:
         notes_section = "Заметок нет."
 
-    # 8. Weather
+    # 9. Weather
     w_cfg = get_user_weather_config(user_id)
     w_loc = f"{w_cfg.get('city', 'Санкт-Петербург')} ({w_cfg.get('district', 'Приморский р-н')})"
 
@@ -138,6 +147,9 @@ def build_full_user_context(user_id: int = 157236577) -> str:
 
 🥗 ПИТАНИЕ И КБЖУ СЕГОДНЯ:
 {food_section}
+
+🏠 УМНЫЙ ДОМ (ЯНДЕКС):
+{sh_section}
 
 🚗 DRIVE2.RU:
 {d2_section}
@@ -164,11 +176,11 @@ def get_system_instruction(user_id: int = 157236577) -> str:
 {ctx}
 
 ТВОИ ПРАВИЛА:
-1. Когда Олег спрашивает про свои данные (например: "Есть ли напоминания на сегодня?", "Когда день рождения у мамы?", "Сколько калорий съел?", "Что на Drive2?", "Что в VK или MAX?"), ВСЕГДА бери точные факты и цифры из блока данных выше и отвечай четко, дружелюбно и по делу.
+1. Когда Олег спрашивает про свои данные (например: "Есть ли напоминания на сегодня?", "Когда день рождения у мамы?", "Сколько калорий съел?", "Что на Drive2?", "Что в VK или MAX?", "Что с умным домом?"), ВСЕГДА бери точные факты и цифры из блока данных выше и отвечай четко, дружелюбно и по делу.
 2. ВНИМАНИЕ: Количество дней рождения в базе ВСЕГДА строго равно {b_count}. Никогда не придумывай и не называй людей, которых нет в разделе '🎂 ДНИ РОЖДЕНИЯ БЛИЗКИХ'!
 3. Если напоминания на сегодня есть — перечисли их с точным временем. Если нет — прямо скажи, что на сегодня задач нет, и упомяни ближайшие.
 4. Отвечай на чистом русском языке, форматируй ключевые моменты жирным шрифтом и смайликами.
-5. Ты умеешь поддерживать диалог на любые темы: авто, программирование, спорт, планирование, расчеты, идеи.
+5. Ты умеешь поддерживать диалог на любые темы: авто, умный дом, программирование, спорт, планирование, расчеты, идеи.
 """
 
 
@@ -216,7 +228,6 @@ async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = N
                 if response and response.text:
                     return response.text.strip()
             else:
-                # Dynamic injection to ensure model always uses fresh context snapshot
                 reset_chat_session(user_id)
                 chat = get_or_create_chat(user_id, model_name)
                 response = await chat.send_message(prompt)
