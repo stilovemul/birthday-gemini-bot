@@ -9,6 +9,7 @@ from modules.drive2_tracker.checker import check_all_drive2_users
 from modules.vk_tracker.checker import check_all_vk_users
 from modules.max_tracker.checker import check_all_max_users
 from modules.weather_synoptic.service import check_all_weather_alerts
+from modules.morning_digest.digest import send_morning_digest_to_user
 
 logger = logging.getLogger("AppScheduler")
 
@@ -39,8 +40,8 @@ async def check_and_send_smart_reminders(bot: Bot):
 
 async def run_scheduler(bot: Bot):
     """Central scheduler for background jobs (MSK UTC+3)."""
-    logger.info("Центральный планировщик запущен (напоминания 20с, Drive2 60с, VK 60с, MAX 60с, Погода 10мин, ДР 09:00 MSK).")
-    last_birthday_check_day = None
+    logger.info("Центральный планировщик запущен (напоминания 20с, Drive2 60с, VK 60с, MAX 60с, Погода 10мин, Дайджест 09:00 MSK).")
+    last_daily_check_day = None
     tick_60s = 0
     weather_tick = 0
 
@@ -63,15 +64,18 @@ async def run_scheduler(bot: Bot):
                 weather_tick = 0
                 asyncio.create_task(check_all_weather_alerts(bot))
 
-            # 4. Check daily birthdays at 09:00 MSK
+            # 4. Morning Digest & Birthday alerts at 09:00 MSK
             now_msk = datetime.now(MSK_TZ)
             today_str = now_msk.strftime("%Y-%m-%d")
 
             if now_msk.hour == DAILY_CHECK_HOUR and now_msk.minute <= 5:
-                if last_birthday_check_day != today_str:
-                    logger.info("Запуск утренней проверки дней рождения в 09:00 MSK...")
+                if last_daily_check_day != today_str:
+                    logger.info("Запуск персонального утреннего дайджеста в 09:00 MSK...")
+                    # Send rich morning digest
+                    asyncio.create_task(send_morning_digest_to_user(157236577, bot))
+                    # Also notify if any exact birthday is today
                     check_birthdays(force_send=False)
-                    last_birthday_check_day = today_str
+                    last_daily_check_day = today_str
 
             await asyncio.sleep(20)
         except Exception as e:

@@ -12,6 +12,7 @@ import uvicorn
 from core.config import TELEGRAM_BOT_TOKEN, MSK_TZ
 from core.scheduler import run_scheduler
 from modules.smart_home.handlers import router as smart_home_router
+from modules.morning_digest.handlers import router as digest_router
 from modules.birthdays.handlers import router as birthdays_router
 from modules.birthdays.storage import get_sorted_birthdays, format_date_entry, format_age_word
 from modules.notes.handlers import router as notes_router, load_notes
@@ -39,6 +40,7 @@ bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher()
 
 # Register modular routers in logical order:
+dp.include_router(digest_router)
 dp.include_router(smart_home_router)
 dp.include_router(drive2_router)
 dp.include_router(vk_router)
@@ -84,12 +86,13 @@ async def run_resilient_polling():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Запуск супер-бота в облаке 24/7 (AI + Smart Home + Drive2 + VK + MAX + Кредиты + Сон + Сейф + Погода + КБЖУ)...")
+    logger.info("Запуск супер-бота в облаке 24/7 (AI + Smart Home + Digest + Drive2 + VK + MAX + Кредиты + Сон + Сейф + Погода + КБЖУ)...")
     
     # Register official Telegram menu commands
     try:
         commands = [
             types.BotCommand(command="start", description="🏠 Главное меню"),
+            types.BotCommand(command="digest", description="🌅 Утренний персональный дайджест"),
             types.BotCommand(command="home", description="🏠 Управление Умным домом"),
             types.BotCommand(command="drive2", description="🚗 Мониторинг Drive2.ru"),
             types.BotCommand(command="vk", description="🔵 Мониторинг ВКонтакте"),
@@ -180,6 +183,9 @@ async def index():
             
             <div class="modules">
                 <div class="card">
+                    <b>🌅 Утренний Дайджест</b><br><span style="color:#94a3b8">Ежедневно в 09:00 MSK</span>
+                </div>
+                <div class="card">
                     <b>🏠 Умный дом Яндекса</b><br><span style="color:#94a3b8">Свет, климат, сценарии</span>
                 </div>
                 <div class="card">
@@ -199,9 +205,6 @@ async def index():
                 </div>
                 <div class="card">
                     <b>🌤 Погода & Осадки</b><br><span style="color:#94a3b8">Радар дождя по районам</span>
-                </div>
-                <div class="card">
-                    <b>🥗 Сканер еды & КБЖУ</b><br><span style="color:#94a3b8">Подсчёт калорий по фото</span>
                 </div>
             </div>
 
