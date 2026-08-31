@@ -106,6 +106,31 @@ async def set_device_on_off(token: str, device_id: str, state: bool) -> Tuple[bo
         return False, f"Ошибка отправки команды: {e}"
 
 
+async def toggle_device_by_id(token: str, device_id: str, force_state: Optional[bool] = None) -> Tuple[bool, str, bool, str]:
+    """Toggles or sets power for a device by its exact ID."""
+    info = await get_user_info(token)
+    if not info:
+        return False, "Не удалось связаться с сервером Умного дома.", False, "Устройство"
+
+    device = next((d for d in info.get("devices", []) if d.get("id") == device_id), None)
+    if not device:
+        return False, f"Устройство не найдено.", False, "Устройство"
+
+    dev_name = device.get("name", "Прибор")
+    current_state = False
+    for cap in device.get("capabilities", []) or []:
+        if cap.get("type") == "devices.capabilities.on_off":
+            c_state = cap.get("state") or {}
+            current_state = bool(c_state.get("value", False))
+
+    target_state = (not current_state) if force_state is None else force_state
+    ok, msg = await set_device_on_off(token, device_id, target_state)
+    if ok:
+        state_icon = "🟢 Включено" if target_state else "⚪️ Выключено"
+        return True, f"✅ {dev_name}: {state_icon}", target_state, dev_name
+    return False, f"❌ {dev_name}: {msg}", current_state, dev_name
+
+
 async def toggle_device_by_name(token: str, name_query: str, force_state: Optional[bool] = None) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
     """Toggles or sets power for a device by name."""
     dev = await get_device_by_name_or_id(token, name_query)
@@ -115,7 +140,6 @@ async def toggle_device_by_name(token: str, name_query: str, force_state: Option
     dev_id = dev["id"]
     dev_name = dev["name"]
 
-    # Determine current state
     current_state = False
     for cap in dev.get("capabilities", []):
         if cap.get("type") == "devices.capabilities.on_off":
@@ -161,7 +185,6 @@ async def turn_off_all_lights(token: str) -> Tuple[bool, str, int]:
     to_turn_off = []
     for d in info.get("devices", []):
         d_type = d.get("type", "")
-        # Only check lights, sockets, switches, relays
         if any(t in d_type for t in ["light", "switch", "socket", "openable"]):
             for cap in d.get("capabilities", []):
                 if cap.get("type") == "devices.capabilities.on_off":
@@ -199,6 +222,54 @@ async def turn_off_all_lights(token: str) -> Tuple[bool, str, int]:
                 return False, f"Ошибка выключения: HTTP {resp.status}", 0
     except Exception as e:
         logger.error(f"Error turning off all lights: {e}")
+        return False, f"Ошибка: {e}", 0
+
+
+async def turn_off_room_devices(token: str, room_id: str) -> Tuple[bool, str, int]:
+    """Turns off all active devices in a specific room."""
+    info = await get_user_info(token)
+    if not info:
+        return False, "Не удалось получить список устройств.", 0
+
+    to_turn_off = []
+    for d in info.get("devices", []):
+        if d.get("room") == room_id:
+            for cap in d.get("capabilities", []):
+                if cap.get("type") == "devices.capabilities.on_off":
+                    c_state = cap.get("state") or {}
+                    if c_state.get("value") is True:
+                        to_turn_off.append(d["id"])
+
+    if not to_turn_off:
+        return True, "✨ В этой комнате все приборы уже выключены!", 0
+
+    url = f"{BASE_URL}/devices/actions"
+    payload = {
+        "devices": [
+            {
+                "id": dev_id,
+                "actions": [
+                    {
+                        "type": "devices.capabilities.on_off",
+                        "state": {
+                            "instance": "on",
+                            "value": False
+                        }
+                    }
+                ]
+            }
+            for dev_id in to_turn_off
+        ]
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, headers=_headers(token), timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status == 200:
+                    return True, f"💡 В комнате выключено приборов: <b>{len(to_turn_off)} шт.</b>", len(to_turn_off)
+                return False, f"Ошибка выключения: HTTP {resp.status}", 0
+    except Exception as e:
+        logger.error(f"Error turning off room devices: {e}")
         return False, f"Ошибка: {e}", 0
 
 
