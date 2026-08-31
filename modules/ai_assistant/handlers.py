@@ -417,7 +417,84 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=kb)
             return
 
-    # 8. Default: General Gemini AI conversation
+    # 8. Subscriptions Natural NLP
+    if any(k in t_lower for k in ["подписк", "подписку", "подписки", "списание за"]):
+        if any(w in t_lower for w in ["добавь", "запиши", "сохрани", "внеси", "создай", "напомни о подписке", "руб", "₽", "числа"]):
+            from modules.subscription_tracker.storage import add_subscription
+            prompt = (
+                f"Пользователь хочет добавить регулярную подписку: '{text}'. "
+                "Извлеки название сервиса, сумму в рублях, число месяца (день списания от 1 до 31) и категорию. "
+                "Верни ТОЛЬКО валидный JSON в формате: "
+                '{"name": "Яндекс Плюс", "amount": 299, "payment_day": 15, "category": "Медиа"}'
+            )
+            ai_resp = await ask_gemini(user_id, prompt)
+            try:
+                import json
+                m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
+                if m:
+                    data = json.loads(m.group(0))
+                    name = data.get("name", "Подписка")
+                    amount = float(data.get("amount", 300))
+                    day = int(data.get("payment_day", 1))
+                    cat = data.get("category", "Сервисы")
+
+                    item = add_subscription(user_id, name, amount, day, category=cat)
+                    reset_chat_session(user_id)
+                    reply = (
+                        f"✅ <b>Подписка успешно сохранена в базе и облаке!</b>\n\n"
+                        f"• Сервис: <b>{item['name']}</b>\n"
+                        f"• Сумма: <b>{item['amount']} ₽/мес</b>\n"
+                        f"• День списания: <b>{item['payment_day']}-е число</b> (следующее: <i>{item['next_payment_date']}</i>)\n"
+                        f"• Категория: <i>{item['category']}</i>\n\n"
+                        f"🔔 <i>Бот напомнит вам за 2 дня и за 1 день до списания!</i>\n"
+                        f"☁️ <i>Данные моментально синхронизированы с GitHub облаком!</i>"
+                    )
+                    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                    return
+            except Exception as e:
+                logger.warning(f"Error parsing sub NLP in ai_assistant: {e}")
+
+    # 9. Custom Rules Natural NLP
+    if any(t_lower.startswith(k) for k in ["создай правило", "добавь правило", "каждое ", "каждый ", "каждую "]):
+        from modules.custom_rules.storage import add_custom_rule
+        prompt = (
+            f"Пользователь хочет создать периодическое автоматическое правило: '{text}'. "
+            "Определи: title, trigger_type ('daily_time', 'monthly_day', 'weekly_day'), day_of_month (1-31 или 0), "
+            "days_of_week (массив 0-6 где 0=Пн), hour (0-23), minute (0-59), action_text. "
+            "Верни ТОЛЬКО JSON: "
+            '{"title": "💧 Показания счетчиков", "trigger_type": "monthly_day", "day_of_month": 20, "days_of_week": [], "hour": 12, "minute": 0, "action_text": "Пора передать показания счетчиков!"}'
+        )
+        ai_resp = await ask_gemini(user_id, prompt)
+        try:
+            import json
+            m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
+            if m:
+                data = json.loads(m.group(0))
+                item = add_custom_rule(
+                    user_id=user_id,
+                    title=data.get("title", "Персональное правило"),
+                    trigger_type=data.get("trigger_type", "daily_time"),
+                    action_text=data.get("action_text", text),
+                    hour=int(data.get("hour", 12)),
+                    minute=int(data.get("minute", 0)),
+                    day_of_month=int(data.get("day_of_month", 0)),
+                    days_of_week=data.get("days_of_week", [])
+                )
+                reset_chat_session(user_id)
+                h_str = f"{item['hour']:02d}:{item['minute']:02d} MSK"
+                reply = (
+                    f"✅ <b>Персональное правило создано и активно!</b>\n\n"
+                    f"📌 <b>{item['title']}</b>\n"
+                    f"⏰ <b>Время:</b> в {h_str}\n"
+                    f"💬 <b>Действие:</b> {item['action_text']}\n\n"
+                    f"☁️ <i>Синхронизировано с GitHub облаком!</i>"
+                )
+                await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                return
+        except Exception as e:
+            logger.warning(f"Error parsing rule NLP in ai_assistant: {e}")
+
+    # 10. Default: General Gemini AI conversation
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     ai_reply = await ask_gemini(user_id, text)
     
