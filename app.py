@@ -149,8 +149,12 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(webapp_router)
 
 
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok", "service": "AiGemAntigravity", "time": datetime.now(MSK_TZ).isoformat()}
+
+
 @app.get("/", response_class=HTMLResponse)
-@app.get("/healthz", response_class=HTMLResponse)
 async def index():
     now_msk = datetime.now(MSK_TZ).strftime("%Y-%m-%d %H:%M:%S MSK")
     birthdays = get_sorted_birthdays()

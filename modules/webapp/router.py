@@ -38,9 +38,10 @@ from modules.food_tracker.storage import (
     set_user_calorie_goal
 )
 from modules.weather_synoptic.service import (
-    get_smart_weather,
+    get_weather_report,
     fetch_weather_wttr
 )
+from modules.weather_synoptic.storage import get_user_weather_config
 from modules.loan_calculator.calculator import (
     calculate_annuity_schedule,
     calculate_early_repayment_savings
@@ -206,8 +207,15 @@ async def get_dashboard_aggregated_data():
         "text": ""
     }
     try:
-        ok, w_text = await get_smart_weather(user_id)
+        w_cfg = get_user_weather_config(user_id)
+        city = w_cfg.get("city", "Санкт-Петербург")
+        district = w_cfg.get("district", "Приморский р-н")
+        lat = w_cfg.get("lat", 59.9950)
+        lon = w_cfg.get("lon", 30.2200)
+        ok, w_text = await get_weather_report(city, district, lat, lon)
         weather_info["text"] = w_text if ok else "Погода загружается..."
+        weather_info["city"] = city
+        weather_info["district"] = district
     except Exception as e:
         logger.warning(f"Dashboard weather fetch error: {e}")
 
