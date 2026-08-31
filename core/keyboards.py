@@ -10,7 +10,8 @@ def get_main_menu() -> ReplyKeyboardMarkup:
         ],
         [
             KeyboardButton(text="🚗 Drive2 Уведомления"),
-            KeyboardButton(text="🔵 VK Уведомления")
+            KeyboardButton(text="🔵 VK Уведомления"),
+            KeyboardButton(text="💬 MAX Уведомления")
         ],
         [
             KeyboardButton(text="🥗 Сканер еды & КБЖУ"),

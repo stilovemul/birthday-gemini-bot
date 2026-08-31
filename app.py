@@ -20,6 +20,7 @@ from modules.image_gen.handlers import router as image_gen_router
 from modules.food_tracker.handlers import router as food_router
 from modules.drive2_tracker.handlers import router as drive2_router
 from modules.vk_tracker.handlers import router as vk_router
+from modules.max_tracker.handlers import router as max_router
 from modules.secret_vault.handlers import router as vault_router
 from modules.weather_synoptic.handlers import router as weather_router
 from modules.sleep_calculator.handlers import router as sleep_router
@@ -39,6 +40,7 @@ dp = Dispatcher()
 # Register modular routers in logical order:
 dp.include_router(drive2_router)
 dp.include_router(vk_router)
+dp.include_router(max_router)
 dp.include_router(loan_router)
 dp.include_router(sleep_router)
 dp.include_router(vault_router)
@@ -80,7 +82,7 @@ async def run_resilient_polling():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Запуск супер-бота в облаке 24/7 (AI + Drive2 + VK + Кредиты + Сон + Сейф + Погода + КБЖУ)...")
+    logger.info("Запуск супер-бота в облаке 24/7 (AI + Drive2 + VK + MAX + Кредиты + Сон + Сейф + Погода + КБЖУ)...")
     
     # Register official Telegram menu commands
     try:
@@ -88,6 +90,7 @@ async def lifespan(app: FastAPI):
             types.BotCommand(command="start", description="🏠 Главное меню"),
             types.BotCommand(command="drive2", description="🚗 Мониторинг Drive2.ru"),
             types.BotCommand(command="vk", description="🔵 Мониторинг ВКонтакте"),
+            types.BotCommand(command="max", description="💬 Мониторинг MAX (web.max.ru)"),
             types.BotCommand(command="credit", description="🔢 Кредиты, ипотека и досрочка"),
             types.BotCommand(command="sleep", description="😴 Калькулятор фаз сна"),
             types.BotCommand(command="weather", description="🌤 Погода и прогноз"),
@@ -178,6 +181,9 @@ async def index():
                 </div>
                 <div class="card">
                     <b>🔵 VK Монитор</b><br><span style="color:#94a3b8">ЛС, заявки, алерты</span>
+                </div>
+                <div class="card">
+                    <b>💬 MAX Монитор</b><br><span style="color:#94a3b8">web.max.ru (60с)</span>
                 </div>
                 <div class="card">
                     <b>🔢 Кредиты & Ипотека</b><br><span style="color:#94a3b8">Аннуитет, выгода досрочки</span>

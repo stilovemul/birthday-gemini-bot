@@ -11,6 +11,8 @@ from modules.smart_reminders.storage import get_active_reminders
 from modules.food_tracker.storage import get_daily_summary
 from modules.notes.handlers import load_notes
 from modules.drive2_tracker.storage import get_user_drive2_config
+from modules.vk_tracker.storage import get_user_vk_config
+from modules.max_tracker.storage import get_user_max_config
 from modules.weather_synoptic.storage import get_user_weather_config
 
 logger = logging.getLogger("GeminiEngine")
@@ -43,7 +45,7 @@ def build_full_user_context(user_id: int = 157236577) -> str:
     - Today's and upcoming reminders
     - Family & friends birthdays (with days left and age)
     - Food & calorie intake today
-    - Drive2.ru and VK monitoring status
+    - Drive2.ru, VK and MAX messenger monitoring status
     - Saved notes
     - Weather location & district
     """
@@ -100,10 +102,20 @@ def build_full_user_context(user_id: int = 157236577) -> str:
         d2_section = "Drive2.ru не настроен."
 
     # 5. VKontakte Tracker
-    vk_file = DATA_DIR / "vk_config.json"
-    vk_section = "VK подключен 🟢" if vk_file.exists() else "VK ожидает настройки."
+    vk = get_user_vk_config(user_id)
+    if vk and vk.get("token"):
+        vk_section = f"VK подключен 🟢 ({vk.get('user_name', 'Олег')}, id{vk.get('user_id_vk', '')}). Последние данные: сообщений {vk.get('last_messages', 0)}, уведомлений {vk.get('last_notifications', 0)}."
+    else:
+        vk_section = "VK ожидает настройки."
 
-    # 6. Notes
+    # 6. MAX Messenger Tracker
+    max_cfg = get_user_max_config(user_id)
+    if max_cfg and max_cfg.get("token"):
+        max_section = f"MAX (web.max.ru) подключен 🟢. Последние данные: непрочитанных сообщений {max_cfg.get('last_messages', 0)}, чатов {max_cfg.get('last_unread_chats', 0)}."
+    else:
+        max_section = "MAX ожидает привязки токена."
+
+    # 7. Notes
     notes = load_notes()
     if notes:
         n_lines = [f"• {n['text']}" for n in notes[:6]]
@@ -111,7 +123,7 @@ def build_full_user_context(user_id: int = 157236577) -> str:
     else:
         notes_section = "Заметок нет."
 
-    # 7. Weather
+    # 8. Weather
     w_cfg = get_user_weather_config(user_id)
     w_loc = f"{w_cfg.get('city', 'Санкт-Петербург')} ({w_cfg.get('district', 'Приморский р-н')})"
 
@@ -133,6 +145,9 @@ def build_full_user_context(user_id: int = 157236577) -> str:
 🔵 ВКОНТАКТЕ (VK):
 {vk_section}
 
+💬 МЕССЕНДЖЕР MAX (web.max.ru):
+{max_section}
+
 📝 ЗАМЕТКИ:
 {notes_section}
 ======================================================="""
@@ -147,7 +162,7 @@ def get_system_instruction(user_id: int = 157236577) -> str:
 {ctx}
 
 ТВОИ ПРАВИЛА:
-1. Когда Олег спрашивает про свои данные (например: "Есть ли напоминания на сегодня?", "Когда день рождения у мамы?", "Сколько калорий съел?", "Что на Drive2?", "Что в заметках?"), ВСЕГДА бери точные факты и цифры из блока данных выше и отвечай четко, дружелюбно и по делу.
+1. Когда Олег спрашивает про свои данные (например: "Есть ли напоминания на сегодня?", "Когда день рождения у мамы?", "Сколько калорий съел?", "Что на Drive2?", "Что в VK или MAX?"), ВСЕГДА бери точные факты и цифры из блока данных выше и отвечай четко, дружелюбно и по делу.
 2. Если напоминания на сегодня есть — перечисли их с точным временем. Если нет — прямо скажи, что на сегодня задач нет, и упомяни ближайшие.
 3. Отвечай на чистом русском языке, форматируй ключевые моменты жирным шрифтом и смайликами.
 4. Ты умеешь поддерживать диалог на любые темы: авто, программирование, спорт, планирование, расчеты, идеи.
@@ -198,7 +213,6 @@ async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = N
                 if response and response.text:
                     return response.text.strip()
             else:
-                # Refresh dynamic context in active session if needed
                 chat = get_or_create_chat(user_id, model_name)
                 response = await chat.send_message(prompt)
                 if response and response.text:
