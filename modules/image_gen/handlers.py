@@ -1,4 +1,5 @@
 import re
+import random
 from aiogram import Router, types, F, Bot
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import Command
@@ -23,14 +24,15 @@ router = Router(name="image_gen")
 
 
 def get_image_action_keyboard() -> InlineKeyboardMarkup:
-    """Returns inline keyboard under generated images with New Image and Finish buttons."""
+    """Returns inline keyboard under generated images with Redraw Variation, New Image and Finish buttons."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="📸 Максимальный реализм", callback_data="img_make_realistic"),
-                InlineKeyboardButton(text="🔄 Сгенерировать НОВОЕ изображение", callback_data="img_new_image")
+                InlineKeyboardButton(text="📸 Макс. реализм", callback_data="img_make_realistic"),
+                InlineKeyboardButton(text="🎲 Другой вариант правки", callback_data="img_redraw_alt_variation")
             ],
             [
+                InlineKeyboardButton(text="🆕 Новый образ с нуля", callback_data="img_new_image"),
                 InlineKeyboardButton(text="⏹ Закончить генерацию", callback_data="img_finish_session")
             ]
         ]
@@ -99,8 +101,8 @@ async def cmd_generate_image(message: types.Message, bot: Bot):
         photo_file = BufferedInputFile(img_bytes, filename="generated.jpg")
         caption = (
             f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-            "💡 <b>Режим точечных правок:</b> пишите любые изменения в чат (например: <i>«добавь пресс на животик»</i>, <i>«сделай улыбку шире»</i>).\n"
-            "<i>(Бот правит именно это фото, не меняя человека, пока вы не нажмете «Сгенерировать НОВОЕ изображение» или «Закончить»).</i>"
+            "💡 <b>Режим точечных правок:</b> пишите любые изменения в чат (например: <i>«добавь кубики на пресс»</i>, <i>«улыбку шире»</i>).\n"
+            "<i>(Используйте кнопку <b>«🎲 Другой вариант правки»</b>, чтобы перерисовать ту же правку в другом ракурсе).</i>"
         )
         await message.answer_photo(
             photo_file,
@@ -125,6 +127,55 @@ async def callback_finish_image_session(callback: types.CallbackQuery):
     )
 
 
+@router.callback_query(F.data == "img_redraw_alt_variation")
+async def callback_redraw_alt_variation(callback: types.CallbackQuery, bot: Bot):
+    """Takes the CURRENT prompt with the latest user edits and redraws it in an alternative creative variation."""
+    user_id = callback.from_user.id
+    sess = get_image_session(user_id)
+    
+    if not sess or not sess.get("current_en_prompt"):
+        await callback.answer("Сессия устарела. Напишите новое описание!", show_alert=True)
+        return
+
+    last_prompt = sess["current_en_prompt"]
+    last_ru = sess.get("last_ru_prompt", "Текущая правка")
+    
+    # Generate a fresh variation seed
+    variation_seed = reset_session_seed(user_id)
+    
+    await callback.answer("Перерисовываю эту же правку по-другому...")
+    status_msg = await callback.message.answer(f"🎲 <i>Перерисовываю текущую правку «{last_ru}» в другом ракурсе и варианте...</i>", parse_mode=ParseMode.HTML)
+    await bot.send_chat_action(callback.message.chat.id, ChatAction.UPLOAD_PHOTO)
+
+    success, img_bytes, orig_p, en_p, seed_used = await generate_image_bytes(
+        last_prompt,
+        user_id=user_id,
+        is_already_en=True,
+        seed=variation_seed
+    )
+
+    try:
+        await status_msg.delete()
+    except Exception:
+        pass
+
+    if success and img_bytes:
+        photo_file = BufferedInputFile(img_bytes, filename="alt_variation.jpg")
+        caption = (
+            f"🎲 <b>Другой вариант этой же правки готов!</b>\n"
+            f"📝 <i>Отрисовано с учётом:</i> «{last_ru}»\n\n"
+            "💡 <i>Если хотите ещё вариант — нажмите «🎲 Другой вариант правки», либо продолжайте писать изменения текстом:</i>"
+        )
+        await callback.message.answer_photo(
+            photo_file,
+            caption=caption,
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_image_action_keyboard()
+        )
+    else:
+        await callback.message.answer("❌ Не удалось перерисовать вариант.")
+
+
 @router.callback_query(F.data == "img_new_image")
 async def callback_new_image(callback: types.CallbackQuery, bot: Bot):
     """Generates a completely NEW image / new character with a new seed."""
@@ -137,8 +188,8 @@ async def callback_new_image(callback: types.CallbackQuery, bot: Bot):
         return
 
     new_seed = reset_session_seed(user_id)
-    await callback.answer("Генерирую новое изображение...")
-    status_msg = await callback.message.answer("🔄 <i>Генерирую абсолютно новый вариант с новым лицом и ракурсом...</i>", parse_mode=ParseMode.HTML)
+    await callback.answer("Генерирую новый образ с нуля...")
+    status_msg = await callback.message.answer("🆕 <i>Генерирую абсолютно новый образ с нуля...</i>", parse_mode=ParseMode.HTML)
     await bot.send_chat_action(callback.message.chat.id, ChatAction.UPLOAD_PHOTO)
 
     success, img_bytes, orig_p, en_p, seed_used = await generate_image_bytes(last_prompt, user_id=user_id, is_already_en=True, seed=new_seed)
@@ -151,8 +202,8 @@ async def callback_new_image(callback: types.CallbackQuery, bot: Bot):
     if success and img_bytes:
         photo_file = BufferedInputFile(img_bytes, filename="new_concept.jpg")
         caption = (
-            "🔄 <b>Новое изображение сгенерировано!</b>\n\n"
-            "💡 <i>Продолжайте писать точечные правки в чат — бот будет менять именно это новое фото.</i>"
+            "🆕 <b>Новый образ сгенерирован с нуля!</b>\n\n"
+            "💡 <i>Продолжайте писать точечные правки в чат или перерисовывайте кнопкой ниже:</i>"
         )
         await callback.message.answer_photo(
             photo_file,
@@ -175,7 +226,7 @@ async def callback_make_realistic(callback: types.CallbackQuery, bot: Bot):
         return
 
     await callback.answer("Усиливаю фотореализм...")
-    status_msg = await callback.message.answer("📸 <i>Усиливаю фотореализм и текстуру кожи (сохраняя человека)...</i>", parse_mode=ParseMode.HTML)
+    status_msg = await callback.message.answer("📸 <i>Усиливаю фотореализм и детализацию кожи...</i>", parse_mode=ParseMode.HTML)
     await bot.send_chat_action(callback.message.chat.id, ChatAction.UPLOAD_PHOTO)
 
     refined_prompt = await refine_prompt_with_ai(last_prompt, "maximum photorealism, authentic raw 35mm film photograph, highly detailed human skin texture, pores, soft natural lighting")
