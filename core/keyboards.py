@@ -13,6 +13,10 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="🚗 Drive2 Уведомления")
         ],
         [
+            KeyboardButton(text="🌤 Погода & Осадки"),
+            KeyboardButton(text="🔐 Секретный сейф")
+        ],
+        [
             KeyboardButton(text="⏰ Напоминания"),
             KeyboardButton(text="🎂 Дни рождения")
         ],

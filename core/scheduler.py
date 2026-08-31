@@ -6,6 +6,7 @@ from core.config import DAILY_CHECK_HOUR, DAILY_CHECK_MINUTE, MSK_TZ
 from modules.birthdays.notifier import check_and_notify as check_birthdays
 from modules.smart_reminders.storage import get_due_reminders, mark_as_done
 from modules.drive2_tracker.checker import check_all_drive2_users
+from modules.weather_synoptic.service import check_all_weather_alerts
 
 logger = logging.getLogger("AppScheduler")
 
@@ -36,9 +37,10 @@ async def check_and_send_smart_reminders(bot: Bot):
 
 async def run_scheduler(bot: Bot):
     """Central scheduler for background jobs (MSK UTC+3)."""
-    logger.info("Центральный планировщик запущен (напоминания 20с, Drive2 60с, ДР 09:00 MSK).")
+    logger.info("Центральный планировщик запущен (напоминания 20с, Drive2 60с, Погода/Осадки 10мин, ДР 09:00 MSK).")
     last_birthday_check_day = None
     drive2_tick = 0
+    weather_tick = 0
 
     while True:
         try:
@@ -51,7 +53,13 @@ async def run_scheduler(bot: Bot):
                 drive2_tick = 0
                 asyncio.create_task(check_all_drive2_users(bot))
 
-            # 3. Check daily birthdays at 09:00 MSK
+            # 3. Check impending precipitation radar (every ~10 mins = 30 ticks of 20s)
+            weather_tick += 1
+            if weather_tick >= 30:
+                weather_tick = 0
+                asyncio.create_task(check_all_weather_alerts(bot))
+
+            # 4. Check daily birthdays at 09:00 MSK
             now_msk = datetime.now(MSK_TZ)
             today_str = now_msk.strftime("%Y-%m-%d")
 

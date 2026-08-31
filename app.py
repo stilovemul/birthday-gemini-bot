@@ -19,6 +19,8 @@ from modules.smart_reminders.storage import get_active_reminders
 from modules.image_gen.handlers import router as image_gen_router
 from modules.food_tracker.handlers import router as food_router
 from modules.drive2_tracker.handlers import router as drive2_router
+from modules.secret_vault.handlers import router as vault_router
+from modules.weather_synoptic.handlers import router as weather_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -33,6 +35,8 @@ dp = Dispatcher()
 
 # Register modular routers in logical order:
 dp.include_router(drive2_router)
+dp.include_router(vault_router)
+dp.include_router(weather_router)
 dp.include_router(food_router)
 dp.include_router(image_gen_router)
 dp.include_router(reminders_router)
@@ -70,12 +74,15 @@ async def run_resilient_polling():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Запуск супер-бота в облаке 24/7 (AI + Drive2 + КБЖУ Еда + Картинки + Напоминания + ДР)...")
+    logger.info("Запуск супер-бота в облаке 24/7 (AI + Drive2 + Сейф + Погода + КБЖУ + Картинки + Напоминания)...")
     
     # Register official Telegram menu commands
     try:
         commands = [
             types.BotCommand(command="start", description="🏠 Главное меню"),
+            types.BotCommand(command="weather", description="🌤 Погода и прогноз"),
+            types.BotCommand(command="set_city", description="🏙 Установить мой город"),
+            types.BotCommand(command="vault", description="🔐 Секретный сейф заметок"),
             types.BotCommand(command="drive2", description="🚗 Мониторинг Drive2.ru"),
             types.BotCommand(command="food", description="🥗 Дневной рацион и калории"),
             types.BotCommand(command="image", description="🎨 Сгенерировать фото"),
@@ -157,16 +164,16 @@ async def index():
             
             <div class="modules">
                 <div class="card">
+                    <b>🌤 Погода & Осадки</b><br><span style="color:#94a3b8">Радар дождя и прогноз</span>
+                </div>
+                <div class="card">
+                    <b>🔐 Секретный сейф</b><br><span style="color:#94a3b8">PIN-код, пароли, карты</span>
+                </div>
+                <div class="card">
                     <b>🚗 Drive2.ru Монитор</b><br><span style="color:#94a3b8">ЛС, подписки, события</span>
                 </div>
                 <div class="card">
                     <b>🥗 Сканер еды & КБЖУ</b><br><span style="color:#94a3b8">Подсчёт калорий по фото</span>
-                </div>
-                <div class="card">
-                    <b>🤖 Gemini AI</b><br><span style="color:#94a3b8">Умный диалог, зрение</span>
-                </div>
-                <div class="card">
-                    <b>🎨 Генератор фото</b><br><span style="color:#94a3b8">RealVisXL / Seed Lock</span>
                 </div>
             </div>
 
