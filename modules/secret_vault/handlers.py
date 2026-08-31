@@ -43,6 +43,12 @@ def get_vault_keyboard(is_unlocked: bool = False, notes: list = None) -> InlineK
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
+def is_in_vault_input_state(message: types.Message) -> bool:
+    """Filter that ensures this router ONLY intercepts text when user is actively in a vault flow."""
+    user_id = message.from_user.id if message.from_user else 0
+    return user_id in user_vault_states
+
+
 @router.message(Command("vault"))
 @router.message(F.text == "🔐 Секретный сейф")
 async def cmd_vault(message: types.Message):
@@ -173,13 +179,13 @@ async def callback_refresh(callback: types.CallbackQuery):
     await callback.answer()
 
 
-@router.message(F.text)
+@router.message(F.text, is_in_vault_input_state)
 async def handle_vault_text_input(message: types.Message):
     user_id = message.from_user.id
     state = user_vault_states.get(user_id)
 
     if not state:
-        return  # Let other routers or AI handle
+        return
 
     text = message.text.strip()
 
