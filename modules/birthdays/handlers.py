@@ -48,6 +48,24 @@ def parse_add_arguments(text: str):
     return None
 
 
+def search_birthday_by_query(query: str):
+    q = query.lower().strip()
+    # Normalize common words
+    q = re.sub(r"^(?:когда|какого\s+числа|узнай|посмотри|день\s+рождения|др|у)\s*", "", q).strip()
+    q = re.sub(r"[?!.,]", "", q).strip()
+    
+    items = get_sorted_birthdays()
+    # 1. Exact or partial substring match
+    for item in items:
+        name = item["name"].lower()
+        if q in name or name in q:
+            return item
+        # check mama / mamy / pape
+        if ("мам" in q and "мам" in name) or ("пап" in q and "пап" in name) or ("жен" in q and "жен" in name) or ("брат" in q and "брат" in name):
+            return item
+    return None
+
+
 @router.message(F.text == "🎂 Дни рождения")
 async def cmd_birthday_menu(message: types.Message):
     await message.answer("🎂 <b>Раздел: Дни рождения</b>\nВыберите действие в меню ниже 👇", parse_mode=ParseMode.HTML, reply_markup=get_birthday_submenu())
@@ -56,6 +74,58 @@ async def cmd_birthday_menu(message: types.Message):
 @router.message(F.text == "🔙 Главное меню")
 async def cmd_back_main(message: types.Message):
     await message.answer("🏠 Главное меню:", reply_markup=get_main_menu())
+
+
+@router.message(Command("when"))
+@router.message(Command("bday"))
+async def cmd_when_birthday(message: types.Message):
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("🔍 Укажите имя: <code>/when Мама</code> или <code>/when Папа</code>", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        return
+
+    query = parts[1].strip()
+    target = search_birthday_by_query(query)
+    if target:
+        date_str = format_date_entry(target)
+        days_left = target["days_left"]
+        age_str = f" (исполняется <b>{format_age_word(target['turning_age'])}</b>)" if target.get("turning_age") else ""
+        left_str = "🔥 <b>СЕГОДНЯ!</b>" if days_left == 0 else (f"⏳ <b>Завтра!</b>" if days_left == 1 else f"через <b>{days_left} дн.</b>")
+        note_str = f"\n🎁 <i>Заметка: {target['note']}</i>" if target.get("note") else ""
+
+        text = (
+            f"🎂 <b>День рождения: {target['name']}</b>\n\n"
+            f"🗓 <b>Дата:</b> {date_str}{age_str}\n"
+            f"⏳ <b>Осталось:</b> {left_str}{note_str}"
+        )
+        await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+    else:
+        await message.answer(f"🔍 В базе пока нет дня рождения для «{query}». Добавить: <code>/add {query} ДД.ММ.ГГГГ</code>", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+
+
+@router.message(F.text.regexp(r"(?i)^(?:когда|какого\s+числа)\s+(?:день\s+рождения|др)\s+(?:у\s+)?(.+)"))
+async def handle_natural_when_birthday(message: types.Message):
+    match = re.search(r"(?i)^(?:когда|какого\s+числа)\s+(?:день\s+рождения|др)\s+(?:у\s+)?(.+)", message.text)
+    if match:
+        query = match.group(1).strip()
+        target = search_birthday_by_query(query)
+        if target:
+            date_str = format_date_entry(target)
+            days_left = target["days_left"]
+            age_str = f" (исполнится <b>{format_age_word(target['turning_age'])}</b>)" if target.get("turning_age") else ""
+            left_str = "🔥 <b>СЕГОДНЯ!</b>" if days_left == 0 else (f"⏳ <b>Завтра!</b>" if days_left == 1 else f"через <b>{days_left} дн.</b>")
+            note_str = f"\n🎁 <i>Заметка: {target['note']}</i>" if target.get("note") else ""
+
+            text = (
+                f"🎂 <b>День рождения: {target['name']}</b>\n\n"
+                f"🗓 <b>Дата:</b> {date_str}{age_str}\n"
+                f"⏳ <b>Осталось:</b> {left_str}{note_str}"
+            )
+            await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+            return
+
+    # If not found, let Gemini AI answer with context
+    pass
 
 
 @router.message(Command("add"))
