@@ -40,9 +40,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger("SuperBotApp")
 
+from aiogram.fsm.storage.memory import MemoryStorage
+
 # Telegram Bot & Dispatcher
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(storage=MemoryStorage())
 
 # Register modular routers in logical order:
 dp.include_router(digest_router)

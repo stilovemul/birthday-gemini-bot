@@ -392,8 +392,8 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
             return
 
-    # 7. Loan / Credit Natural Trigger
-    if any(k in t_lower for k in ["кредит", "ипотек", "автокредит", "досрочн", "переплат", "посчитай займ"]):
+    # 7. Loan / Credit Calculation Explicit Trigger (only on explicit calculation intent)
+    if any(k in t_lower for k in ["посчитай кредит", "рассчитай кредит", "посчитай ипотек", "рассчитай ипотек", "калькулятор кредит", "калькулятор ипотек", "досрочн", "переплат", "посчитай займ"]):
         parsed = parse_loan_query(text)
         if parsed:
             amount, rate, months, extra = parsed
@@ -417,14 +417,14 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=kb)
             return
 
-    # 8. Subscriptions & Recurring Payments Multi-Item Natural NLP
+    # 8. Subscriptions & Recurring Payments Multi-Item Natural NLP (Supports Mortgage, Rent, Loans, Media, Telecom)
     is_sub_candidate = (
         any(k in t_lower for k in ["подписк", "подписку", "подписки", "списание", "каждый месяц", "ежемесячно", "абонентск", "тариф", "рублей, каждый месяц"]) or
         bool(re.search(r"\b(?:\d{1,2}\s+(?:янв|фев|мар|апр|ма|июн|июл|авг|сен|окт|ноя|дек|числа)|числа\s+\d{1,2})\b.*\b\d{2,5}\b", t_lower)) or
         bool(re.search(r"\b\d{2,5}\s*(?:руб|р|₽|\.00|\.50|\.5)\b.*\b\d{1,2}\b", t_lower))
     )
 
-    if is_sub_candidate and not any(k in t_lower for k in ["кредит", "ипотек", "погода", "напомни"]):
+    if is_sub_candidate and not any(k in t_lower for k in ["погода", "напомни"]):
         from modules.subscription_tracker.storage import add_subscription, get_subscription_stats
         prompt = (
             f"Пользователь отправил список регулярных подписок / платежей:\n'{text}'\n\n"

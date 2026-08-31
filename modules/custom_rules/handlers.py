@@ -4,10 +4,12 @@ import logging
 from aiogram import Router, types, F, Bot
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 from core.keyboards import get_main_menu
 from core.gemini import ask_gemini, reset_chat_session
+from core.states import CustomRuleStates
 from modules.custom_rules.storage import (
     reload_from_cloud,
     get_user_rules,
@@ -24,12 +26,10 @@ router = Router(name="custom_rules")
 def get_rules_keyboard(rules: list) -> InlineKeyboardMarkup:
     kb_rows = []
     for r in rules:
-        # Green icon if completed for current period, White if pending
         is_done = r.get("is_completed_now", False)
         done_icon = "🟢" if is_done else "⚪️"
         btn_done_text = f"{done_icon} {r.get('title', 'Правило')[:22]}"
         
-        # Row with completion toggle and delete
         kb_rows.append([
             InlineKeyboardButton(text=btn_done_text, callback_data=f"rule_done_{r['id']}"),
             InlineKeyboardButton(text="⚙️ Вкл/Выкл", callback_data=f"rule_toggle_{r['id']}"),
@@ -55,7 +55,7 @@ def format_rules_card(user_id: int) -> str:
     ]
 
     if not rules:
-        lines.append("<i>Список правил пуст. Напишите, например: «Передать показания с 20 по 24 число каждого месяца»</i>")
+        lines.append("<i>Список правил пуст. Нажмите «➕ Создать правило», чтобы добавить автоматизацию.</i>")
     else:
         for idx, r in enumerate(rules, 1):
             is_done = r.get("is_completed_now", False)
@@ -90,7 +90,8 @@ def format_rules_card(user_id: int) -> str:
 @router.message(Command("rules"))
 @router.message(Command("automations"))
 @router.message(F.text == "🧩 Мои правила")
-async def cmd_custom_rules(message: types.Message):
+async def cmd_custom_rules(message: types.Message, state: FSMContext):
+    await state.clear()
     user_id = message.from_user.id
     text = format_rules_card(user_id)
     kb = get_rules_keyboard(get_user_rules(user_id))
@@ -98,7 +99,8 @@ async def cmd_custom_rules(message: types.Message):
 
 
 @router.callback_query(F.data == "rule_refresh")
-async def cb_rule_refresh(callback: types.CallbackQuery):
+async def cb_rule_refresh(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
     user_id = callback.from_user.id
     reload_from_cloud()
     text = format_rules_card(user_id)
@@ -110,8 +112,121 @@ async def cb_rule_refresh(callback: types.CallbackQuery):
     await callback.answer("🔄 Обновлено!")
 
 
+@router.callback_query(F.data == "rule_cancel")
+async def cb_rule_cancel(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    user_id = callback.from_user.id
+    text = format_rules_card(user_id)
+    kb = get_rules_keyboard(get_user_rules(user_id))
+    try:
+        await callback.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb)
+    except Exception:
+        pass
+    await callback.answer("❌ Создание правила отменено.")
+
+
+@router.callback_query(F.data == "rule_add_prompt")
+async def cb_rule_add_prompt(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(CustomRuleStates.waiting_for_rule_text)
+    prompt_text = (
+        "🧩 <b>Режим создания персонального правила:</b>\n\n"
+        "Напишите текст или надиктуйте периодическую задачу голосом:\n\n"
+        "👉 <code>Передать показания счётчиков каждый месяц с 20 по 24 число</code>\n"
+        "👉 <code>Каждую пятницу в 18:00 напоминай проверить уровень масла в авто</code>\n"
+        "👉 <code>Каждое утро в 08:30 напоминай выпить витамины</code>\n"
+        "👉 <code>Каждый месяц 1 числа оплатить аренду квартиры</code>\n\n"
+        "💡 <i>В этом режиме любой ввод будет сохранен именно в раздел «Мои правила»!</i>"
+    )
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Отмена", callback_data="rule_cancel")]
+        ]
+    )
+    await callback.message.edit_text(prompt_text, parse_mode=ParseMode.HTML, reply_markup=kb)
+    await callback.answer()
+
+
+@router.message(CustomRuleStates.waiting_for_rule_text)
+async def handle_rule_waiting_input(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    text = message.text or ""
+
+    if text.strip() in ["/cancel", "Отмена", "отмена", "❌ Отмена"]:
+        await state.clear()
+        card_text = format_rules_card(user_id)
+        await message.answer("❌ Создание отменено.\n\n" + card_text, parse_mode=ParseMode.HTML, reply_markup=get_rules_keyboard(get_user_rules(user_id)))
+        return
+
+    # Process strictly as custom rule
+    prompt = (
+        f"Пользователь находится в режиме создания персонального правила/повторяющейся задачи и написал:\n'{text}'\n\n"
+        "Определи параметры правила: "
+        "1. title: Короткий заголовок с понятным эмодзи (до 30 символов, например '💧 Передать показания счетчиков'). "
+        "2. trigger_type: "
+        "   - 'monthly_range' (если указан диапазон дат каждого месяца, например 'с 20 по 24 число') "
+        "   - 'monthly_day' (если точный день месяца, например '20-е число') "
+        "   - 'weekly_day' (если определенный день недели, например 'каждую пятницу') "
+        "   - 'daily_time' (если каждый день) "
+        "3. start_day: начальное число диапазона от 1 до 31 (число, например 20, если monthly_range, иначе 0). "
+        "4. end_day: конечное число диапазона от 1 до 31 (число, например 24, если monthly_range, иначе 0). "
+        "5. day_of_month: число месяца (если monthly_day или start_day). "
+        "6. days_of_week: массив чисел от 0 до 6, где 0=Пн, 4=Пт, 6=Вс (если weekly_day). "
+        "7. hour: час напоминания от 0 до 23 (по умолчанию 12). "
+        "8. minute: минуты от 0 до 59 (по умолчанию 0). "
+        "9. action_text: Понятный текст напоминания / инструкции. "
+        "Верни ТОЛЬКО валидный JSON в формате:\n"
+        '{"title": "💧 Передать показания счетчиков", "trigger_type": "monthly_range", "start_day": 20, "end_day": 24, "day_of_month": 20, "days_of_week": [], "hour": 12, "minute": 0, "action_text": "Пора передать показания счетчиков воды и света!"}'
+    )
+    ai_resp = await ask_gemini(user_id, prompt)
+    try:
+        m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
+        if m:
+            data = json.loads(m.group(0))
+            item = add_custom_rule(
+                user_id=user_id,
+                title=data.get("title", "Персональное правило"),
+                trigger_type=data.get("trigger_type", "daily_time"),
+                action_text=data.get("action_text", text),
+                hour=int(data.get("hour", 12)),
+                minute=int(data.get("minute", 0)),
+                start_day=int(data.get("start_day", 0)),
+                end_day=int(data.get("end_day", 0)),
+                day_of_month=int(data.get("day_of_month", 0)),
+                days_of_week=data.get("days_of_week", [])
+            )
+            await state.clear()
+            reset_chat_session(user_id)
+
+            h_str = f"{item['hour']:02d}:{item['minute']:02d} MSK"
+            tt = item.get("trigger_type")
+            if tt == "monthly_range":
+                sched_desc = f"каждый месяц с {item.get('start_day')} по {item.get('end_day')} число"
+            elif tt == "monthly_day":
+                sched_desc = f"каждое {item.get('day_of_month')}-е число"
+            elif tt == "weekly_day":
+                sched_desc = "еженедельно"
+            else:
+                sched_desc = "ежедневно"
+
+            reply = (
+                f"✅ <b>Персональное правило создано и добавлено в базу:</b>\n\n"
+                f"📌 <b>{item['title']}</b>\n"
+                f"🗓 <b>Период:</b> {sched_desc} (в {h_str})\n"
+                f"💬 <b>Действие:</b> {item['action_text']}\n"
+                f"👉 <b>Статус:</b> ⚪️ <i>Ожидает выполнения</i>\n\n"
+                f"🔔 <i>Бот будет присылать напоминание, пока вы не нажмете зеленую кнопку 🟢 [Выполнено]!</i>"
+            )
+            await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_rules_keyboard(get_user_rules(user_id)))
+            return
+    except Exception as e:
+        logger.warning(f"Error parsing rule in FSM state: {e}")
+
+    await message.answer("⚠️ Не удалось разобрать параметры правила. Попробуйте так: <code>Передать показания с 20 по 24 число</code>", parse_mode=ParseMode.HTML)
+
+
 @router.callback_query(F.data.startswith("rule_done_"))
-async def cb_rule_done(callback: types.CallbackQuery):
+async def cb_rule_done(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
     user_id = callback.from_user.id
     rule_id = callback.data.replace("rule_done_", "")
     is_done = mark_rule_completed(user_id, rule_id)
@@ -131,7 +246,8 @@ async def cb_rule_done(callback: types.CallbackQuery):
 
 
 @router.callback_query(F.data.startswith("rule_toggle_"))
-async def cb_rule_toggle(callback: types.CallbackQuery):
+async def cb_rule_toggle(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
     user_id = callback.from_user.id
     rule_id = callback.data.replace("rule_toggle_", "")
     new_st = toggle_rule_state(user_id, rule_id)
@@ -151,7 +267,8 @@ async def cb_rule_toggle(callback: types.CallbackQuery):
 
 
 @router.callback_query(F.data.startswith("rule_del_"))
-async def cb_rule_del(callback: types.CallbackQuery):
+async def cb_rule_del(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
     user_id = callback.from_user.id
     rule_id = callback.data.replace("rule_del_", "")
     ok = delete_custom_rule(user_id, rule_id)
@@ -167,21 +284,3 @@ async def cb_rule_del(callback: types.CallbackQuery):
         await callback.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb)
     except Exception:
         pass
-
-
-@router.callback_query(F.data == "rule_add_prompt")
-async def cb_rule_add_prompt(callback: types.CallbackQuery):
-    prompt_text = (
-        "➕ <b>Как создать персональное правило:</b>\n\n"
-        "Напишите фразу в свободной форме или надиктуйте голосом:\n\n"
-        "👉 <code>Передать показания счетчиков каждый месяц с 20 по 24 число</code>\n"
-        "👉 <code>Каждую пятницу в 18:00 напоминай проверить уровень масла в авто</code>\n"
-        "👉 <code>Каждое утро в 08:30 напоминай выпить стакан воды с лимоном</code>\n"
-        "👉 <code>Каждый месяц 1 числа оплатить аренду квартиры</code>\n\n"
-        "Нейросеть автоматически выделит диапазон дней, время и текст напоминания!"
-    )
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="🔙 Назад к правилам", callback_data="rule_refresh")]]
-    )
-    await callback.message.edit_text(prompt_text, parse_mode=ParseMode.HTML, reply_markup=kb)
-    await callback.answer()
