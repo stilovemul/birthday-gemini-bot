@@ -14,6 +14,7 @@ from modules.food_tracker.storage import log_meal, get_daily_summary
 from modules.food_tracker.handlers import get_food_meal_keyboard
 from modules.loan_calculator.calculator import parse_loan_query, calculate_early_repayment_savings, calculate_annuity_loan
 from modules.loan_calculator.handlers import format_loan_result
+from modules.birthdays.storage import add_birthday, delete_birthday, get_sorted_birthdays, format_date_entry
 from modules.image_gen.generator import (
     generate_image_bytes,
     refine_prompt_with_ai,
@@ -37,7 +38,7 @@ async def cmd_start(message: types.Message):
     set_user_awaiting_image(message.from_user.id, False)
     welcome_text = (
         "👋 <b>Привет, Олег! Супер-бот AiGemAntigravity активен 24/7!</b> 🚀\n\n"
-        "Я твой персональный ИИ-ассистент в облаке с кучей полезных функций:\n\n"
+        "Я твой персональный ИИ-ассистент в облаке с автоматической синхронизацией данных:\n\n"
         "✨ <b>Что я умею:</b>\n"
         "• 🤖 <b>Gemini AI</b>: умный диалог, ответы на любые вопросы\n"
         "• 🎨 <b>Генератор фото (RealVisXL)</b>: создание фото с сохранением внешности\n"
@@ -45,10 +46,12 @@ async def cmd_start(message: types.Message):
         "• 🔢 <b>Кредитный калькулятор</b>: расчет платежа, переплаты и выгоды досрочки\n"
         "• 😴 <b>Калькулятор сна</b>: биоритмы, 90-мин циклы и Power Nap\n"
         "• 🚗 <b>Drive2.ru Монитор</b>: мгновенные алерты о сообщениях и событиях\n"
+        "• 🔵 <b>VK Монитор</b>: проверка непрочитанных личных сообщений\n"
+        "• 💬 <b>MAX Монитор</b>: мониторинг сообщений web.max.ru\n"
         "• 🌤 <b>Погода & Осадки</b>: радар дождя с точностью до района\n"
         "• 🔐 <b>Секретный сейф</b>: защищенное хранилище паролей и заметок\n"
         "• ⏰ <b>Умные напоминания</b>: <i>«Напомни завтра в 15:00 позвонить в банк»</i>\n"
-        "• 🎂 <b>Дни рождения</b>: авто-напоминания в 09:00 MSK\n"
+        "• 🎂 <b>Дни рождения</b>: авто-синхронизация с облаком и напоминания в 09:00 MSK\n"
         "• 📝 <b>Заметки</b>: <code>/note Текст</code>\n\n"
         "Напишите мне что угодно или воспользуйтесь кнопками ниже 👇"
     )
@@ -62,6 +65,9 @@ async def cmd_help(message: types.Message):
     set_user_awaiting_image(message.from_user.id, False)
     help_text = (
         "📖 <b>Справка по возможностям бота:</b>\n\n"
+        "🎂 <b>Дни рождения:</b>\n"
+        "• Кнопка «🎂 Дни рождения» или напишите в чат:\n"
+        "  <i>«Добавь день рождения Ивана 15 марта»</i>\n\n"
         "🥗 <b>Сканер еды и калорий:</b>\n"
         "• Отправьте фото еды в чат — бот посчитает калории, белки, жиры, углеводы и состав порции.\n"
         "• Кнопка «🥗 Сканер еды & КБЖУ» — просмотр дневного рациона и нормы.\n\n"
@@ -197,7 +203,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             )
             return
         
-        if text in ["🤖 Gemini AI", "🎨 Генерация картинок", "🥗 Сканер еды & КБЖУ", "⏰ Напоминания", "🎂 Дни рождения", "📝 Заметки", "❓ Справка", "😴 Калькулятор сна", "🔢 Калькулятор кредитов"]:
+        if text in ["🤖 Gemini AI", "🎨 Генерация картинок", "🥗 Сканер еды & КБЖУ", "⏰ Напоминания", "🎂 Дни рождения", "📝 Заметки", "❓ Справка", "😴 Калькулятор сна", "🔢 Калькулятор кредитов", "🚗 Drive2 Уведомления", "🔵 VK Уведомления", "💬 MAX Уведомления"]:
             end_image_session(user_id)
         else:
             sess = get_image_session(user_id)
@@ -295,7 +301,31 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
             return
 
-    # 4. Smart Reminders Natural NLP
+    # 4. Birthday Natural Language Add/Delete Triggers (Direct Cloud-Synced DB execution)
+    bday_add_match = re.match(r"^(?:добавь|запиши|сохрани|внеси)\s+(?:день\s+рождения|др)\s+(.+)", text, re.IGNORECASE)
+    if bday_add_match:
+        raw_bday = bday_add_match.group(1).strip()
+        m = re.search(r"^(.+?)\s+(\d{1,2}(?:[./\-]\d{1,2}(?:[./\-]\d{2,4})?|\s+[а-яё]+(?:\s+\d{2,4})?))(?:\s+(.*))?$", raw_bday, re.IGNORECASE)
+        if m:
+            b_name = m.group(1).strip()
+            b_date = m.group(2).strip()
+            b_note = m.group(3).strip() if m.group(3) else ""
+            success, reply_msg, _ = add_birthday(b_name, b_date, b_note)
+            reset_chat_session(user_id)
+            cloud_info = "\n☁️ <i>Запись моментально синхронизирована с облаком!</i>" if success else ""
+            await message.answer(f"{reply_msg}{cloud_info}", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+            return
+
+    bday_del_match = re.match(r"^(?:удали|сотри|убери)\s+(?:день\s+рождения|др)\s+(.+)", text, re.IGNORECASE)
+    if bday_del_match:
+        raw_target = bday_del_match.group(1).strip()
+        success, reply_msg = delete_birthday(raw_target)
+        reset_chat_session(user_id)
+        cloud_info = "\n☁️ <i>Изменения синхронизированы с облаком!</i>" if success else ""
+        await message.answer(f"{reply_msg}{cloud_info}", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        return
+
+    # 5. Smart Reminders Natural NLP
     if re.match(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s+", text, re.IGNORECASE):
         raw = re.sub(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s*", "", text, flags=re.IGNORECASE).strip()
         success, target_dt, task_text, info_remind = await parse_natural_reminder(raw)
@@ -311,7 +341,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
             return
 
-    # 5. Loan / Credit Natural Trigger (e.g. "посчитай кредит 3 млн 18% 5 лет" or "ипотека 5000000 19% 15 лет")
+    # 6. Loan / Credit Natural Trigger
     if any(k in t_lower for k in ["кредит", "ипотек", "автокредит", "досрочн", "переплат", "посчитай займ"]):
         parsed = parse_loan_query(text)
         if parsed:
@@ -336,7 +366,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=kb)
             return
 
-    # 6. Default: General Gemini AI conversation
+    # 7. Default: General Gemini AI conversation
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     ai_reply = await ask_gemini(user_id, text)
     

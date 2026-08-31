@@ -1,9 +1,14 @@
 import json
 import re
 import uuid
+import threading
+import logging
 from datetime import date, datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 from core.config import BIRTHDAYS_FILE, MSK_TZ
+from modules.birthdays.sync import push_birthdays_to_github, pull_birthdays_from_github
+
+logger = logging.getLogger("BirthdayStorage")
 
 MONTHS_RU = {
     "января": 1, "январь": 1, "янв": 1,
@@ -25,12 +30,24 @@ MONTH_NAMES_RU = [
     "июля", "августа", "сентября", "октября", "ноября", "декабря"
 ]
 
+_synced_on_startup = False
+
 
 def get_current_msk_date() -> date:
     return datetime.now(MSK_TZ).date()
 
 
 def load_birthdays() -> List[Dict[str, Any]]:
+    global _synced_on_startup
+    if not _synced_on_startup:
+        _synced_on_startup = True
+        try:
+            cloud_data = pull_birthdays_from_github()
+            if cloud_data:
+                return cloud_data
+        except Exception:
+            pass
+
     if not BIRTHDAYS_FILE.exists():
         save_birthdays([])
         return []
@@ -46,6 +63,15 @@ def save_birthdays(birthdays: List[Dict[str, Any]]) -> None:
     BIRTHDAYS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(BIRTHDAYS_FILE, "w", encoding="utf-8") as f:
         json.dump(birthdays, f, ensure_ascii=False, indent=2)
+
+    # Trigger background auto-sync to GitHub
+    def _bg_sync():
+        try:
+            push_birthdays_to_github(birthdays)
+        except Exception as e:
+            logger.warning(f"Background cloud sync warning: {e}")
+
+    threading.Thread(target=_bg_sync, daemon=True).start()
 
 
 def parse_date_string(date_str: str) -> Optional[Tuple[int, int, Optional[int]]]:
