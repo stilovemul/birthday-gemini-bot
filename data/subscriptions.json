@@ -1,19 +1,5 @@
 [
   {
-    "id": "sub_rostelecom",
-    "user_id": 157236577,
-    "name": "Ростелеком",
-    "amount": 899,
-    "currency": "₽",
-    "billing_cycle": "monthly",
-    "payment_day": 12,
-    "next_payment_date": "2026-09-12",
-    "category": "Интернет & ТВ",
-    "card_comment": "Основная карта",
-    "auto_renew": true,
-    "last_notified": ""
-  },
-  {
     "id": "sub_megafon",
     "user_id": 157236577,
     "name": "Мегафон",
