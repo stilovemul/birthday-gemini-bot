@@ -43,24 +43,50 @@ async def cmd_remind(message: types.Message):
 @router.message(Command("reminders"))
 @router.message(F.text == "⏰ Напоминания")
 async def cmd_list_reminders(message: types.Message):
-    items = get_active_reminders(message.from_user.id)
-    if not items:
+    user_id = message.from_user.id
+    items = get_active_reminders(user_id)
+    
+    from modules.custom_rules.storage import get_user_rules
+    rules = get_user_rules(user_id)
+    active_rules = [r for r in rules if r.get("is_active", True)]
+
+    if not items and not active_rules:
         await message.answer(
             "📭 У вас нет активных напоминаний.\n\n"
             "Чтобы создать напоминание, напишите:\n"
             "<code>/remind завтра в 15:00 позвонить коллеге</code>\n"
-            "или просто: <i>«Напомни через 20 минут проверить духовку»</i>",
+            "или правило: <i>«Передать показания счетчиков каждый месяц с 20 по 24 число»</i>",
             parse_mode=ParseMode.HTML,
             reply_markup=get_main_menu()
         )
         return
 
-    lines = [f"⏰ <b>Ваши активные напоминания ({len(items)}):</b>\n"]
-    for idx, r in enumerate(items, 1):
-        lines.append(f"{idx}. 📌 <b>{r['text']}</b>\n   └ 🕒 {r['target_display']} <code>[id:{r['id']}]</code>")
+    lines = []
+    
+    if items:
+        lines.append(f"⏰ <b>Разовые напоминания ({len(items)}):</b>\n")
+        for idx, r in enumerate(items, 1):
+            lines.append(f"{idx}. 📌 <b>{r['text']}</b>\n   └ 🕒 {r['target_display']} <code>[id:{r['id']}]</code>")
+        lines.append("\n")
 
-    lines.append("\n💡 <i>Чтобы отменить напоминание:</i> <code>/delremind ID</code>")
-    await message.answer("\n\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+    if active_rules:
+        lines.append(f"🧩 <b>Периодические правила и задачи ({len(active_rules)}):</b>\n")
+        for idx, r in enumerate(active_rules, 1):
+            is_done = r.get("is_completed_now", False)
+            st_icon = "🟢 Выполнено" if is_done else "⚪️ Ожидает выполнения"
+            tt = r.get("trigger_type", "")
+            if tt == "monthly_range":
+                sched = f"Каждый месяц с {r.get('start_day')} по {r.get('end_day')} число"
+            elif tt == "monthly_day":
+                sched = f"Каждое {r.get('day_of_month')}-е число"
+            elif tt == "weekly_day":
+                sched = "Еженедельно"
+            else:
+                sched = "Ежедневно"
+            lines.append(f"{idx}. <b>{r.get('title')}</b>\n   └ 🗓 {sched} | {st_icon}")
+
+    lines.append("\n💡 <i>Управлять правилами и отмечать 🟢:</i> нажмите <b>«🧩 Мои правила»</b>")
+    await message.answer("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
 
 @router.message(Command("delremind"))

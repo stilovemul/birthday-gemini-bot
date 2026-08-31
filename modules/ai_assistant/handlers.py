@@ -472,15 +472,33 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         except Exception as e:
             logger.warning(f"Error in multi-sub NLP parser: {e}")
 
-    # 9. Custom Rules Natural NLP
-    if any(t_lower.startswith(k) for k in ["создай правило", "добавь правило", "каждое ", "каждый ", "каждую "]):
+    # 9. Custom Rules & Periodic Tasks Natural NLP (with Date Range support)
+    is_rule_candidate = (
+        any(k in t_lower for k in ["создай правило", "добавь правило", "новое правило", "каждое ", "каждый ", "каждую ", "ежемесячно", "еженедельно"]) or
+        ("показания" in t_lower and ("числа" in t_lower or "по" in t_lower or "счетчик" in t_lower)) or
+        bool(re.search(r"с\s+\d{1,2}\s+(?:числа\s+)?по\s+\d{1,2}", t_lower))
+    )
+
+    if is_rule_candidate and not any(k in t_lower for k in ["подписк", "кредит", "ипотек", "погода"]):
         from modules.custom_rules.storage import add_custom_rule
         prompt = (
-            f"Пользователь хочет создать периодическое автоматическое правило: '{text}'. "
-            "Определи: title, trigger_type ('daily_time', 'monthly_day', 'weekly_day'), day_of_month (1-31 или 0), "
-            "days_of_week (массив 0-6 где 0=Пн), hour (0-23), minute (0-59), action_text. "
-            "Верни ТОЛЬКО JSON: "
-            '{"title": "💧 Показания счетчиков", "trigger_type": "monthly_day", "day_of_month": 20, "days_of_week": [], "hour": 12, "minute": 0, "action_text": "Пора передать показания счетчиков!"}'
+            f"Пользователь хочет создать персональное периодическое правило / повторяющуюся задачу:\n'{text}'\n\n"
+            "Определи параметры правила: "
+            "1. title: Короткий заголовок с понятным эмодзи (до 30 символов, например '💧 Передать показания счетчиков'). "
+            "2. trigger_type: "
+            "   - 'monthly_range' (если указан диапазон дат каждого месяца, например 'с 20 по 24 число') "
+            "   - 'monthly_day' (если точный один день месяца, например '20-е число') "
+            "   - 'weekly_day' (если определенный день недели, например 'каждую пятницу') "
+            "   - 'daily_time' (если каждый день) "
+            "3. start_day: начальное число диапазона от 1 до 31 (число, например 20, если monthly_range, иначе 0). "
+            "4. end_day: конечное число диапазона от 1 до 31 (число, например 24, если monthly_range, иначе 0). "
+            "5. day_of_month: число месяца (если monthly_day или start_day). "
+            "6. days_of_week: массив чисел от 0 до 6, где 0=Пн, 4=Пт, 6=Вс (если weekly_day). "
+            "7. hour: час напоминания от 0 до 23 (по умолчанию 12). "
+            "8. minute: минуты от 0 до 59 (по умолчанию 0). "
+            "9. action_text: Понятный текст напоминания / инструкции. "
+            "Верни ТОЛЬКО валидный JSON в формате:\n"
+            '{"title": "💧 Передать показания счетчиков", "trigger_type": "monthly_range", "start_day": 20, "end_day": 24, "day_of_month": 20, "days_of_week": [], "hour": 12, "minute": 0, "action_text": "Пора передать показания счетчиков воды и света!"}'
         )
         ai_resp = await ask_gemini(user_id, prompt)
         try:
@@ -495,17 +513,31 @@ async def handle_generic_text(message: types.Message, bot: Bot):
                     action_text=data.get("action_text", text),
                     hour=int(data.get("hour", 12)),
                     minute=int(data.get("minute", 0)),
+                    start_day=int(data.get("start_day", 0)),
+                    end_day=int(data.get("end_day", 0)),
                     day_of_month=int(data.get("day_of_month", 0)),
                     days_of_week=data.get("days_of_week", [])
                 )
                 reset_chat_session(user_id)
                 h_str = f"{item['hour']:02d}:{item['minute']:02d} MSK"
+                tt = item.get("trigger_type")
+                if tt == "monthly_range":
+                    sched_desc = f"каждый месяц с {item.get('start_day')} по {item.get('end_day')} число"
+                elif tt == "monthly_day":
+                    sched_desc = f"каждое {item.get('day_of_month')}-е число"
+                elif tt == "weekly_day":
+                    sched_desc = "еженедельно"
+                else:
+                    sched_desc = "ежедневно"
+
                 reply = (
-                    f"✅ <b>Персональное правило создано и активно!</b>\n\n"
+                    f"✅ <b>Персональное правило и задача созданы!</b>\n\n"
                     f"📌 <b>{item['title']}</b>\n"
-                    f"⏰ <b>Время:</b> в {h_str}\n"
-                    f"💬 <b>Действие:</b> {item['action_text']}\n\n"
-                    f"☁️ <i>Синхронизировано с GitHub облаком!</i>"
+                    f"🗓 <b>Период:</b> {sched_desc} (в {h_str})\n"
+                    f"💬 <b>Действие:</b> {item['action_text']}\n"
+                    f"👉 <b>Статус:</b> ⚪️ <i>Ожидает выполнения</i>\n\n"
+                    f"🔔 <i>Бот будет напоминать в этот период, пока вы не нажмете зеленый значок 🟢 [Выполнено] в боте!</i>\n"
+                    f"☁️ <i>Правило синхронизировано с GitHub облаком и добавлено в «⏰ Напоминания»!</i>"
                 )
                 await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
                 return
