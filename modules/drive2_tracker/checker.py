@@ -27,7 +27,7 @@ async def parse_drive2_counters(html: str) -> Tuple[int, int]:
     notifications = 0
 
     # 1. Unread messages counter regex
-    msg_match = re.search(r'href=["\']/my/messages/["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*badge[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
+    msg_match = re.search(r'href=["\']/my/messages/["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*(?:badge|counter)[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
     if not msg_match:
         msg_match = re.search(r'data-counter=["\']messages["\'][^>]*>([0-9]+)<', html, re.IGNORECASE)
     if msg_match:
@@ -37,7 +37,7 @@ async def parse_drive2_counters(html: str) -> Tuple[int, int]:
             pass
 
     # 2. Unread notifications counter regex
-    notif_match = re.search(r'href=["\']/my/notifications/["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*badge[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
+    notif_match = re.search(r'href=["\']/my/notifications/["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*(?:badge|counter)[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
     if not notif_match:
         notif_match = re.search(r'data-counter=["\']notifications["\'][^>]*>([0-9]+)<', html, re.IGNORECASE)
     if notif_match:
@@ -52,7 +52,6 @@ async def parse_drive2_counters(html: str) -> Tuple[int, int]:
 async def parse_recent_notification_items(html: str) -> List[Dict[str, str]]:
     """Extracts recent notification titles / authors / events from /my/notifications/ page."""
     items = []
-    # Pattern for Drive2 notification feed items
     pattern = re.compile(r'<div[^>]*class=["\'][^"\']*c-notifications-item[^"\']*["\'][^>]*data-id=["\']([^"\']+)["\'][^>]*>(.*?)</div>\s*</div>', re.DOTALL | re.IGNORECASE)
     matches = pattern.findall(html)
     
@@ -78,11 +77,15 @@ async def check_user_drive2(user_id: int, bot: Bot, notify_if_no_change: bool = 
     if not cookies_str and not profile_url:
         return False, "Не указаны данные для проверки Drive2 (куки или профиль)."
 
+    # Format cookie header properly
     headers = dict(DEFAULT_HEADERS)
     if cookies_str:
-        headers["Cookie"] = cookies_str
+        if not cookies_str.startswith(".AST=") and not " " in cookies_str and len(cookies_str) > 20:
+            headers["Cookie"] = f".AST={cookies_str}"
+        else:
+            headers["Cookie"] = cookies_str
 
-    target_url = "https://www.drive2.ru/my/notifications/" if cookies_str else profile_url
+    target_url = "https://www.drive2.ru/my/messages/" if cookies_str else profile_url
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -93,9 +96,20 @@ async def check_user_drive2(user_id: int, bot: Bot, notify_if_no_change: bool = 
                 
                 html = await resp.text()
 
-                # Check if logged in when cookies were supplied
-                if cookies_str and ("Войти" in html and "Зарегистрироваться" in html and "href=\"/my/" not in html):
-                    return False, "⚠️ <b>Сессия Drive2 устарела!</b> Пожалуйста, обновите куки командой <code>/drive2_cookie</code>."
+                # Check if session expired
+                is_logged_out = (
+                    "<title>Вход</title>" in html
+                    or "/reception/" in html
+                    or ("Доступно только для зарегистрированных" in html)
+                )
+
+                if cookies_str and is_logged_out:
+                    err_text = (
+                        "⚠️ <b>Сессия Drive2.ru устарела!</b>\n\n"
+                        "Сайт Drive2 сбросил авторизацию. Пожалуйста, скопируйте свежее значение куки <code>.AST</code> из браузера и отправьте команду:\n"
+                        "<code>/drive2_cookie ВАШ_НОВЫЙ_КУКИ</code>"
+                    )
+                    return False, err_text
 
                 cur_msgs, cur_notifs = await parse_drive2_counters(html)
                 recent_items = await parse_recent_notification_items(html)
@@ -141,16 +155,17 @@ async def check_user_drive2(user_id: int, bot: Bot, notify_if_no_change: bool = 
                     msg_text = (
                         "🚗 <b>Новое событие на Drive2.ru!</b> 🔔\n\n"
                         + "\n".join(alert_parts)
-                        + "\n\n🔗 <a href='https://www.drive2.ru/my/notifications/'>Открыть уведомления на Drive2</a> | <a href='https://www.drive2.ru/my/messages/'>Личные сообщения</a>"
+                        + "\n\n🔗 <a href='https://www.drive2.ru/my/messages/'>Личные сообщения</a> | <a href='https://www.drive2.ru/my/notifications/'>Уведомления</a>"
                     )
                     await bot.send_message(user_id, msg_text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
                     return True, "Обнаружены новые события!"
                 
                 if notify_if_no_change:
                     status_text = (
-                        "🚗 <b>Статус Drive2.ru:</b> всё спокойно, новых событий нет.\n\n"
+                        "🚗 <b>Статус Drive2.ru:</b>\n\n"
                         f"📩 Непрочитанных сообщений: <b>{cur_msgs}</b>\n"
-                        f"🔔 Новых уведомлений: <b>{cur_notifs}</b>"
+                        f"🔔 Новых уведомлений: <b>{cur_notifs}</b>\n\n"
+                        + ("✨ <i>Все входящие прочитаны!</i>" if (cur_msgs == 0 and cur_notifs == 0) else "⚡ <i>Есть непрочитанные сообщения на сайте!</i>")
                     )
                     return True, status_text
 
