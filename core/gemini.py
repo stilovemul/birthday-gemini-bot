@@ -6,6 +6,12 @@ from typing import Dict, Any, Optional
 from google import genai
 from google.genai import types
 from core.config import GEMINI_API_KEY, MSK_TZ, DATA_DIR
+from modules.birthdays.storage import get_sorted_birthdays, format_date_entry, format_age_word
+from modules.smart_reminders.storage import get_active_reminders
+from modules.food_tracker.storage import get_daily_summary
+from modules.notes.handlers import load_notes
+from modules.drive2_tracker.storage import get_user_drive2_config
+from modules.weather_synoptic.storage import get_user_weather_config
 
 logger = logging.getLogger("GeminiEngine")
 
@@ -30,50 +36,121 @@ def get_genai_client():
     return client
 
 
-def get_dynamic_context() -> str:
-    """Loads user's birthdays and reminders to keep Gemini always aware of personal context."""
-    now_msk = datetime.now(MSK_TZ).strftime("%d.%m.%Y %H:%M (%A, MSK UTC+3)")
-    
-    # Load Birthdays
-    birthdays_str = ""
-    b_file = DATA_DIR / "birthdays.json"
-    if b_file.exists():
-        try:
-            with open(b_file, "r", encoding="utf-8") as f:
-                b_list = json.load(f)
-                b_lines = []
-                for b in b_list:
-                    name = b.get("name", "")
-                    d = b.get("day")
-                    m = b.get("month")
-                    y = b.get("year", "")
-                    y_str = f" ({y} г.р.)" if y else ""
-                    b_lines.append(f"• {name}: {d:02d}.{m:02d}{y_str}")
-                birthdays_str = "\n".join(b_lines)
-        except Exception as e:
-            logger.warning(f"Error reading birthdays context: {e}")
+def build_full_user_context(user_id: int = 157236577) -> str:
+    """
+    Builds a complete real-time contextual snapshot of all user data across all bot modules:
+    - Current date & time (MSK)
+    - Today's and upcoming reminders
+    - Family & friends birthdays (with days left and age)
+    - Food & calorie intake today
+    - Drive2.ru and VK monitoring status
+    - Saved notes
+    - Weather location & district
+    """
+    now = datetime.now(MSK_TZ)
+    now_str = now.strftime("%d.%m.%Y %H:%M (%A, MSK UTC+3)")
+    today_date_str = now.strftime("%Y-%m-%d")
 
-    ctx = (
-        f"Текущая дата и время: {now_msk}.\n"
-        f"Пользователь: Олег (Telegram).\n\n"
-        f"Список сохраненных дней рождения близких Олега:\n"
-        f"{birthdays_str if birthdays_str else 'Список пока пуст'}\n\n"
-        "Когда Олег спрашивает про дни рождения близких (мамы, папы, жены, брата или друзей), всегда точно отвечай дату, сколько лет исполняется и сколько дней осталось."
+    # 1. Reminders
+    reminders = get_active_reminders(user_id)
+    rem_today = []
+    rem_future = []
+    for r in reminders:
+        t_iso = r.get("target_iso", "")
+        if t_iso.startswith(today_date_str):
+            rem_today.append(f"• [СЕГОДНЯ в {r['target_display']}] {r['text']} (ID: {r['id']})")
+        else:
+            rem_future.append(f"• [{r['target_display']}] {r['text']} (ID: {r['id']})")
+
+    if rem_today:
+        reminders_section = "🔔 Напоминания на СЕГОДНЯ:\n" + "\n".join(rem_today)
+        if rem_future:
+            reminders_section += "\n📅 Будущие напоминания:\n" + "\n".join(rem_future[:5])
+    elif rem_future:
+        reminders_section = "На сегодня напоминаний нет. Будущие напоминания:\n" + "\n".join(rem_future[:5])
+    else:
+        reminders_section = "Активных напоминаний нет."
+
+    # 2. Birthdays
+    birthdays = get_sorted_birthdays()
+    b_lines = []
+    for b in birthdays:
+        name = b.get("name", "")
+        d_str = format_date_entry(b)
+        days = b.get("days_left", 0)
+        age = f", исполнится {format_age_word(b['turning_age'])}" if b.get("turning_age") else ""
+        left_str = "СЕГОДНЯ!" if days == 0 else (f"завтра" if days == 1 else f"через {days} дн.")
+        b_lines.append(f"• {name}: {d_str}{age} (до ДР: {left_str})")
+    birthdays_section = "\n".join(b_lines) if b_lines else "Список дней рождения пуст."
+
+    # 3. Food / Calories Today
+    food = get_daily_summary(user_id)
+    food_section = (
+        f"Съедено сегодня ({food['date']}): {food['total_calories']} ккал из {food['goal_calories']} ккал норматива "
+        f"(осталось {food['remaining_calories']} ккал). "
+        f"БЖУ: Белки {food['total_protein']}г, Жиры {food['total_fat']}г, Углеводы {food['total_carbs']}г. "
+        f"Приёмов пищи: {len(food.get('meals', []))}."
     )
-    return ctx
+
+    # 4. Drive2 Tracker
+    d2 = get_user_drive2_config(user_id)
+    if d2 and d2.get("cookies"):
+        d2_section = f"Drive2.ru подключен 🟢 (проверка каждые 60 сек). Последние данные: сообщений {d2.get('last_messages', 0)}, уведомлений {d2.get('last_notifications', 0)}."
+    else:
+        d2_section = "Drive2.ru не настроен."
+
+    # 5. VKontakte Tracker
+    vk_file = DATA_DIR / "vk_config.json"
+    vk_section = "VK подключен 🟢" if vk_file.exists() else "VK ожидает настройки."
+
+    # 6. Notes
+    notes = load_notes()
+    if notes:
+        n_lines = [f"• {n['text']}" for n in notes[:6]]
+        notes_section = "\n".join(n_lines)
+    else:
+        notes_section = "Заметок нет."
+
+    # 7. Weather
+    w_cfg = get_user_weather_config(user_id)
+    w_loc = f"{w_cfg.get('city', 'Санкт-Петербург')} ({w_cfg.get('district', 'Приморский р-н')})"
+
+    context = f"""=== АКТУАЛЬНЫЕ ДАННЫЕ ПОЛЬЗОВАТЕЛЯ (Олег, {now_str}) ===
+📍 Локация пользователя: {w_loc}
+
+⏰ НАПОМИНАНИЯ:
+{reminders_section}
+
+🎂 ДНИ РОЖДЕНИЯ БЛИЗКИХ:
+{birthdays_section}
+
+🥗 ПИТАНИЕ И КБЖУ СЕГОДНЯ:
+{food_section}
+
+🚗 DRIVE2.RU:
+{d2_section}
+
+🔵 ВКОНТАКТЕ (VK):
+{vk_section}
+
+📝 ЗАМЕТКИ:
+{notes_section}
+======================================================="""
+    return context
 
 
-def get_system_instruction() -> str:
-    ctx = get_dynamic_context()
-    return f"""Ты — персональный многофункциональный ИИ-ассистент Олега в Telegram (AiGemAntigravity).
-Ты работаешь 24/7 автономно в облаке.
+def get_system_instruction(user_id: int = 157236577) -> str:
+    ctx = build_full_user_context(user_id)
+    return f"""Ты — персональный всезнающий ИИ-ассистент Олега в Telegram (AiGemAntigravity).
+Ты работаешь 24/7 автономно в облаке и имеешь прямой доступ ко всем модулям и данным бота.
 
 {ctx}
 
-Твои качества:
-- Дружелюбный, внимательный, эрудированный и полезный собеседник.
-- Отвечай понятно, структурированно, грамотно и по делу на русском языке.
-- Умеешь решать любые задачи: диалог, поиск дней рождения, расчеты, тексты, код, анализ фото, помощь в делах.
+ТВОИ ПРАВИЛА:
+1. Когда Олег спрашивает про свои данные (например: "Есть ли напоминания на сегодня?", "Когда день рождения у мамы?", "Сколько калорий съел?", "Что на Drive2?", "Что в заметках?"), ВСЕГДА бери точные факты и цифры из блока данных выше и отвечай четко, дружелюбно и по делу.
+2. Если напоминания на сегодня есть — перечисли их с точным временем. Если нет — прямо скажи, что на сегодня задач нет, и упомяни ближайшие.
+3. Отвечай на чистом русском языке, форматируй ключевые моменты жирным шрифтом и смайликами.
+4. Ты умеешь поддерживать диалог на любые темы: авто, программирование, спорт, планирование, расчеты, идеи.
 """
 
 
@@ -82,7 +159,7 @@ user_chats: Dict[int, Any] = {}
 
 def get_or_create_chat(user_id: int, model_name: str = CANDIDATE_MODELS[0]):
     c = get_genai_client()
-    sys_inst = get_system_instruction()
+    sys_inst = get_system_instruction(user_id)
     if user_id not in user_chats or user_chats[user_id].get("model") != model_name:
         chat = c.aio.chats.create(
             model=model_name,
@@ -102,7 +179,7 @@ def reset_chat_session(user_id: int):
 
 async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = None, mime_type: str = "image/jpeg") -> str:
     c = get_genai_client()
-    sys_inst = get_system_instruction()
+    sys_inst = get_system_instruction(user_id)
     
     for model_name in CANDIDATE_MODELS:
         try:
@@ -121,6 +198,7 @@ async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = N
                 if response and response.text:
                     return response.text.strip()
             else:
+                # Refresh dynamic context in active session if needed
                 chat = get_or_create_chat(user_id, model_name)
                 response = await chat.send_message(prompt)
                 if response and response.text:

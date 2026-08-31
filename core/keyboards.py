@@ -9,23 +9,26 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="🎨 Генерация картинок")
         ],
         [
+            KeyboardButton(text="🚗 Drive2 Уведомления"),
+            KeyboardButton(text="🔵 VK Уведомления")
+        ],
+        [
             KeyboardButton(text="🥗 Сканер еды & КБЖУ"),
-            KeyboardButton(text="🚗 Drive2 Уведомления")
+            KeyboardButton(text="🌤 Погода & Осадки")
         ],
         [
-            KeyboardButton(text="🌤 Погода & Осадки"),
-            KeyboardButton(text="😴 Калькулятор сна")
+            KeyboardButton(text="😴 Калькулятор сна"),
+            KeyboardButton(text="🔢 Калькулятор кредитов")
         ],
         [
-            KeyboardButton(text="🔢 Калькулятор кредитов"),
-            KeyboardButton(text="🔐 Секретный сейф")
+            KeyboardButton(text="🔐 Секретный сейф"),
+            KeyboardButton(text="⏰ Напоминания")
         ],
         [
-            KeyboardButton(text="⏰ Напоминания"),
-            KeyboardButton(text="🎂 Дни рождения")
+            KeyboardButton(text="🎂 Дни рождения"),
+            KeyboardButton(text="📝 Заметки")
         ],
         [
-            KeyboardButton(text="📝 Заметки"),
             KeyboardButton(text="❓ Справка")
         ]
     ]

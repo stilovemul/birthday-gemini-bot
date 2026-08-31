@@ -19,6 +19,7 @@ from modules.smart_reminders.storage import get_active_reminders
 from modules.image_gen.handlers import router as image_gen_router
 from modules.food_tracker.handlers import router as food_router
 from modules.drive2_tracker.handlers import router as drive2_router
+from modules.vk_tracker.handlers import router as vk_router
 from modules.secret_vault.handlers import router as vault_router
 from modules.weather_synoptic.handlers import router as weather_router
 from modules.sleep_calculator.handlers import router as sleep_router
@@ -37,6 +38,7 @@ dp = Dispatcher()
 
 # Register modular routers in logical order:
 dp.include_router(drive2_router)
+dp.include_router(vk_router)
 dp.include_router(loan_router)
 dp.include_router(sleep_router)
 dp.include_router(vault_router)
@@ -78,22 +80,24 @@ async def run_resilient_polling():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Запуск супер-бота в облаке 24/7 (AI + Кредиты + Сон + Drive2 + Сейф + Погода + КБЖУ + Картинки)...")
+    logger.info("Запуск супер-бота в облаке 24/7 (AI + Drive2 + VK + Кредиты + Сон + Сейф + Погода + КБЖУ)...")
     
     # Register official Telegram menu commands
     try:
         commands = [
             types.BotCommand(command="start", description="🏠 Главное меню"),
+            types.BotCommand(command="drive2", description="🚗 Мониторинг Drive2.ru"),
+            types.BotCommand(command="vk", description="🔵 Мониторинг ВКонтакте"),
             types.BotCommand(command="credit", description="🔢 Кредиты, ипотека и досрочка"),
             types.BotCommand(command="sleep", description="😴 Калькулятор фаз сна"),
             types.BotCommand(command="weather", description="🌤 Погода и прогноз"),
             types.BotCommand(command="set_city", description="🏙 Установить мой город/район"),
             types.BotCommand(command="vault", description="🔐 Секретный сейф заметок"),
-            types.BotCommand(command="drive2", description="🚗 Мониторинг Drive2.ru"),
             types.BotCommand(command="food", description="🥗 Дневной рацион и калории"),
             types.BotCommand(command="image", description="🎨 Сгенерировать фото"),
             types.BotCommand(command="remind", description="⏰ Умное напоминание"),
             types.BotCommand(command="reminders", description="📋 Мои напоминания"),
+            types.BotCommand(command="when", description="🎂 Узнать дату дня рождения"),
             types.BotCommand(command="clear", description="🧹 Очистить диалог с ИИ"),
             types.BotCommand(command="add", description="🎂 Добавить день рождения"),
             types.BotCommand(command="list", description="🎂 Список дней рождения"),
@@ -170,6 +174,12 @@ async def index():
             
             <div class="modules">
                 <div class="card">
+                    <b>🚗 Drive2.ru Монитор</b><br><span style="color:#94a3b8">ЛС, события (60с)</span>
+                </div>
+                <div class="card">
+                    <b>🔵 VK Монитор</b><br><span style="color:#94a3b8">ЛС, заявки, алерты</span>
+                </div>
+                <div class="card">
                     <b>🔢 Кредиты & Ипотека</b><br><span style="color:#94a3b8">Аннуитет, выгода досрочки</span>
                 </div>
                 <div class="card">
@@ -177,12 +187,6 @@ async def index():
                 </div>
                 <div class="card">
                     <b>🌤 Погода & Осадки</b><br><span style="color:#94a3b8">Радар дождя по районам</span>
-                </div>
-                <div class="card">
-                    <b>🔐 Секретный сейф</b><br><span style="color:#94a3b8">PIN-код, пароли, карты</span>
-                </div>
-                <div class="card">
-                    <b>🚗 Drive2.ru Монитор</b><br><span style="color:#94a3b8">ЛС, подписки, события</span>
                 </div>
                 <div class="card">
                     <b>🥗 Сканер еды & КБЖУ</b><br><span style="color:#94a3b8">Подсчёт калорий по фото</span>
