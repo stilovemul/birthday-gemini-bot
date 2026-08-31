@@ -6,6 +6,9 @@ def get_main_menu() -> ReplyKeyboardMarkup:
     kb = [
         [
             KeyboardButton(text="🏠 Умный дом"),
+            KeyboardButton(text="🌅 Утренний дайджест")
+        ],
+        [
             KeyboardButton(text="🤖 Gemini AI"),
             KeyboardButton(text="🎨 Генерация картинок")
         ],
