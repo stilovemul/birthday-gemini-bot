@@ -8,6 +8,19 @@ logger = logging.getLogger("Drive2Storage")
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data")
 DRIVE2_FILE = os.path.join(DATA_DIR, "drive2_config.json")
 
+# Predefined persistent configs for key users
+DEFAULT_CONFIGS: Dict[str, Dict[str, Any]] = {
+    "157236577": {
+        "profile_url": "",
+        "cookies": ".AST=AhQDQVNTVAIxuQCAACF2CN8HSipsA94AAAABNfx8TU0jV5-Mzz1hUWo2boSDXKo",
+        "enabled": True,
+        "last_messages": 0,
+        "last_notifications": 0,
+        "last_followers": 0,
+        "last_event_ids": []
+    }
+}
+
 
 def _ensure_data_dir():
     if not os.path.exists(DATA_DIR):
@@ -16,14 +29,15 @@ def _ensure_data_dir():
 
 def load_drive2_configs() -> Dict[str, Dict[str, Any]]:
     _ensure_data_dir()
-    if not os.path.exists(DRIVE2_FILE):
-        return {}
-    try:
-        with open(DRIVE2_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"Error loading drive2 configs: {e}")
-        return {}
+    data = dict(DEFAULT_CONFIGS)
+    if os.path.exists(DRIVE2_FILE):
+        try:
+            with open(DRIVE2_FILE, "r", encoding="utf-8") as f:
+                saved = json.load(f)
+                data.update(saved)
+        except Exception as e:
+            logger.error(f"Error loading drive2 configs: {e}")
+    return data
 
 
 def save_drive2_configs(data: Dict[str, Dict[str, Any]]) -> None:
@@ -85,5 +99,5 @@ def update_drive2_state(
         if followers_count is not None:
             configs[uid]["last_followers"] = followers_count
         if new_event_ids is not None:
-            configs[uid]["last_event_ids"] = new_event_ids[-50:]  # Keep last 50
+            configs[uid]["last_event_ids"] = new_event_ids[-50:]
         save_drive2_configs(configs)
