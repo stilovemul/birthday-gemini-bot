@@ -5,6 +5,7 @@ from aiogram import Bot
 from core.config import DAILY_CHECK_HOUR, DAILY_CHECK_MINUTE, MSK_TZ
 from modules.birthdays.notifier import check_and_notify as check_birthdays
 from modules.smart_reminders.storage import get_due_reminders, mark_as_done
+from modules.drive2_tracker.checker import check_all_drive2_users
 
 logger = logging.getLogger("AppScheduler")
 
@@ -35,15 +36,22 @@ async def check_and_send_smart_reminders(bot: Bot):
 
 async def run_scheduler(bot: Bot):
     """Central scheduler for background jobs (MSK UTC+3)."""
-    logger.info("Центральный планировщик запущен (напоминания каждые 20 сек + ДР в 09:00 MSK).")
+    logger.info("Центральный планировщик запущен (напоминания 20с, Drive2 60с, ДР 09:00 MSK).")
     last_birthday_check_day = None
+    drive2_tick = 0
 
     while True:
         try:
-            # 1. Check minute-level smart reminders
+            # 1. Check minute-level smart reminders (every 20s)
             await check_and_send_smart_reminders(bot)
 
-            # 2. Check daily birthdays at 09:00 MSK
+            # 2. Check Drive2 events (every ~60s)
+            drive2_tick += 1
+            if drive2_tick >= 3:
+                drive2_tick = 0
+                asyncio.create_task(check_all_drive2_users(bot))
+
+            # 3. Check daily birthdays at 09:00 MSK
             now_msk = datetime.now(MSK_TZ)
             today_str = now_msk.strftime("%Y-%m-%d")
 

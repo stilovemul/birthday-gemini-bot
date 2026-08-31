@@ -10,13 +10,14 @@ def get_main_menu() -> ReplyKeyboardMarkup:
         ],
         [
             KeyboardButton(text="🥗 Сканер еды & КБЖУ"),
-            KeyboardButton(text="⏰ Напоминания")
+            KeyboardButton(text="🚗 Drive2 Уведомления")
         ],
         [
-            KeyboardButton(text="🎂 Дни рождения"),
-            KeyboardButton(text="📝 Заметки")
+            KeyboardButton(text="⏰ Напоминания"),
+            KeyboardButton(text="🎂 Дни рождения")
         ],
         [
+            KeyboardButton(text="📝 Заметки"),
             KeyboardButton(text="❓ Справка")
         ]
     ]
