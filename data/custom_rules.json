@@ -1,0 +1,43 @@
+[
+  {
+    "id": "rule_counters_20th",
+    "user_id": 157236577,
+    "title": "💧 Передать показания счетчиков воды и света",
+    "trigger_type": "monthly_day",
+    "day_of_month": 20,
+    "hour": 12,
+    "minute": 0,
+    "days_of_week": [],
+    "action_text": "Пора передать показания счетчиков воды (ХВС/ГВС) и электричества в Петроэлектросбыт/УК!",
+    "is_active": true,
+    "last_triggered": ""
+  },
+  {
+    "id": "rule_vitamins_morning",
+    "user_id": 157236577,
+    "title": "💊 Принять утренние витамины и Омега-3",
+    "trigger_type": "daily_time",
+    "day_of_month": 0,
+    "hour": 9,
+    "minute": 15,
+    "days_of_week": [],
+    "action_text": "Не забудьте выпить витамины и стакан воды для бодрого начала дня!",
+    "is_active": true,
+    "last_triggered": ""
+  },
+  {
+    "id": "rule_friday_weekend_weather",
+    "user_id": 157236577,
+    "title": "🌤 Прогноз погоды на выходные",
+    "trigger_type": "weekly_day",
+    "day_of_month": 0,
+    "hour": 18,
+    "minute": 0,
+    "days_of_week": [
+      4
+    ],
+    "action_text": "Пятничный вечер! Завтра выходные — самое время проверить планы на загородную поездку или прогулку.",
+    "is_active": true,
+    "last_triggered": ""
+  }
+]
