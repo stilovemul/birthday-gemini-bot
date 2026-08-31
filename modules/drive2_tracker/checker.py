@@ -23,34 +23,41 @@ DEFAULT_HEADERS = {
 
 async def parse_drive2_counters(html: str) -> Tuple[int, int]:
     """
-    Extracts unread messages count and unread notifications count from Drive2 HTML using exact Drive2 DOM attributes.
+    Extracts unread messages count and unread notifications count strictly from the top header navigation
+    to avoid false positives from sidebar elements (e.g. Барахолка).
     """
     messages = 0
     notifications = 0
 
-    # 1. Unread messages counter (Drive2: data-slot="messages-status.counter")
-    msg_match = re.search(r'data-slot=["\']messages-status\.counter["\'][^>]*>([0-9]+)<', html, re.IGNORECASE)
-    if not msg_match:
-        msg_match = re.search(r'data-role=["\']messages-status["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*c-notification-bubble[^"\']*["\'][^>]*>([0-9]+)<', html, re.DOTALL | re.IGNORECASE)
-    if not msg_match:
-        msg_match = re.search(r'href=["\']/my/messages/[^"\']*["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*(?:c-notification-bubble|badge|counter)[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
-    if msg_match:
-        try:
-            messages = int(msg_match.group(1).strip())
-        except Exception:
-            pass
+    # Extract only header block
+    header_match = re.search(r'<header[^>]*>.*?</header>', html, re.DOTALL | re.IGNORECASE)
+    header_html = header_match.group(0) if header_match else html
 
-    # 2. Unread notifications counter (Drive2: data-slot="notifications-status.counter")
-    notif_match = re.search(r'data-slot=["\']notifications-status\.counter["\'][^>]*>([0-9]+)<', html, re.IGNORECASE)
-    if not notif_match:
-        notif_match = re.search(r'data-role=["\']notifications-status["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*c-notification-bubble[^"\']*["\'][^>]*>([0-9]+)<', html, re.DOTALL | re.IGNORECASE)
-    if not notif_match:
-        notif_match = re.search(r'href=["\']/my/notifications/[^"\']*["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*(?:c-notification-bubble|badge|counter)[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
-    if notif_match:
-        try:
-            notifications = int(notif_match.group(1).strip())
-        except Exception:
-            pass
+    # 1. Unread messages counter (strictly inside messages-status element)
+    msg_elem = re.search(r'<a[^>]*data-role=["\']messages-status["\'][^>]*>(.*?)</a>', header_html, re.DOTALL | re.IGNORECASE)
+    if msg_elem:
+        inner = msg_elem.group(1)
+        cnt = re.search(r'<span[^>]*class=["\'][^"\']*c-notification-bubble[^"\']*["\'][^>]*>([0-9]+)</span>', inner, re.IGNORECASE)
+        if not cnt:
+            cnt = re.search(r'data-slot=["\']messages-status\.counter["\'][^>]*>([0-9]+)<', inner, re.IGNORECASE)
+        if cnt:
+            try:
+                messages = int(cnt.group(1).strip())
+            except Exception:
+                pass
+
+    # 2. Unread notifications counter (strictly inside notifications-status button)
+    notif_elem = re.search(r'<button[^>]*data-role=["\']notifications-status["\'][^>]*>(.*?)</button>', header_html, re.DOTALL | re.IGNORECASE)
+    if notif_elem:
+        inner = notif_elem.group(1)
+        cnt = re.search(r'<span[^>]*class=["\'][^"\']*c-notification-bubble[^"\']*["\'][^>]*>([0-9]+)</span>', inner, re.IGNORECASE)
+        if not cnt:
+            cnt = re.search(r'data-slot=["\']notifications-status\.counter["\'][^>]*>([0-9]+)<', inner, re.IGNORECASE)
+        if cnt:
+            try:
+                notifications = int(cnt.group(1).strip())
+            except Exception:
+                pass
 
     return messages, notifications
 
