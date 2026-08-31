@@ -29,6 +29,7 @@ from modules.sleep_calculator.handlers import router as sleep_router
 from modules.loan_calculator.handlers import router as loan_router
 from modules.webapp.router import router as webapp_router
 from modules.webapp.handlers import router as webapp_bot_router
+from modules.voice_assistant.handlers import router as voice_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -44,6 +45,7 @@ dp = Dispatcher()
 # Register modular routers in logical order:
 dp.include_router(digest_router)
 dp.include_router(smart_home_router)
+dp.include_router(voice_router)
 dp.include_router(drive2_router)
 dp.include_router(vk_router)
 dp.include_router(max_router)
