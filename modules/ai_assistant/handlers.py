@@ -29,28 +29,35 @@ def is_image_refinement_intent(text: str, last_prompt: str) -> bool:
         return False
     if t in ["🤖 gemini ai", "🎨 генерация картинок", "⏰ напоминания", "🎂 дни рождения", "📝 заметки", "❓ справка"]:
         return False
+    if t.endswith("?") and not any(k in t for k in ["картинк", "фото", "фон", "плать", "одежд", "волос", "блондинк"]):
+        return False
 
     edit_verbs = [
         "спусти", "опусти", "подними", "приподними", "сдвинь", "убери", "добавь", "надень", "одень",
         "сними", "раздень", "покрой", "закрой", "открой", "поверни", "разверни", "поменяй", "измени",
         "переделай", "перерисуй", "исправь", "замени", "сделай", "хочу", "дай", "покажи", "дорисуй",
-        "смени", "поставь", "удали", "приоткрой", "нарисуй", "перекрась", "увеличь", "уменьши"
+        "смени", "поставь", "удали", "приоткрой", "нарисуй", "перекрась", "увеличь", "уменьши",
+        "давай", "пусть", "хотелось бы", "хочется", "можно", "лучше"
     ]
     modifiers = [
         "ниже", "выше", "крупнее", "ближе", "дальше", "ярче", "темнее", "светлее", "больше", "меньше",
         "реалистичнее", "живее", "естественнее", "другой", "другую", "другое", "не то", "не так",
         "не нравится", "плохо", "ужасно", "кукла", "аниме", "пластик", "глянец", "мыльно", "размыто",
-        "не видно", "не похоже", "где", "нет"
+        "не видно", "не похоже", "где", "нет", "блондинк", "брюнетк", "шатенк", "рыж", "русы",
+        "длинн", "коротк", "прям", "кудряв", "красив", "молод"
     ]
     scene_words = [
         "одеял", "простын", "подушк", "кроват", "постел", "лиц", "глаз", "волос", "улыбк", "взгляд",
         "поз", "рук", "ног", "груд", "плеч", "тел", "одежд", "плать", "белье", "рубашк", "фон",
-        "свет", "окн", "ракурс", "кадр", "план", "картинк", "фото", "губ", "нос", "бюст", "комнат"
+        "свет", "окн", "ракурс", "кадр", "план", "картинк", "фото", "губ", "нос", "бюст", "комнат",
+        "девушк", "женщин", "парен", "мужчин", "человек", "кошк", "кот", "машин", "авто"
     ]
 
-    if any(v in t for v in edit_verbs) or any(m in t for m in modifiers):
+    if any(v in t for v in edit_verbs):
         return True
-    if any(w in t for w in scene_words) and len(t.split()) <= 8:
+    if any(m in t for m in modifiers):
+        return True
+    if any(w in t for w in scene_words) and len(t.split()) <= 10:
         return True
     return False
 
@@ -64,7 +71,7 @@ async def cmd_start(message: types.Message):
         "✨ <b>Что я умею прямо сейчас:</b>\n"
         "• 🤖 <b>Gemini AI</b>: живой умный диалог, решение любых задач\n"
         "• 🎨 <b>Генерация картинок (RealVisXL)</b>: напишите <code>/image описание</code> или просто <i>«Русская девушка в постели утром, реальное фото»</i>\n"
-        "  └ <i>Правки: просто напишите любую команду: «одеяло ниже спусти», «сделай лицо крупнее», «смени фон»</i>\n"
+        "  └ <i>Правки: просто пишите в чат любые пожелания: «давай девушку блондинку», «одеяло ниже спусти», «смени фон»</i>\n"
         "• ⏰ <b>Умные напоминания</b>: <i>«Напомни завтра в 15:00 позвонить в банк»</i> или <i>«Напомни через 40 мин выключить духовку»</i>\n"
         "• 🎂 <b>Дни рождения</b>: напоминания в 09:00 MSK (за 7, 3, 1 день и в праздник)\n"
         "• 📝 <b>Заметки</b>: <code>/note Текст</code>\n\n"
@@ -82,7 +89,7 @@ async def cmd_help(message: types.Message):
         "🎨 <b>Генерация картинок:</b>\n"
         "• Кнопка «🎨 Генерация картинок» или <code>/image описание</code>\n"
         "• Просто фразы: <i>«Русская девушка в постели утром, реальное фото»</i>\n"
-        "• <b>Правки:</b> напишите в чат: <i>«Одеяло ниже спусти»</i>, <i>«Сделай улыбку»</i>\n\n"
+        "• <b>Правки:</b> просто пишите: <i>«Давай девушку блондинку»</i>, <i>«Одеяло ниже спусти»</i>\n\n"
         "⏰ <b>Умные напоминания:</b>\n"
         "• <i>«Напомни завтра в 15:00 позвонить врачу»</i>\n"
         "• <i>«Напомни через 30 минут выпить таблетку»</i>\n"
@@ -159,7 +166,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
             caption = (
                 f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-                "💡 <i>Хотите изменить? Напишите правки (например: «одеяло ниже спусти», «сделай лицо крупнее» или «смени фон»).</i>"
+                "💡 <i>Хотите изменить? Напишите правки (например: «давай блондинку», «одеяло ниже спусти» или «смени фон»).</i>"
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
@@ -191,7 +198,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
             caption = (
                 f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-                "💡 <i>Хотите изменить? Напишите правки (например: «одеяло ниже спусти» или «смени фон»).</i>"
+                "💡 <i>Хотите изменить? Напишите правки (например: «давай блондинку», «одеяло ниже спусти» или «смени фон»).</i>"
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
@@ -202,12 +209,12 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     # 3. Image Refinement / Modification of recent image (Semantic Intent Recognition)
     info = get_last_image_info(user_id)
     if info and is_image_refinement_intent(text, info["prompt"]):
-        last_prompt = info["prompt"]
+        last_prompt = info["en_prompt"] or info["prompt"]
         status_msg = await message.answer(f"📸 <i>Учитываю правку: «{text}» и перерисовываю фото...</i>", parse_mode=ParseMode.HTML)
         await bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_PHOTO)
         
         refined_prompt = await refine_prompt_with_ai(last_prompt, text)
-        success, img_bytes, orig_p, en_p = await generate_image_bytes(refined_prompt, user_id=user_id)
+        success, img_bytes, orig_p, en_p = await generate_image_bytes(refined_prompt, user_id=user_id, is_already_en=True)
         
         try:
             await status_msg.delete()
