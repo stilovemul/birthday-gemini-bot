@@ -4,7 +4,7 @@ import logging
 from aiogram import Router, types, F, Bot
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import CommandStart, Command
-from aiogram.types import BufferedInputFile
+from aiogram.types import BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from core.keyboards import get_main_menu
 from core.gemini import ask_gemini, reset_chat_session
 from modules.smart_reminders.parser import parse_natural_reminder
@@ -12,6 +12,8 @@ from modules.smart_reminders.storage import add_reminder
 from modules.food_tracker.analyzer import analyze_food_photo
 from modules.food_tracker.storage import log_meal, get_daily_summary
 from modules.food_tracker.handlers import get_food_meal_keyboard
+from modules.loan_calculator.calculator import parse_loan_query, calculate_early_repayment_savings, calculate_annuity_loan
+from modules.loan_calculator.handlers import format_loan_result
 from modules.image_gen.generator import (
     generate_image_bytes,
     refine_prompt_with_ai,
@@ -40,6 +42,11 @@ async def cmd_start(message: types.Message):
         "• 🤖 <b>Gemini AI</b>: умный диалог, ответы на любые вопросы\n"
         "• 🎨 <b>Генератор фото (RealVisXL)</b>: создание фото с сохранением внешности\n"
         "• 🥗 <b>Сканер еды & КБЖУ</b>: просто сфотографируйте вашу тарелку — я посчитаю калории, БЖУ и запишу в дневной рацион!\n"
+        "• 🔢 <b>Кредитный калькулятор</b>: расчет платежа, переплаты и выгоды досрочки\n"
+        "• 😴 <b>Калькулятор сна</b>: биоритмы, 90-мин циклы и Power Nap\n"
+        "• 🚗 <b>Drive2.ru Монитор</b>: мгновенные алерты о сообщениях и событиях\n"
+        "• 🌤 <b>Погода & Осадки</b>: радар дождя с точностью до района\n"
+        "• 🔐 <b>Секретный сейф</b>: защищенное хранилище паролей и заметок\n"
         "• ⏰ <b>Умные напоминания</b>: <i>«Напомни завтра в 15:00 позвонить в банк»</i>\n"
         "• 🎂 <b>Дни рождения</b>: авто-напоминания в 09:00 MSK\n"
         "• 📝 <b>Заметки</b>: <code>/note Текст</code>\n\n"
@@ -57,8 +64,12 @@ async def cmd_help(message: types.Message):
         "📖 <b>Справка по возможностям бота:</b>\n\n"
         "🥗 <b>Сканер еды и калорий:</b>\n"
         "• Отправьте фото еды в чат — бот посчитает калории, белки, жиры, углеводы и состав порции.\n"
-        "• Кнопка «🥗 Сканер еды & КБЖУ» — просмотр дневного рациона и нормы.\n"
-        "• <code>/set_goal 2000</code> — задать суточную норму калорий.\n\n"
+        "• Кнопка «🥗 Сканер еды & КБЖУ» — просмотр дневного рациона и нормы.\n\n"
+        "🔢 <b>Калькулятор кредитов & Ипотеки:</b>\n"
+        "• <code>/credit 3 млн 18% 5 лет +10000</code>\n"
+        "• Кнопка «🔢 Калькулятор кредитов» — пошаговый мастер ввода.\n\n"
+        "😴 <b>Калькулятор сна:</b>\n"
+        "• <code>/sleep 07:00</code> или кнопка «😴 Калькулятор сна».\n\n"
         "🎨 <b>Генерация и доработка фото:</b>\n"
         "• Кнопка «🎨 Генерация картинок» или <code>/image описание</code>\n"
         "• <b>Правки:</b> пишите любые изменения в чат подряд с сохранением лица.\n\n"
@@ -67,10 +78,7 @@ async def cmd_help(message: types.Message):
         "• <code>/reminders</code> — список активных напоминаний\n\n"
         "🤖 <b>Gemini AI Диалог:</b>\n"
         "• Просто пишите любые вопросы или присылайте фото\n"
-        "• <code>/clear</code> — очистить контекст диалога\n\n"
-        "🎂 <b>Дни рождения:</b>\n"
-        "• <code>/add Имя ДД.ММ.ГГГГ [Заметка]</code> | <code>/list</code>\n\n"
-        "📝 <b>Заметки:</b> <code>/note Текст</code> | <code>/notes</code>"
+        "• <code>/clear</code> — очистить контекст диалога"
     )
     await message.answer(help_text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
@@ -123,13 +131,11 @@ async def handle_photo(message: types.Message, bot: Bot):
             ingredients = food_data.get("ingredients", [])
             verdict = food_data.get("healthy_verdict", "")
 
-            # Format breakdown string
             breakdown_lines = []
             for ing in ingredients[:5]:
                 breakdown_lines.append(f"• {ing.get('name')} ({ing.get('weight', '')}): {ing.get('kcal', '')} ккал (Б:{ing.get('p')} Ж:{ing.get('f')} У:{ing.get('c')})")
             breakdown_str = "\n".join(breakdown_lines)
 
-            # Log to daily storage
             entry = log_meal(user_id, dish, kcal, p, f, c, weight_g=weight, breakdown_text=breakdown_str)
             summary = get_daily_summary(user_id)
 
@@ -191,7 +197,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             )
             return
         
-        if text in ["🤖 Gemini AI", "🎨 Генерация картинок", "🥗 Сканер еды & КБЖУ", "⏰ Напоминания", "🎂 Дни рождения", "📝 Заметки", "❓ Справка"]:
+        if text in ["🤖 Gemini AI", "🎨 Генерация картинок", "🥗 Сканер еды & КБЖУ", "⏰ Напоминания", "🎂 Дни рождения", "📝 Заметки", "❓ Справка", "😴 Калькулятор сна", "🔢 Калькулятор кредитов"]:
             end_image_session(user_id)
         else:
             sess = get_image_session(user_id)
@@ -248,8 +254,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             photo_file = BufferedInputFile(img_bytes, filename="art.jpg")
             caption = (
                 f"✨ <b>Запрос:</b> «<i>{orig_p}</i>»\n\n"
-                "💡 <b>Режим точечных правок:</b> пишите любые изменения в чат.\n"
-                "<i>(Используйте кнопку «🎲 Другой вариант правки» для нового ракурса).</i>"
+                "💡 <b>Режим точечных правок:</b> пишите любые изменения в чат."
             )
             await message.answer_photo(photo_file, caption=caption, parse_mode=ParseMode.HTML, reply_markup=get_image_action_keyboard())
             return
@@ -290,7 +295,7 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(f"❌ {en_p}", reply_markup=get_main_menu())
             return
 
-    # 4. Smart Reminders
+    # 4. Smart Reminders Natural NLP
     if re.match(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s+", text, re.IGNORECASE):
         raw = re.sub(r"^(?:напомни|напомнить|поставь\s+напоминание|сделай\s+напоминание)\s*", "", text, flags=re.IGNORECASE).strip()
         success, target_dt, task_text, info_remind = await parse_natural_reminder(raw)
@@ -306,7 +311,32 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
             return
 
-    # 5. Default: General Gemini AI conversation
+    # 5. Loan / Credit Natural Trigger (e.g. "посчитай кредит 3 млн 18% 5 лет" or "ипотека 5000000 19% 15 лет")
+    if any(k in t_lower for k in ["кредит", "ипотек", "автокредит", "досрочн", "переплат", "посчитай займ"]):
+        parsed = parse_loan_query(text)
+        if parsed:
+            amount, rate, months, extra = parsed
+            if extra > 0:
+                res = calculate_early_repayment_savings(amount, rate, months, extra_monthly=extra)
+            else:
+                res = calculate_annuity_loan(amount, rate, months)
+
+            reply = format_loan_result(res)
+            kb = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(text="➕ Досрочка +5 000 ₽/мес", callback_data=f"ln_add_5000_{int(amount)}_{rate}_{months}"),
+                        InlineKeyboardButton(text="➕ +15 000 ₽/мес", callback_data=f"ln_add_15000_{int(amount)}_{rate}_{months}")
+                    ],
+                    [
+                        InlineKeyboardButton(text="✏️ Ввести другие параметры", callback_data="ln_wizard_start")
+                    ]
+                ]
+            )
+            await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=kb)
+            return
+
+    # 6. Default: General Gemini AI conversation
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     ai_reply = await ask_gemini(user_id, text)
     

@@ -8,9 +8,6 @@ logger = logging.getLogger("LoanCalculator")
 def calculate_annuity_loan(amount: float, annual_rate: float, months: int) -> Dict[str, Any]:
     """
     Calculates standard annuity loan details.
-    amount: Principal loan amount in RUB
-    annual_rate: Annual interest rate in percent (e.g. 18.5 for 18.5%)
-    months: Total duration in months
     """
     if amount <= 0 or months <= 0:
         return {}
@@ -35,7 +32,7 @@ def calculate_annuity_loan(amount: float, annual_rate: float, months: int) -> Di
         "monthly_payment": round(monthly_payment),
         "total_payout": round(total_payout),
         "total_overpayment": round(total_overpayment),
-        "overpayment_percent": round((total_overpayment / amount) * 100, 1)
+        "overpayment_percent": round((total_overpayment / amount) * 100, 1) if amount > 0 else 0
     }
 
 
@@ -48,8 +45,7 @@ def calculate_early_repayment_savings(
     one_time_month: int = 1
 ) -> Dict[str, Any]:
     """
-    Simulates loan amortization with early repayments (month-by-month schedule)
-    with the 'Reduce Loan Term' strategy (saves the most money).
+    Simulates loan amortization with early repayments (month-by-month schedule).
     """
     base = calculate_annuity_loan(amount, annual_rate, months)
     if not base or (extra_monthly <= 0 and one_time_extra <= 0):
@@ -67,12 +63,10 @@ def calculate_early_repayment_savings(
         interest_for_month = balance * monthly_rate
         total_interest_paid += interest_for_month
 
-        # Regular principal reduction
         regular_principal = base_payment - interest_for_month
         if regular_principal < 0:
             regular_principal = 0
 
-        # Prepayment addition
         extra_this_month = extra_monthly
         if actual_months == one_time_month:
             extra_this_month += one_time_extra
@@ -107,63 +101,102 @@ def calculate_early_repayment_savings(
 
 def parse_loan_query(text: str) -> Optional[Tuple[float, float, int, float]]:
     """
-    Parses strings like:
+    Super flexible parser for loan queries in Russian and numerical formats:
     - '3000000 18% 5y'
+    - '3500000 19 5'
     - '5 млн 20% 15 лет'
-    - '1 500 000 под 19.5% на 3 года досрочно 10000'
-    - '500k 22% 2 года'
-    Returns: (amount, annual_rate, months, extra_monthly)
+    - '3.5 миллиона под 18.5 на 5 лет досрочно 10000'
+    - '500 тыс на 3 года под 22%'
+    - '2 000 000 18'
     """
-    raw = text.lower().replace(" ", "").replace(",", ".").replace("₽", "").replace("руб", "")
-
-    # Extract Amount
+    clean = text.lower().replace("₽", "").replace("руб", "").replace("рублей", "").strip()
+    
+    # 1. Check for millions/thousands keywords
     amount = 0.0
-    # Match millions: e.g. 5млн, 3.5млн, 5m
-    m_mln = re.search(r"(\d+(?:\.\d+)?)(?:млн|m|kk)", raw)
+    m_mln = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:млн|миллион|миллиона|миллионов|m|kk)", clean)
     if m_mln:
-        amount = float(m_mln.group(1)) * 1_000_000
+        amount = float(m_mln.group(1).replace(",", ".")) * 1_000_000
     else:
-        # Match thousands: e.g. 500k, 500тыс
-        m_k = re.search(r"(\d+(?:\.\d+)?)(?:k|тыс)", raw)
-        if m_k:
-            amount = float(m_k.group(1)) * 1_000
+        m_ths = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:тыс|тысяч|тысячи|k)", clean)
+        if m_ths:
+            amount = float(m_ths.group(1).replace(",", ".")) * 1_000
         else:
-            # Match plain large number: e.g. 3000000
-            m_plain = re.search(r"(?:^|[^\d%.])(\d{4,9})(?:[^\d%]|$)", raw)
-            if m_plain:
-                amount = float(m_plain.group(1))
+            # Look for sequence of digits (e.g. 3 500 000 or 3500000)
+            digits_match = re.search(r"(\d[\d\s.,]{3,12}\d)", clean)
+            if digits_match:
+                cand = re.sub(r"[\s_]", "", digits_match.group(1)).replace(",", ".")
+                try:
+                    cand_f = float(cand)
+                    if cand_f >= 1000:
+                        amount = cand_f
+                except Exception:
+                    pass
 
-    # Extract Rate (e.g. 18.5%, 20%, под19%)
+    # 2. Check for rate (e.g. 18.5%, под 19%, 19.5)
     rate = 0.0
-    m_rate = re.search(r"(\d+(?:\.\d+)?)\s*%", raw)
+    m_rate = re.search(r"(\d+(?:[.,]\d+)?)\s*%", clean)
     if not m_rate:
-        m_rate = re.search(r"под(\d+(?:\.\d+)?)", raw)
+        m_rate = re.search(r"(?:под|ставка)\s*(\d+(?:[.,]\d+)?)", clean)
     if m_rate:
-        rate = float(m_rate.group(1))
-    else:
-        rate = 19.0  # Default current market rate benchmark if omitted
+        rate = float(m_rate.group(1).replace(",", "."))
 
-    # Extract Duration (Years / Months)
+    # 3. Check for duration (years / months)
     months = 0
-    m_years = re.search(r"(\d+)(?:y|г|лет|года|год)", raw)
-    if m_years:
-        months = int(m_years.group(1)) * 12
+    m_yr = re.search(r"(\d+)\s*(?:лет|года|год|y|г)", clean)
+    if m_yr:
+        months = int(m_yr.group(1)) * 12
     else:
-        m_months = re.search(r"(\d+)(?:m|мес|месяцев|месяца)", raw)
-        if m_months:
-            months = int(m_months.group(1))
-        else:
-            months = 60  # Default 5 years
+        m_mo = re.search(r"(\d+)\s*(?:мес|месяцев|месяца|m)", clean)
+        if m_mo:
+            months = int(m_mo.group(1))
 
-    # Extract Extra Monthly Prepayment (e.g. досрочно 10000, +5000, доплата 15k)
+    # 4. Check for extra prepayment
     extra = 0.0
-    m_extra = re.search(r"(?:\+|досрочно|доплата|сверху)(\d+(?:\.\d+)?)(?:k|тыс)?", raw)
+    m_extra = re.search(r"(?:\+|досрочно|доплата|сверху|плюс)\s*(\d+(?:[.,]\d+)?)\s*(?:k|тыс|млн)?", clean)
     if m_extra:
-        val = float(m_extra.group(1))
-        if "k" in m_extra.group(0) or "тыс" in m_extra.group(0):
-            val *= 1000
+        val = float(m_extra.group(1).replace(",", "."))
+        matched_str = m_extra.group(0)
+        if "млн" in matched_str:
+            val *= 1_000_000
+        elif "k" in matched_str or "тыс" in matched_str:
+            val *= 1_000
         extra = val
 
-    if amount > 1000:
+    # 5. If amount found but rate or months omitted, check positional numbers (e.g. '3500000 18 5')
+    if amount > 0 and (rate <= 0 or months <= 0):
+        # Find all isolated numbers
+        numbers = re.findall(r"\b\d+(?:[.,]\d+)?\b", clean)
+        num_floats = []
+        for n in numbers:
+            try:
+                num_floats.append(float(n.replace(",", ".")))
+            except Exception:
+                pass
+        
+        # Remove the amount number
+        remaining = [n for n in num_floats if abs(n - amount) > 1 and abs(n - (amount / 1000000)) > 0.01 and abs(n - (amount / 1000)) > 0.01]
+        
+        if rate <= 0 and remaining:
+            # Rates are usually 5.0 to 45.0
+            rate_cand = next((n for n in remaining if 1.0 <= n <= 50.0), None)
+            if rate_cand:
+                rate = rate_cand
+                remaining.remove(rate_cand)
+
+        if months <= 0 and remaining:
+            # Term is usually 1 to 30 years or 6 to 360 months
+            term_cand = remaining[0]
+            if term_cand <= 30:
+                months = int(term_cand * 12)
+            else:
+                months = int(term_cand)
+
+    # Defaults if user only entered amount (e.g. '/credit 3500000')
+    if amount >= 1000:
+        if rate <= 0:
+            rate = 19.0  # standard market benchmark
+        if months <= 0:
+            months = 60  # standard 5 years default
         return amount, rate, months, extra
+
     return None
