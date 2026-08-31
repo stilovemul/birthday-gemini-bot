@@ -1,9 +1,10 @@
 import asyncio
 import logging
 import os
+import aiohttp
 from contextlib import asynccontextmanager
 from datetime import datetime
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import uvicorn
@@ -36,6 +37,33 @@ dp.include_router(notes_router)
 dp.include_router(ai_router)  # Catch-all AI router last
 
 
+async def keep_alive_task():
+    """Pings the public web service URL every 5 minutes to prevent Render free-tier sleep."""
+    app_url = "https://birthday-gemini-bot.onrender.com/healthz"
+    logger.info(f"Запущена служба поддержания активности (Keep-Alive Self-Ping): {app_url}")
+    await asyncio.sleep(60)  # Initial delay
+    while True:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(app_url, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                    logger.info(f"Keep-Alive ping status: {resp.status}")
+        except Exception as e:
+            logger.warning(f"Keep-Alive ping warning: {e}")
+        await asyncio.sleep(300)  # Every 5 minutes
+
+
+async def run_resilient_polling():
+    """Runs Telegram polling with auto-reconnect on network interruptions."""
+    while True:
+        try:
+            logger.info("Запуск Telegram Polling...")
+            await bot.delete_webhook(drop_pending_updates=False)
+            await dp.start_polling(bot, handle_signals=False)
+        except Exception as e:
+            logger.error(f"Polling interrupted: {e}. Перезапуск через 3 сек...")
+            await asyncio.sleep(3)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Запуск супер-бота в облаке 24/7 (AI + Картинки + Напоминания + ДР + Заметки)...")
@@ -60,11 +88,15 @@ async def lifespan(app: FastAPI):
         logger.error(f"Не удалось установить команды бота: {e}")
 
     scheduler_task = asyncio.create_task(run_scheduler(bot))
-    polling_task = asyncio.create_task(dp.start_polling(bot, handle_signals=False))
+    polling_task = asyncio.create_task(run_resilient_polling())
+    keepalive_task = asyncio.create_task(keep_alive_task())
+    
     yield
+    
     logger.info("Остановка приложения...")
     scheduler_task.cancel()
     polling_task.cancel()
+    keepalive_task.cancel()
     await bot.session.close()
 
 
@@ -122,7 +154,7 @@ async def index():
                     <b>🤖 Gemini AI</b><br><span style="color:#94a3b8">Умный диалог, зрение</span>
                 </div>
                 <div class="card">
-                    <b>🎨 Генератор картинок</b><br><span style="color:#94a3b8">Flux / SDXL AI</span>
+                    <b>🎨 Генератор картинок</b><br><span style="color:#94a3b8">RealVisXL / Flux</span>
                 </div>
                 <div class="card">
                     <b>⏰ Напоминания</b><br><span style="color:#94a3b8">{len(reminders)} активных</span>
