@@ -39,6 +39,7 @@ def get_user_weather_config(user_id: int) -> Dict[str, Any]:
     configs = load_weather_configs()
     return configs.get(str(user_id), {
         "city": "Санкт-Петербург",
+        "district": "",
         "lat": 59.9386,
         "lon": 30.3141,
         "alerts_enabled": True,
@@ -51,13 +52,15 @@ def set_user_weather_config(
     city: str,
     lat: float,
     lon: float,
+    district: str = "",
     alerts_enabled: bool = True
 ) -> Dict[str, Any]:
     configs = load_weather_configs()
     uid = str(user_id)
     curr = configs.get(uid, {})
     curr.update({
-        "city": city,
+        "city": city.strip(),
+        "district": district.strip(),
         "lat": lat,
         "lon": lon,
         "alerts_enabled": alerts_enabled
