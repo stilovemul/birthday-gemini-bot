@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sub_ya_plus",
+    "user_id": 157236577,
+    "name": "Яндекс Плюс",
+    "amount": 299,
+    "currency": "₽",
+    "billing_cycle": "monthly",
+    "payment_day": 15,
+    "next_payment_date": "2026-09-15",
+    "category": "Медиа & Музыка",
+    "card_comment": "Основная карта",
+    "auto_renew": true,
+    "last_notified": ""
+  },
+  {
+    "id": "sub_mobile_tel",
+    "user_id": 157236577,
+    "name": "Мобильная связь",
+    "amount": 650,
+    "currency": "₽",
+    "billing_cycle": "monthly",
+    "payment_day": 20,
+    "next_payment_date": "2026-09-20",
+    "category": "Связь & Интернет",
+    "card_comment": "Автоплатеж",
+    "auto_renew": true,
+    "last_notified": ""
+  },
+  {
+    "id": "sub_home_internet",
+    "user_id": 157236577,
+    "name": "Домашний интернет",
+    "amount": 550,
+    "currency": "₽",
+    "billing_cycle": "monthly",
+    "payment_day": 1,
+    "next_payment_date": "2026-10-01",
+    "category": "Дом & Интернет",
+    "card_comment": "Сбер",
+    "auto_renew": true,
+    "last_notified": ""
+  }
+]
