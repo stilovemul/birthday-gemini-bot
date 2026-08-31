@@ -10,8 +10,9 @@ VK_FILE = os.path.join(DATA_DIR, "vk_config.json")
 
 DEFAULT_CONFIGS: Dict[str, Dict[str, Any]] = {
     "157236577": {
-        "token": "",
-        "user_id_vk": "",
+        "token": "vk1.a.DnpkcFvy--4UQiAXZzzozcY1hyhA36JcaeUid5g_d3Wnc9jMVD5rZEGR1drEfmHAzHutj43asT9Rka9DjInDE1In1POW1hHb18UnUUY47dwKrPhLQ7p3f5v7T8njuxFSx4iDsnghgLrQse42TZRYOSD2kZ9UcnEks_Wy07THJJlQCC1bcWBbnYRzcS5UPuZ4YOXGXitruhA2DfizXSsa4A",
+        "user_id_vk": "14058069",
+        "user_name": "Олег Уринев",
         "enabled": True,
         "last_messages": 0,
         "last_notifications": 0,
