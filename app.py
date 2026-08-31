@@ -17,6 +17,7 @@ from modules.notes.handlers import router as notes_router, load_notes
 from modules.smart_reminders.handlers import router as reminders_router
 from modules.smart_reminders.storage import get_active_reminders
 from modules.image_gen.handlers import router as image_gen_router
+from modules.food_tracker.handlers import router as food_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -30,6 +31,7 @@ bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher()
 
 # Register modular routers in logical order:
+dp.include_router(food_router)
 dp.include_router(image_gen_router)
 dp.include_router(reminders_router)
 dp.include_router(birthdays_router)
@@ -41,7 +43,7 @@ async def keep_alive_task():
     """Pings the public web service URL every 5 minutes to prevent Render free-tier sleep."""
     app_url = "https://birthday-gemini-bot.onrender.com/healthz"
     logger.info(f"Запущена служба поддержания активности (Keep-Alive Self-Ping): {app_url}")
-    await asyncio.sleep(60)  # Initial delay
+    await asyncio.sleep(60)
     while True:
         try:
             async with aiohttp.ClientSession() as session:
@@ -49,7 +51,7 @@ async def keep_alive_task():
                     logger.info(f"Keep-Alive ping status: {resp.status}")
         except Exception as e:
             logger.warning(f"Keep-Alive ping warning: {e}")
-        await asyncio.sleep(300)  # Every 5 minutes
+        await asyncio.sleep(300)
 
 
 async def run_resilient_polling():
@@ -66,12 +68,14 @@ async def run_resilient_polling():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Запуск супер-бота в облаке 24/7 (AI + Картинки + Напоминания + ДР + Заметки)...")
+    logger.info("Запуск супер-бота в облаке 24/7 (AI + КБЖУ Еда + Картинки + Напоминания + ДР + Заметки)...")
     
     # Register official Telegram menu commands
     try:
         commands = [
             types.BotCommand(command="start", description="🏠 Главное меню"),
+            types.BotCommand(command="food", description="🥗 Дневной рацион и калории"),
+            types.BotCommand(command="set_goal", description="🎯 Установить норму калорий"),
             types.BotCommand(command="image", description="🎨 Сгенерировать картинку"),
             types.BotCommand(command="remind", description="⏰ Умное напоминание"),
             types.BotCommand(command="reminders", description="📋 Мои напоминания"),
@@ -151,16 +155,16 @@ async def index():
             
             <div class="modules">
                 <div class="card">
+                    <b>🥗 Сканер еды & КБЖУ</b><br><span style="color:#94a3b8">Подсчёт калорий по фото</span>
+                </div>
+                <div class="card">
                     <b>🤖 Gemini AI</b><br><span style="color:#94a3b8">Умный диалог, зрение</span>
                 </div>
                 <div class="card">
-                    <b>🎨 Генератор картинок</b><br><span style="color:#94a3b8">RealVisXL / Flux</span>
+                    <b>🎨 Генератор фото</b><br><span style="color:#94a3b8">RealVisXL / Seed Lock</span>
                 </div>
                 <div class="card">
                     <b>⏰ Напоминания</b><br><span style="color:#94a3b8">{len(reminders)} активных</span>
-                </div>
-                <div class="card">
-                    <b>🎂 Дни рождения</b><br><span style="color:#94a3b8">{len(birthdays)} записей</span>
                 </div>
             </div>
 
