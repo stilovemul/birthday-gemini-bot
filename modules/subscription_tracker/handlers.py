@@ -1,4 +1,5 @@
 import re
+import json
 import logging
 from aiogram import Router, types, F, Bot
 from aiogram.enums import ParseMode, ChatAction
@@ -6,7 +7,7 @@ from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 from core.keyboards import get_main_menu
-from core.gemini import ask_gemini
+from core.gemini import ask_gemini, reset_chat_session
 from modules.subscription_tracker.storage import (
     get_user_subscriptions,
     add_subscription,
@@ -99,12 +100,10 @@ async def cb_sub_refresh(callback: types.CallbackQuery):
 @router.callback_query(F.data == "sub_add_prompt")
 async def cb_sub_add_prompt(callback: types.CallbackQuery):
     prompt_text = (
-        "➕ <b>Как быстро добавить подписку:</b>\n\n"
-        "Просто напишите в чат текстом или надиктуйте голосом:\n\n"
-        "👉 <code>Подписка Яндекс Плюс 299 руб 15 числа</code>\n"
-        "👉 <code>Добавь подписку Домашний интернет 550р 1 числа</code>\n"
-        "👉 <code>Подписка Телеграм Премиум 300 25 числа Связь</code>\n\n"
-        "Бот поймет название, сумму, день списания и сразу сохранит!"
+        "➕ <b>Как быстро добавить подписки:</b>\n\n"
+        "Вы можете отправить одну подписку или сразу целый список текстом или голосом:\n\n"
+        "👉 <code>Яндекс плюс 449 руб 10 числа\nРостелеком 899 руб 12 числа\nМегафон 163 руб 25 числа</code>\n\n"
+        "Бот поймет все сервисы, сохранит их в базу данных и включит авто-напоминания!"
     )
     kb = InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="🔙 Назад к списку", callback_data="sub_refresh")]]
@@ -140,6 +139,7 @@ async def cb_sub_del_item(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     sub_id = callback.data.replace("sub_del_", "")
     ok = delete_subscription(user_id, sub_id)
+    reset_chat_session(user_id)
     if ok:
         await callback.answer("✅ Подписка успешно удалена!", show_alert=False)
     else:
@@ -178,43 +178,3 @@ async def cb_sub_analytics(callback: types.CallbackQuery):
     )
     await callback.message.edit_text("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=kb)
     await callback.answer()
-
-
-# Natural text parser for adding subscription
-@router.message(F.text.lower().startswith("подписка") | F.text.lower().startswith("добавь подписку") | F.text.lower().startswith("запиши подписку"))
-async def handle_sub_nlp(message: types.Message):
-    user_id = message.from_user.id
-    text = message.text
-
-    prompt = (
-        f"Пользователь хочет добавить регулярную подписку: '{text}'. "
-        "Извлеки название сервиса, сумму в рублях, число месяца (день списания от 1 до 31) и категорию. "
-        "Верни ТОЛЬКО валидный JSON в формате: "
-        '{"name": "Яндекс Плюс", "amount": 299, "payment_day": 15, "category": "Медиа"}'
-    )
-    ai_resp = await ask_gemini(user_id, prompt)
-    try:
-        import json
-        m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
-        if m:
-            data = json.loads(m.group(0))
-            name = data.get("name", "Подписка")
-            amount = float(data.get("amount", 300))
-            day = int(data.get("payment_day", 1))
-            cat = data.get("category", "Сервисы")
-
-            item = add_subscription(user_id, name, amount, day, category=cat)
-            reply = (
-                f"✅ <b>Подписка успешно сохранена!</b>\n\n"
-                f"• Сервис: <b>{item['name']}</b>\n"
-                f"• Сумма: <b>{item['amount']} ₽/мес</b>\n"
-                f"• День списания: <b>{item['payment_day']}-е число</b> (следующее: <i>{item['next_payment_date']}</i>)\n"
-                f"• Категория: <i>{item['category']}</i>\n\n"
-                f"🔔 Бот напомнит вам за 2 дня и за 1 день до списания!"
-            )
-            await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
-            return
-    except Exception as e:
-        logger.warning(f"Error parsing sub NLP: {e}")
-
-    await message.answer("⚠️ Не удалось разобрать параметры подписки. Попробуйте так: <code>Подписка Название 300 руб 15 числа</code>", parse_mode=ParseMode.HTML)

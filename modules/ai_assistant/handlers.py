@@ -417,42 +417,60 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=kb)
             return
 
-    # 8. Subscriptions Natural NLP
-    if any(k in t_lower for k in ["подписк", "подписку", "подписки", "списание за"]):
-        if any(w in t_lower for w in ["добавь", "запиши", "сохрани", "внеси", "создай", "напомни о подписке", "руб", "₽", "числа"]):
-            from modules.subscription_tracker.storage import add_subscription
-            prompt = (
-                f"Пользователь хочет добавить регулярную подписку: '{text}'. "
-                "Извлеки название сервиса, сумму в рублях, число месяца (день списания от 1 до 31) и категорию. "
-                "Верни ТОЛЬКО валидный JSON в формате: "
-                '{"name": "Яндекс Плюс", "amount": 299, "payment_day": 15, "category": "Медиа"}'
-            )
-            ai_resp = await ask_gemini(user_id, prompt)
-            try:
-                import json
-                m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
-                if m:
-                    data = json.loads(m.group(0))
-                    name = data.get("name", "Подписка")
-                    amount = float(data.get("amount", 300))
-                    day = int(data.get("payment_day", 1))
-                    cat = data.get("category", "Сервисы")
+    # 8. Subscriptions & Recurring Payments Multi-Item Natural NLP
+    is_sub_candidate = (
+        any(k in t_lower for k in ["подписк", "подписку", "подписки", "списание", "каждый месяц", "ежемесячно", "абонентск", "тариф", "рублей, каждый месяц"]) or
+        bool(re.search(r"\b(?:\d{1,2}\s+(?:янв|фев|мар|апр|ма|июн|июл|авг|сен|окт|ноя|дек|числа)|числа\s+\d{1,2})\b.*\b\d{2,5}\b", t_lower)) or
+        bool(re.search(r"\b\d{2,5}\s*(?:руб|р|₽|\.00|\.50|\.5)\b.*\b\d{1,2}\b", t_lower))
+    )
 
-                    item = add_subscription(user_id, name, amount, day, category=cat)
+    if is_sub_candidate and not any(k in t_lower for k in ["кредит", "ипотек", "погода", "напомни"]):
+        from modules.subscription_tracker.storage import add_subscription, get_subscription_stats
+        prompt = (
+            f"Пользователь отправил список регулярных подписок / платежей:\n'{text}'\n\n"
+            "Твоя задача — извлечь ВСЕ подписки и регулярные платежи в массив объектов. "
+            "Для каждой подписки определи: "
+            "- name: название сервиса/платежа (например: 'Яндекс Плюс', 'Ростелеком', 'Мегафон') "
+            "- amount: сумма списания в рублях (число, например 449, 899, 163) "
+            "- payment_day: день месяца списания от 1 до 31 (число, например 10, 12, 25) "
+            "- category: категория ('Медиа & Музыка', 'Связь & Интернет', 'Дом', 'Сервисы') "
+            "Верни ТОЛЬКО валидный JSON в формате:\n"
+            '{"is_subscriptions": true, "items": [{"name": "Яндекс Плюс", "amount": 449, "payment_day": 10, "category": "Медиа & Музыка"}, {"name": "Ростелеком", "amount": 899, "payment_day": 12, "category": "Интернет & ТВ"}]}'
+        )
+        ai_resp = await ask_gemini(user_id, prompt)
+        try:
+            import json
+            m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
+            if m:
+                data = json.loads(m.group(0))
+                items = data.get("items", [])
+                if items and isinstance(items, list):
+                    added_items = []
+                    for it in items:
+                        name = it.get("name", "Подписка")
+                        amount = float(it.get("amount", 300))
+                        day = int(it.get("payment_day", 1))
+                        cat = it.get("category", "Сервисы")
+                        added = add_subscription(user_id, name, amount, day, category=cat)
+                        added_items.append(added)
+
                     reset_chat_session(user_id)
-                    reply = (
-                        f"✅ <b>Подписка успешно сохранена в базе и облаке!</b>\n\n"
-                        f"• Сервис: <b>{item['name']}</b>\n"
-                        f"• Сумма: <b>{item['amount']} ₽/мес</b>\n"
-                        f"• День списания: <b>{item['payment_day']}-е число</b> (следующее: <i>{item['next_payment_date']}</i>)\n"
-                        f"• Категория: <i>{item['category']}</i>\n\n"
-                        f"🔔 <i>Бот напомнит вам за 2 дня и за 1 день до списания!</i>\n"
-                        f"☁️ <i>Данные моментально синхронизированы с GitHub облаком!</i>"
-                    )
-                    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                    stats = get_subscription_stats(user_id)
+
+                    lines = [
+                        f"✅ <b>Успешно сохранено в базу данных: {len(added_items)} шт.!</b>\n"
+                    ]
+                    for idx, it in enumerate(added_items, 1):
+                        lines.append(f"{idx}. <b>{it['name']}</b> — <b>{it['amount']} ₽/мес</b> (<i>{it['payment_day']}-е число</i>, {it['category']})")
+
+                    lines.append(f"\n📊 <b>Всего расходов:</b> <b>{stats['monthly_total']} ₽/мес</b> (<b>{stats['yearly_total']} ₽/год</b>)")
+                    lines.append("🔔 <i>Бот автоматически предупредит за 2 дня и за 1 день до каждого списания!</i>")
+                    lines.append("☁️ <i>Данные сохранены и синхронизированы с GitHub облаком!</i>")
+
+                    await message.answer("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
                     return
-            except Exception as e:
-                logger.warning(f"Error parsing sub NLP in ai_assistant: {e}")
+        except Exception as e:
+            logger.warning(f"Error in multi-sub NLP parser: {e}")
 
     # 9. Custom Rules Natural NLP
     if any(t_lower.startswith(k) for k in ["создай правило", "добавь правило", "каждое ", "каждый ", "каждую "]):
