@@ -22,6 +22,7 @@ from modules.drive2_tracker.handlers import router as drive2_router
 from modules.secret_vault.handlers import router as vault_router
 from modules.weather_synoptic.handlers import router as weather_router
 from modules.sleep_calculator.handlers import router as sleep_router
+from modules.loan_calculator.handlers import router as loan_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -36,6 +37,7 @@ dp = Dispatcher()
 
 # Register modular routers in logical order:
 dp.include_router(drive2_router)
+dp.include_router(loan_router)
 dp.include_router(sleep_router)
 dp.include_router(vault_router)
 dp.include_router(weather_router)
@@ -76,12 +78,13 @@ async def run_resilient_polling():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Запуск супер-бота в облаке 24/7 (AI + Drive2 + Сон + Сейф + Погода + КБЖУ + Картинки + Напоминания)...")
+    logger.info("Запуск супер-бота в облаке 24/7 (AI + Кредиты + Сон + Drive2 + Сейф + Погода + КБЖУ + Картинки)...")
     
     # Register official Telegram menu commands
     try:
         commands = [
             types.BotCommand(command="start", description="🏠 Главное меню"),
+            types.BotCommand(command="credit", description="🔢 Кредиты, ипотека и досрочка"),
             types.BotCommand(command="sleep", description="😴 Калькулятор фаз сна"),
             types.BotCommand(command="weather", description="🌤 Погода и прогноз"),
             types.BotCommand(command="set_city", description="🏙 Установить мой город/район"),
@@ -167,6 +170,9 @@ async def index():
             
             <div class="modules">
                 <div class="card">
+                    <b>🔢 Кредиты & Ипотека</b><br><span style="color:#94a3b8">Аннуитет, выгода досрочки</span>
+                </div>
+                <div class="card">
                     <b>😴 Калькулятор сна</b><br><span style="color:#94a3b8">90-мин фазы, Power Nap</span>
                 </div>
                 <div class="card">
@@ -180,9 +186,6 @@ async def index():
                 </div>
                 <div class="card">
                     <b>🥗 Сканер еды & КБЖУ</b><br><span style="color:#94a3b8">Подсчёт калорий по фото</span>
-                </div>
-                <div class="card">
-                    <b>🤖 Gemini AI</b><br><span style="color:#94a3b8">Умный диалог, зрение</span>
                 </div>
             </div>
 
