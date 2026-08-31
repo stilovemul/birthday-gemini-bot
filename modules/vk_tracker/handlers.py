@@ -52,37 +52,18 @@ async def cmd_vk_dashboard(message: types.Message, bot: Bot):
             "• 👥 Новые заявки в друзья\n\n"
             "⚙️ <b>Как настроить за 30 секунд:</b>\n"
             "Отправьте команду с вашим токеном VK:\n"
-            "<code>/vk_token ВАШ_ТОКЕН</code>\n\n"
-            "<i>(Или нажмите кнопку «Привязать токен VK» ниже для пошаговой подсказки)</i>"
+            "<code>/vk_token ВАШ_ТОКЕН</code>"
         )
         await message.answer(intro, parse_mode=ParseMode.HTML, reply_markup=get_vk_keyboard(False, enabled))
         return
 
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    success, data, err_info = await fetch_vk_updates(token)
+    report = await check_vk_for_user(user_id, bot, notify_only_new=False)
 
-    if success:
-        cur_msg = data.get("messages", 0)
-        cur_notif = data.get("notifications", 0)
-        cur_friends = data.get("friends", 0)
-
-        status_text = (
-            "🔵 <b>Центр уведомлений ВКонтакте (VK)</b>\n\n"
-            f"📊 <b>Состояние:</b> {'🟢 Активен (проверка каждые 60с)' if enabled else '⏸ На паузе'}\n"
-            f"🔐 <b>Авторизация:</b> 🔑 Токен подключен\n\n"
-            "📬 <b>Текущие счетчики:</b>\n"
-            f"• ✉️ Непрочитанных сообщений: <b>{cur_msg}</b>\n"
-            f"• 🔔 Новых уведомлений / реакций: <b>{cur_notif}</b>\n"
-            f"• 👥 Заявок в друзья: <b>{cur_friends}</b>\n\n"
-            + ("✨ <i>Все входящие прочитаны!</i>" if cur_msg == 0 and cur_notif == 0 and cur_friends == 0 else "⚡ <i>Есть непрочитанные события!</i>")
-        )
-        await message.answer(status_text, parse_mode=ParseMode.HTML, reply_markup=get_vk_keyboard(True, enabled))
+    if report:
+        await message.answer(report, parse_mode=ParseMode.HTML, reply_markup=get_vk_keyboard(True, enabled))
     else:
-        await message.answer(
-            f"⚠️ <b>Ошибка связи с VK:</b>\n{err_info}\n\nПопробуйте обновить токен через /vk_token.",
-            parse_mode=ParseMode.HTML,
-            reply_markup=get_vk_keyboard(False, enabled)
-        )
+        await message.answer("⚠️ Не удалось получить данные от VK. Попробуйте нажать «Проверить сейчас».", reply_markup=get_vk_keyboard(True, enabled))
 
 
 @router.message(Command("vk_token"))
@@ -100,7 +81,6 @@ async def cmd_set_vk_token(message: types.Message):
         return
 
     raw_token = parts[1].strip()
-    # If user passed full URL from vkhost / oauth, extract access_token=...
     if "access_token=" in raw_token:
         try:
             token_val = raw_token.split("access_token=")[1].split("&")[0]
@@ -162,12 +142,11 @@ async def callback_vk_prompt_token(callback: types.CallbackQuery):
 @router.callback_query(F.data == "vk_guide")
 async def callback_vk_guide(callback: types.CallbackQuery):
     guide_text = (
-        "📖 <b>Как получить access_token ВКонтакте за 30 секунд:</b>\n\n"
-        "1. Перейдите на проверенный сервис получения токена (например: <code>vkhost.github.io</code>)\n"
-        "2. Выберите приложение (например: <b>Kate Mobile</b> или <b>VK Admin</b>)\n"
-        "3. Нажмите «Разрешить доступ» ➔ скопируйте ссылку из адресной строки (или сам <code>access_token=vk1.a...</code>)\n"
-        "4. Отправьте команду в чат:\n"
+        "📖 <b>Как получить access_token ВКонтакте:</b>\n\n"
+        "1. Откройте прямую ссылку авторизации: <a href='https://oauth.vk.com/authorize?client_id=2685278&scope=friends,messages,notifications,offline&response_type=token&v=5.199'>Получить токен VK</a>\n"
+        "2. Нажмите «Разрешить»\n"
+        "3. Скопируйте ссылку из адресной строки и отправьте её боту:\n"
         "<code>/vk_token ВАШ_ТОКЕН</code>"
     )
-    await callback.message.answer(guide_text, parse_mode=ParseMode.HTML)
+    await callback.message.answer(guide_text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
     await callback.answer()
