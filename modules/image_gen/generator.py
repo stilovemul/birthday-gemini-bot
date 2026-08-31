@@ -92,33 +92,31 @@ def get_last_image_info(user_id: int) -> Optional[Dict[str, Any]]:
 
 
 def apply_heuristic_enrichment(raw_prompt: str) -> str:
-    """Applies pure photography tokens with authentic Slavic features."""
+    """Applies high-beauty, youthful feminine portrait and athletic body tokens."""
     p_lower = raw_prompt.lower()
     tags = []
 
-    # Hair color heuristics
-    hair_token = "light brown hair"
+    # Hair color
+    hair_token = "natural blonde hair"
     if any(k in p_lower for k in ["рыж", "рыженьк", "redhead", "ginger"]):
-        hair_token = "natural vibrant red/ginger hair with soft waves, freckles"
-    elif any(k in p_lower for k in ["блондинк", "светл", "blonde"]):
-        hair_token = "natural blonde hair, soft golden highlights"
+        hair_token = "vibrant natural ginger red hair"
     elif any(k in p_lower for k in ["брюнетк", "темн", "черн", "brunette"]):
-        hair_token = "rich dark brunette hair"
+        hair_token = "rich glossy brunette hair"
+    elif any(k in p_lower for k in ["блондинк", "светл", "blonde"]):
+        hair_token = "platinum blonde hair with soft waves"
+
+    # Framing / Body
+    framing = "candid raw 35mm photograph"
+    if any(k in p_lower for k in ["пресс", "живот", "кубик", "фигур", "тел", "abs", "stomach"]):
+        framing = "medium shot showing her fit toned athletic torso, visible defined six-pack abs on flat stomach"
 
     if any(k in p_lower for k in ["девушк", "женщин", "красавиц", "модель", "girl", "woman"]):
-        if any(r in p_lower for r in ["русск", "росси", "славян"]):
-            tags.append(f"candid raw 35mm portrait photograph of a beautiful 23-year-old natural Slavic Russian woman with authentic Slavic facial features, {hair_token}, natural skin texture with pores, gentle smile, real life photograph")
-        else:
-            tags.append(f"candid 35mm portrait photograph of a natural beautiful woman, {hair_token}, authentic human features, realistic skin texture, real photo")
+        tags.append(f"{framing} of an exceptionally gorgeous and attractive 22-year-old Russian woman with a stunningly beautiful, tender, and youthful feminine face, {hair_token}, captivating eyes, radiant glowing skin texture, gentle warm smile, real life photograph")
     elif any(k in p_lower for k in ["парен", "мужчин", "человек", "man", "guy"]):
-        tags.append("candid portrait photograph of a man, authentic human facial features, natural lighting, real photography")
-    elif any(k in p_lower for k in ["кот", "кошк", "котен", "котик", "cat"]):
-        tags.append("adorable realistic cat, fluffy fur, natural daylight, real pet photography")
-    elif any(k in p_lower for k in ["машин", "авто", "спорткар", "автомобил", "car"]):
-        tags.append("real-life automotive photography of a sleek sports car, glossy reflections, natural ambient daylight, 8k raw photo")
+        tags.append("candid portrait photograph of an attractive young man, authentic human facial features, natural lighting, real photography")
 
     if any(k in p_lower for k in ["постел", "кроват", "утром", "утро", "bed", "morning"]):
-        tags.append("relaxing in cozy white morning bed sheets, soft morning natural sunlight from bedroom window, authentic lifestyle photo")
+        tags.append("in cozy morning bed sheets, soft morning natural sunlight from bedroom window, authentic lifestyle photo")
 
     if tags:
         return f"{', '.join(tags)}"
@@ -130,11 +128,10 @@ async def translate_and_enrich_prompt(user_prompt: str) -> str:
     Translates Russian prompt into clean, photorealistic English photography prompt.
     """
     enrich_system = """You are an expert realistic photographer and prompt engineer.
-Translate the user's prompt into a clean English photography prompt for RealVisXL.
+Translate the user's prompt into an English photography prompt for RealVisXL.
 IMPORTANT RULES:
-- If user asks for a Russian / Slavic woman: 'candid raw 35mm photo of an authentic 23-year-old Slavic Russian woman with natural features, expressive eyes, realistic skin texture with pores and natural makeup, real human portrait'.
-- If hair color specified (e.g. 'рыженькая' / ginger / red hair, 'блондинка' / blonde): specify hair color clearly.
-- If in bed in morning: 'resting in cozy white morning bed under soft duvet, gentle window sunlight'.
+- Ensure the female face is STUNNINGLY GORGEOUS, young (21-23yo), highly feminine, attractive, with soft delicate facial features and a warm lovely smile (avoid harsh, tired, or masculine jawline).
+- If user requests abs/stomach/body (e.g. 'пресс на живот', 'кубики', 'фигура'): make sure the camera framing is a 'medium shot showing her toned flat stomach and defined fit abs'.
 - Output ONLY 1-2 concise English sentences without negative prompt words."""
 
     c = get_genai_client()
@@ -162,14 +159,14 @@ async def refine_prompt_with_ai(old_prompt: str, user_feedback: str) -> str:
     prompt_to_gemini = f"""Previous image prompt:
 "{old_prompt}"
 
-User feedback / modification:
+User modification:
 "{user_feedback}"
 
-Generate an updated, detailed English photography prompt for RealVisXL that merges the user's modification into the previous scene.
-Examples:
-- If user says 'давай будет рыженькая девушка' -> change hair to natural ginger/red hair with freckles while keeping the rest of the bedroom scene intact!
-- If user says 'одеяло ниже спусти' -> keep the woman and lower the blanket!
-Emphasize: authentic real-life Slavic facial features, natural skin texture with fine pores, candid 35mm photography, natural sunlight.
+Generate an updated, detailed English photography prompt for RealVisXL that merges the user's modification.
+CRITICAL INSTRUCTIONS:
+- If user asks for abs/stomach/body ('пресс на живот', 'кубики', 'фигура'): adjust framing to 'medium shot or seated in bed, clearly showing her fit athletic flat stomach with defined six-pack abs and toned torso'. Do NOT do a tight headshot!
+- ALWAYS enforce: stunningly beautiful, young (22yo), charming and feminine face with delicate features, radiant skin, and attractive smile (never tired or masculine).
+- Preserve previous features (e.g. hair color, morning bed) unless the user explicitly asks to change them!
 Output ONLY the resulting English prompt in 1-2 sentences."""
 
     c = get_genai_client()
@@ -190,8 +187,14 @@ Output ONLY the resulting English prompt in 1-2 sentences."""
 
 
 async def generate_via_realvis_horde(prompt: str) -> Optional[bytes]:
-    """Generates 100% photorealistic human photo via RealVisXL V4.0 / Juggernaut XL."""
-    full_prompt = f"{prompt} ### anime, 3d, doll, drawing, painting, cartoon, asian, smooth plastic, artificial, airbrush, render"
+    """Generates 100% photorealistic human photo via RealVisXL V4.0 / Juggernaut XL with beauty filters."""
+    # Explicit negative prompt to eliminate masculine jaw, tired eyes, wrinkled skin, or wrong cropping
+    negative_prompt = (
+        "anime, 3d, doll, drawing, painting, cartoon, asian, smooth plastic, artificial, airbrush, render, "
+        "harsh masculine face, masculine jawline, aged, tired eyes, dark circles under eyes, wrinkles, "
+        "close-up head crop when stomach/body requested, bad anatomy, deformed body, unnatural abs"
+    )
+    full_prompt = f"{prompt} ### {negative_prompt}"
     payload = {
         "prompt": full_prompt,
         "params": {
@@ -220,7 +223,7 @@ async def generate_via_realvis_horde(prompt: str) -> Optional[bytes]:
                 if not task_id:
                     return None
 
-            for _ in range(6):
+            for _ in range(7):
                 await asyncio.sleep(3)
                 async with session.get(
                     f"https://stablehorde.net/api/v2/generate/check/{task_id}",
