@@ -15,11 +15,15 @@ SYSTEM_INSTRUCTION = """Ты — персональный многофункци
 - Умеешь решать любые задачи: диалог, тексты, код, анализ фото, генерация идей, ответы на вопросы, помощь в делах.
 """
 
+# Active models with maximum quota and instant fallback
 CANDIDATE_MODELS = [
-    "gemini-3.6-flash",
     "gemini-3.1-flash-lite",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
     "gemini-3.7-flash",
-    "gemini-3.5-flash"
+    "gemini-3.6-flash"
 ]
 
 client = None
@@ -54,7 +58,6 @@ def reset_chat_session(user_id: int):
 
 
 async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = None, mime_type: str = "image/jpeg") -> str:
-    last_error = None
     c = get_genai_client()
     
     for model_name in CANDIDATE_MODELS:
@@ -79,8 +82,7 @@ async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = N
                 if response and response.text:
                     return response.text.strip()
         except Exception as e:
-            logger.warning(f"Model {model_name} failed: {e}. Trying fallback...")
-            last_error = e
+            logger.warning(f"Model {model_name} failed: {e}. Trying next candidate...")
             reset_chat_session(user_id)
 
-    return f"⚠️ Не удалось получить ответ от Gemini: {last_error}"
+    return "⏳ <b>Нейросеть Gemini сейчас испытывает кратковременную нагрузку.</b>\nПожалуйста, отправьте сообщение через 15 секунд — я сразу отвечу!"
