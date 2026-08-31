@@ -32,6 +32,11 @@ from modules.webapp.handlers import router as webapp_bot_router
 from modules.voice_assistant.handlers import router as voice_router
 from modules.subscription_tracker.handlers import router as subs_router
 from modules.custom_rules.handlers import router as rules_router
+from modules.gourmet_assistant.handlers import router as gourmet_router
+from modules.freebies_promos.handlers import router as freebies_router
+from modules.auto_legal_aid.handlers import router as auto_legal_router
+from modules.ai_deep_research.handlers import router as research_router
+from modules.anti_spam_guard.handlers import router as antispam_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -64,6 +69,11 @@ dp.include_router(birthdays_router)
 dp.include_router(notes_router)
 dp.include_router(subs_router)
 dp.include_router(rules_router)
+dp.include_router(gourmet_router)
+dp.include_router(freebies_router)
+dp.include_router(auto_legal_router)
+dp.include_router(research_router)
+dp.include_router(antispam_router)
 dp.include_router(webapp_bot_router)
 dp.include_router(ai_router)  # Catch-all AI router last
 

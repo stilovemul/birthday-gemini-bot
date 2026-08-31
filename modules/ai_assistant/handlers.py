@@ -352,7 +352,50 @@ async def handle_generic_text(message: types.Message, bot: Bot):
                 await message.answer(f"🏠 {res_msg}", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
                 return
 
-    # 5. Birthday Natural Language Add/Delete Triggers (Direct Cloud-Synced DB execution)
+    # 5. New Features Menu Buttons & Quick Triggers
+    if text == "🍳 Завтрак & 🍸 Бармен":
+        from modules.gourmet_assistant.handlers import cmd_breakfast
+        await cmd_breakfast(message)
+        return
+
+    if text == "🎁 Промокоды & 🎮 Игры":
+        from modules.freebies_promos.handlers import cmd_promos
+        await cmd_promos(message)
+        return
+
+    if text == "🚗 Авто-Юрист & 🚨 ДТП":
+        from modules.auto_legal_aid.handlers import cmd_dtp
+        await cmd_dtp(message)
+        return
+
+    if text == "🔬 Deep Research & 🛡 Фактчек":
+        from modules.ai_deep_research.handlers import cmd_research
+        await cmd_research(message)
+        return
+
+    if text == "📵 Проверить номер":
+        await message.answer(
+            "📵 <b>Антиспам-чекер номеров:</b>\n\n"
+            "Отправьте номер телефона в чат для проверки репутации и оператора:\n"
+            "👉 <code>+7 (921) 123-45-67</code>\n"
+            "👉 <i>«Чей номер +78124567890?»</i>\n"
+            "👉 <i>«Кто звонил 89001112233?»</i>",
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_main_menu()
+        )
+        return
+
+    # Anti-Spam Phone Detection (if user sends phone number or asks 'кто звонил')
+    phone_match = re.search(r"(?:\+7|8)[\s\-(]?\d{3}[\s\-)]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}", text)
+    if phone_match and any(k in t_lower for k in ["номер", "звонил", "кто", "спам", "проверь", "чей", "откуда", "+7", "89", "8812"]):
+        from modules.anti_spam_guard.checker import check_phone_number_reputation
+        from modules.anti_spam_guard.handlers import format_spam_card
+        await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        data = await check_phone_number_reputation(user_id, phone_match.group(0))
+        await message.answer(format_spam_card(data), parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        return
+
+    # 5.1 Birthday Natural Language Add/Delete Triggers (Direct Cloud-Synced DB execution)
     bday_add_match = re.match(r"^(?:добавь|запиши|сохрани|внеси)\s+(?:день\s+рождения|др)\s+(.+)", text, re.IGNORECASE)
     if bday_add_match:
         raw_bday = bday_add_match.group(1).strip()

@@ -43,6 +43,15 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="🧩 Мои правила")
         ],
         [
+            KeyboardButton(text="🍳 Завтрак & 🍸 Бармен"),
+            KeyboardButton(text="🎁 Промокоды & 🎮 Игры")
+        ],
+        [
+            KeyboardButton(text="🚗 Авто-Юрист & 🚨 ДТП"),
+            KeyboardButton(text="🔬 Deep Research & 🛡 Фактчек")
+        ],
+        [
+            KeyboardButton(text="📵 Проверить номер"),
             KeyboardButton(text="❓ Справка")
         ]
     ]
