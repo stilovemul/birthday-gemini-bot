@@ -22,24 +22,30 @@ DEFAULT_HEADERS = {
 
 
 async def parse_drive2_counters(html: str) -> Tuple[int, int]:
-    """Extracts unread messages count and unread notifications count from Drive2 HTML."""
+    """
+    Extracts unread messages count and unread notifications count from Drive2 HTML using exact Drive2 DOM attributes.
+    """
     messages = 0
     notifications = 0
 
-    # 1. Unread messages counter regex
-    msg_match = re.search(r'href=["\']/my/messages/["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*(?:badge|counter)[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
+    # 1. Unread messages counter (Drive2: data-slot="messages-status.counter")
+    msg_match = re.search(r'data-slot=["\']messages-status\.counter["\'][^>]*>([0-9]+)<', html, re.IGNORECASE)
     if not msg_match:
-        msg_match = re.search(r'data-counter=["\']messages["\'][^>]*>([0-9]+)<', html, re.IGNORECASE)
+        msg_match = re.search(r'data-role=["\']messages-status["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*c-notification-bubble[^"\']*["\'][^>]*>([0-9]+)<', html, re.DOTALL | re.IGNORECASE)
+    if not msg_match:
+        msg_match = re.search(r'href=["\']/my/messages/[^"\']*["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*(?:c-notification-bubble|badge|counter)[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
     if msg_match:
         try:
             messages = int(msg_match.group(1).strip())
         except Exception:
             pass
 
-    # 2. Unread notifications counter regex
-    notif_match = re.search(r'href=["\']/my/notifications/["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*(?:badge|counter)[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
+    # 2. Unread notifications counter (Drive2: data-slot="notifications-status.counter")
+    notif_match = re.search(r'data-slot=["\']notifications-status\.counter["\'][^>]*>([0-9]+)<', html, re.IGNORECASE)
     if not notif_match:
-        notif_match = re.search(r'data-counter=["\']notifications["\'][^>]*>([0-9]+)<', html, re.IGNORECASE)
+        notif_match = re.search(r'data-role=["\']notifications-status["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*c-notification-bubble[^"\']*["\'][^>]*>([0-9]+)<', html, re.DOTALL | re.IGNORECASE)
+    if not notif_match:
+        notif_match = re.search(r'href=["\']/my/notifications/[^"\']*["\'][^>]*>.*?<span[^>]*class=["\'][^"\']*(?:c-notification-bubble|badge|counter)[^"\']*["\'][^>]*>([0-9]+)</span>', html, re.DOTALL | re.IGNORECASE)
     if notif_match:
         try:
             notifications = int(notif_match.group(1).strip())
@@ -77,10 +83,9 @@ async def check_user_drive2(user_id: int, bot: Bot, notify_if_no_change: bool = 
     if not cookies_str and not profile_url:
         return False, "Не указаны данные для проверки Drive2 (куки или профиль)."
 
-    # Format cookie header properly
     headers = dict(DEFAULT_HEADERS)
     if cookies_str:
-        if not cookies_str.startswith(".AST=") and not " " in cookies_str and len(cookies_str) > 20:
+        if not cookies_str.startswith(".AST=") and " " not in cookies_str and len(cookies_str) > 20:
             headers["Cookie"] = f".AST={cookies_str}"
         else:
             headers["Cookie"] = cookies_str

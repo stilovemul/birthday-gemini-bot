@@ -6,17 +6,15 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger("Drive2Storage")
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data")
-DRIVE2_FILE = os.path.join(DATA_DIR, "drive2_config.json")
+CONFIG_FILE = os.path.join(DATA_DIR, "drive2_config.json")
 
-# Predefined persistent configs for key users
 DEFAULT_CONFIGS: Dict[str, Dict[str, Any]] = {
     "157236577": {
-        "profile_url": "",
-        "cookies": ".AST=AhQDQVNTVAIxuQCAACF2CN8HSipsA94AAAABNfx8TU0jV5-Mzz1hUWo2boSDXKo",
+        "cookies": ".AST=AhQDQVNTVAlxuQCAACF2CN8HSipsA94AAAABNfX8TU0jV5-Mzz1hUWo2boSDXKo",
+        "profile_url": "https://www.drive2.ru/users/manofftoday/",
         "enabled": True,
         "last_messages": 0,
         "last_notifications": 0,
-        "last_followers": 0,
         "last_event_ids": []
     }
 }
@@ -30,23 +28,23 @@ def _ensure_data_dir():
 def load_drive2_configs() -> Dict[str, Dict[str, Any]]:
     _ensure_data_dir()
     data = dict(DEFAULT_CONFIGS)
-    if os.path.exists(DRIVE2_FILE):
+    if os.path.exists(CONFIG_FILE):
         try:
-            with open(DRIVE2_FILE, "r", encoding="utf-8") as f:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 saved = json.load(f)
                 data.update(saved)
         except Exception as e:
-            logger.error(f"Error loading drive2 configs: {e}")
+            logger.error(f"Error loading drive2 config: {e}")
     return data
 
 
 def save_drive2_configs(data: Dict[str, Dict[str, Any]]) -> None:
     _ensure_data_dir()
     try:
-        with open(DRIVE2_FILE, "w", encoding="utf-8") as f:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        logger.error(f"Error saving drive2 configs: {e}")
+        logger.error(f"Error saving drive2 config: {e}")
 
 
 def get_user_drive2_config(user_id: int) -> Optional[Dict[str, Any]]:
@@ -56,26 +54,25 @@ def get_user_drive2_config(user_id: int) -> Optional[Dict[str, Any]]:
 
 def set_user_drive2_config(
     user_id: int,
-    profile_url: Optional[str] = None,
     cookies: Optional[str] = None,
+    profile_url: Optional[str] = None,
     enabled: bool = True
 ) -> Dict[str, Any]:
     configs = load_drive2_configs()
     uid = str(user_id)
     curr = configs.get(uid, {
-        "profile_url": "",
         "cookies": "",
+        "profile_url": "",
         "enabled": True,
         "last_messages": 0,
         "last_notifications": 0,
-        "last_followers": 0,
         "last_event_ids": []
     })
 
-    if profile_url is not None:
-        curr["profile_url"] = profile_url.strip()
     if cookies is not None:
         curr["cookies"] = cookies.strip()
+    if profile_url is not None:
+        curr["profile_url"] = profile_url.strip()
     curr["enabled"] = enabled
 
     configs[uid] = curr
@@ -88,7 +85,6 @@ def update_drive2_state(
     user_id: int,
     messages_count: int,
     notifications_count: int,
-    followers_count: Optional[int] = None,
     new_event_ids: Optional[list] = None
 ) -> None:
     configs = load_drive2_configs()
@@ -96,8 +92,6 @@ def update_drive2_state(
     if uid in configs:
         configs[uid]["last_messages"] = messages_count
         configs[uid]["last_notifications"] = notifications_count
-        if followers_count is not None:
-            configs[uid]["last_followers"] = followers_count
         if new_event_ids is not None:
             configs[uid]["last_event_ids"] = new_event_ids[-50:]
         save_drive2_configs(configs)
