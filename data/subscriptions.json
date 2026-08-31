@@ -1,19 +1,5 @@
 [
   {
-    "id": "sub_ya_plus",
-    "user_id": 157236577,
-    "name": "Яндекс Плюс",
-    "amount": 299,
-    "currency": "₽",
-    "billing_cycle": "monthly",
-    "payment_day": 15,
-    "next_payment_date": "2026-09-15",
-    "category": "Медиа & Музыка",
-    "card_comment": "Основная карта",
-    "auto_renew": true,
-    "last_notified": ""
-  },
-  {
     "id": "sub_mobile_tel",
     "user_id": 157236577,
     "name": "Мобильная связь",
