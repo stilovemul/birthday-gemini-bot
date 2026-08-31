@@ -110,7 +110,7 @@ def get_last_image_info(user_id: int) -> Optional[Dict[str, Any]]:
 
 
 def apply_heuristic_enrichment(raw_prompt: str) -> str:
-    """Applies pure raw 35mm analog photography tokens with authentic Slavic facial features."""
+    """Applies pure raw 35mm analog photography tokens with correct human anatomy."""
     p_lower = raw_prompt.lower()
     tags = []
 
@@ -122,35 +122,35 @@ def apply_heuristic_enrichment(raw_prompt: str) -> str:
     elif any(k in p_lower for k in ["блондинк", "светл", "blonde", "пепельн"]):
         hair_token = "natural platinum blonde hair with soft waves"
 
-    framing = "candid raw 35mm analog photograph shot on Kodak Portra 400"
+    framing = "candid raw 35mm analog photograph, naturally seated, perfect human anatomy, realistic body proportions"
     if any(k in p_lower for k in ["пресс", "живот", "кубик", "фигур", "тел", "abs", "stomach"]):
-        framing = "candid medium shot showing her fit toned athletic torso, visible defined six-pack abs on flat stomach"
+        framing = "candid medium portrait naturally seated, fit toned flat stomach with visible subtle abs, correct natural anatomy"
 
     if any(k in p_lower for k in ["девушк", "женщин", "красавиц", "модель", "girl", "woman", "обнажен"]):
-        tags.append(f"{framing} of an authentic 22-year-old gorgeous Slavic Russian woman with natural human facial features, {hair_token}, realistic unretouched human skin texture with visible fine pores, soft natural ambient lighting, genuine unposed photo")
+        tags.append(f"{framing} of an authentic 22-year-old gorgeous Slavic Russian woman, natural feminine face, {hair_token}, realistic human skin texture with pores, soft natural daylight, genuine unposed photo")
     elif any(k in p_lower for k in ["парен", "мужчин", "человек", "man", "guy"]):
         tags.append("candid portrait photograph of an attractive young man, authentic human facial features, natural lighting, real photography")
 
     if any(k in p_lower for k in ["постел", "кроват", "утром", "утро", "bed", "morning"]):
-        tags.append("relaxing in white morning bed sheets, soft morning natural sunlight from bedroom window, authentic lifestyle photo")
+        tags.append("relaxing naturally on bed sheets, soft morning natural sunlight from bedroom window, authentic lifestyle photo")
     elif any(k in p_lower for k in ["машин", "авто", "салон", "car"]):
         tags.append("inside car cabin, natural daylight through car window, authentic candid shot")
 
     if tags:
         return f"{', '.join(tags)}"
-    return f"{raw_prompt}, candid 35mm photography, natural lighting, authentic real life photo, raw film grain"
+    return f"{raw_prompt}, candid 35mm photography, natural lighting, authentic real life photo, correct human anatomy"
 
 
 async def translate_and_enrich_prompt(user_prompt: str) -> str:
     """
-    Translates Russian prompt into clean, raw 35mm analog photography prompt.
+    Translates Russian prompt into clean, raw 35mm analog photography prompt with correct anatomy.
     """
     enrich_system = """You are a master analog photographer and prompt engineer for RealVisXL V4.0.
 Convert the user's prompt into an authentic raw 35mm photographic description.
 CRITICAL RULES:
-- If a Russian/Slavic woman is requested: 'candid raw 35mm analog photograph shot on Kodak Portra 400 of an authentic 22-year-old gorgeous Slavic Russian woman, natural facial features, real human skin texture with pores and subtle imperfections, genuine expression, realistic ambient lighting'.
+- Ensure CORRECT NATURAL HUMAN ANATOMY: Avoid extreme distorted poses, pretzel legs, or twisted spines. Prefer natural seated, standing or reclining poses with realistic proportions.
+- If a Russian/Slavic woman is requested: 'candid raw 35mm analog photo of an authentic 22-year-old gorgeous Slavic Russian woman, natural facial features, real skin pores, realistic feminine anatomy, natural lighting'.
 - NEVER allow anime, 3D, CGI, doll-like or airbrushed plastic aesthetics.
-- If abs/body requested: 'medium shot showing her fit toned flat stomach and defined abs'.
 - Return ONLY 1-2 concise English sentences."""
 
     c = get_genai_client()
@@ -173,7 +173,7 @@ CRITICAL RULES:
 
 async def refine_prompt_with_ai(old_prompt: str, user_feedback: str) -> str:
     """
-    Carefully updates ONLY the requested delta changes while strictly preserving the existing subject, lighting, and composition.
+    Carefully updates ONLY the requested delta changes while strictly preserving natural anatomy and realism.
     """
     prompt_to_gemini = f"""You are an expert realistic photo inpainting engineer for RealVisXL.
 BASE PHOTO DESCRIPTION:
@@ -184,7 +184,7 @@ USER MODIFICATION:
 
 TASK:
 Produce an updated raw 35mm photographic prompt merging ONLY the requested change into the base photo.
-Ensure: authentic Slavic Russian facial features, real skin pores, raw unedited 35mm camera look (NO 3d, NO doll, NO anime).
+Ensure: perfect natural human anatomy, realistic body proportions, authentic Slavic Russian facial features, real skin pores, raw unedited 35mm camera look.
 Output ONLY the resulting 1-2 sentence English prompt."""
 
     c = get_genai_client()
@@ -205,18 +205,20 @@ Output ONLY the resulting 1-2 sentence English prompt."""
 
 
 async def generate_via_realvis_horde(prompt: str, seed: Optional[int] = None) -> Optional[bytes]:
-    """Generates 100% authentic raw human photo via RealVisXL V4.0 / Juggernaut XL."""
-    # Heavy negative prompt eliminating all cartoon, doll, 3d render, asian, or airbrushed traits
+    """Generates 100% authentic raw human photo via RealVisXL V4.0 / Juggernaut XL with anti-mutation negatives."""
+    # Comprehensive negative prompt eliminating anatomical mutations, extra limbs, broken spines, and 3D/anime
     negative_prompt = (
+        "deformed limbs, extra legs, mutated legs, bad anatomy, broken spine, malformed torso, "
+        "extra limbs, disconnected limbs, missing limbs, bad proportions, unnatural body twisting, "
+        "mutated body, anatomically incorrect, mutilated, disfigured, hollow stomach, "
         "anime, 3d, doll, cgi, render, drawing, painting, cartoon, asian, smooth plastic, artificial, "
-        "airbrush, digital art, illustration, photoshop, airbrushed skin, plastic face, fake eyes, "
-        "harsh masculine face, aged, wrinkled, bad anatomy, deformed body"
+        "airbrush, digital art, photoshop, airbrushed skin, plastic face, fake eyes, harsh masculine face"
     )
     full_prompt = f"{prompt} ### {negative_prompt}"
     
     params: Dict[str, Any] = {
         "sampler_name": "k_dpmpp_2m",
-        "cfg_scale": 6.5,
+        "cfg_scale": 5.5,  # 5.5 prevents over-saturation and body distortion
         "steps": 28,
         "width": 1024,
         "height": 1024,
@@ -246,7 +248,6 @@ async def generate_via_realvis_horde(prompt: str, seed: Optional[int] = None) ->
                 if not task_id:
                     return None
 
-            # Poll for RealVisXL (up to ~12-15 seconds for highest quality photorealism)
             for _ in range(6):
                 await asyncio.sleep(2.5)
                 async with session.get(
@@ -282,7 +283,7 @@ async def generate_image_bytes(
     seed: Optional[int] = None
 ) -> Tuple[bool, Optional[bytes], str, str, int]:
     """
-    Generates image with RealVisXL high photorealism priority.
+    Generates image with RealVisXL high photorealism priority and natural anatomy.
     Returns (success, image_bytes, original_prompt, enriched_en_prompt, seed_used).
     """
     clean_prompt = prompt.strip()
@@ -318,8 +319,8 @@ async def generate_image_bytes(
         if img_bytes and len(img_bytes) > 5000:
             return True, img_bytes, clean_prompt, en_prompt, current_seed
 
-    # 2. Photorealistic Fallback with explicit raw photography tokens
-    photo_prompt = f"{en_prompt}, candid raw 35mm film photograph, real human skin with pores, authentic Slavic Russian facial features, natural lighting, shot on 35mm lens, NO anime, NO 3d render, NO plastic"
+    # 2. Photorealistic Fallback with explicit raw photography and anatomy tokens
+    photo_prompt = f"{en_prompt}, candid raw 35mm film photograph, perfect human anatomy, realistic body proportions, real skin with pores, authentic Slavic Russian facial features, natural lighting, shot on 35mm lens, NO anime, NO 3d render, NO mutated limbs, NO plastic"
     encoded = urllib.parse.quote(photo_prompt)
     url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&nologo=true&model=flux&enhance=false&seed={current_seed}"
 
