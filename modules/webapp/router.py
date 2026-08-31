@@ -43,7 +43,7 @@ from modules.weather_synoptic.service import (
 )
 from modules.weather_synoptic.storage import get_user_weather_config
 from modules.loan_calculator.calculator import (
-    calculate_annuity_schedule,
+    calculate_annuity_loan,
     calculate_early_repayment_savings
 )
 
@@ -360,13 +360,13 @@ async def api_delete_food(req: FoodDeleteRequest):
 @router.post("/api/loan/calculate")
 async def api_calc_loan(req: LoanCalcRequest):
     try:
-        schedule = calculate_annuity_schedule(req.amount, req.rate, req.months)
+        schedule = calculate_annuity_loan(req.amount, req.rate, req.months)
         early_res = calculate_early_repayment_savings(req.amount, req.rate, req.months, req.early_monthly)
         return {
             "success": True,
             "monthly_payment": schedule.get("monthly_payment", 0),
             "total_payout": schedule.get("total_payout", 0),
-            "total_interest": schedule.get("total_interest", 0),
+            "total_interest": schedule.get("total_overpayment", 0),
             "early": early_res
         }
     except Exception as e:

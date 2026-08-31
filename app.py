@@ -124,6 +124,7 @@ async def lifespan(app: FastAPI):
         # Setup Telegram Menu Button (WebApp)
         await bot.set_chat_menu_button(
             menu_button=types.MenuButtonWebApp(
+                type="web_app",
                 text="📱 Дашборд",
                 web_app=types.WebAppInfo(url="https://birthday-gemini-bot.onrender.com/app")
             )
