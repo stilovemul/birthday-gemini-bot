@@ -19,6 +19,7 @@ from modules.gourmet_assistant.shashlik_calc import calculate_shashlik_marinade
 from modules.gourmet_assistant.sauces import get_restaurant_sauce
 from modules.gourmet_assistant.asian_cuisine import get_asian_dish_recipe
 from modules.gourmet_assistant.craft_beer import get_craft_beer_guide
+from modules.gourmet_assistant.wine_spirits import get_wine_spirits_guide
 
 logger = logging.getLogger("GourmetHandlers")
 router = Router(name="gourmet_assistant")
@@ -45,7 +46,10 @@ def get_gourmet_main_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="🍜 Азиатская кухня", callback_data="mode_start_asian"),
-                InlineKeyboardButton(text="🍺 Крафтовое пиво", callback_data="mode_start_beer")
+                InlineKeyboardButton(text="🍺 Пивной сомелье", callback_data="mode_start_beer")
+            ],
+            [
+                InlineKeyboardButton(text="🍷 Вино, Водка, Коньяк & Алкоголь", callback_data="mode_start_wine_spirits")
             ],
             [
                 InlineKeyboardButton(text="🍸 AI-Бармен & Коктейли", callback_data="mode_start_barman")
@@ -321,6 +325,53 @@ def format_cocktail_message(data: dict) -> str:
     return "\n".join(lines)
 
 
+def format_wine_spirits_message(data: dict) -> str:
+    notes = data.get("tasting_notes", "")
+    if isinstance(notes, list):
+        notes_str = ", ".join(str(x) for x in notes)
+    else:
+        notes_str = str(notes) if notes else "Благородный сбалансированный букет"
+
+    lines = [
+        f"🍷 <b>{data.get('drink_name', 'Алкогольный напиток')}</b>",
+        f"🏭 Производитель: <b>{data.get('producer', 'Мастер')}</b> | Категория: <i>{data.get('category', 'Премиум')}</i>",
+        f"🌍 Регион: <i>{data.get('origin', 'Мир')}</i> | Крепость: <b>{data.get('abv', '40%')}</b> | ⭐️ <b>Рейтинг: {data.get('rating', '4.2 / 5.0')}</b>",
+        "",
+        f"👅 <b>Вкус и мягкость (Консенсус отзывов):</b>\n{data.get('taste_verdict', '')}",
+        "",
+        f"🛒 <b>Вердикт сомелье:</b>\n{data.get('buy_verdict', '')}",
+        "",
+        "🧀 <b>ИДЕАЛЬНЫЕ ГАСТРОНОМИЧЕСКИЕ ПАРЫ:</b>"
+    ]
+    pairings = data.get("pairings", {})
+    if isinstance(pairings, dict):
+        if pairings.get("cheeses_meats"):
+            lines.append(f"  🧀 <b>Сыры/Мясные деликатесы:</b> <i>{pairings.get('cheeses_meats')}</i>")
+        if pairings.get("hot_dishes"):
+            lines.append(f"  🥩 <b>Горячие блюда:</b> <i>{pairings.get('hot_dishes')}</i>")
+        if pairings.get("traditional_snacks"):
+            lines.append(f"  🍋 <b>Закуски под крепкое:</b> <i>{pairings.get('traditional_snacks')}</i>")
+        if pairings.get("fruits_desserts"):
+            lines.append(f"  🥖 <b>Десерты/Фрукты:</b> <i>{pairings.get('fruits_desserts')}</i>")
+    elif isinstance(pairings, str) and pairings:
+        lines.append(f"  🍽 <b>Рекомендованные блюда:</b> <i>{pairings}</i>")
+
+    hang = data.get("hangover_risk", {})
+    if isinstance(hang, dict) and hang:
+        lines.append("")
+        lines.append("🤕 <b>БУДЕТ ЛИ УТРОМ БОЛЕТЬ ГОЛОВА? (Похмельный фактор):</b>")
+        lines.append(f"  • Риск: <b>{hang.get('risk_level', 'Умеренный')}</b>")
+        lines.append(f"  • Прогноз: <i>{hang.get('morning_forecast', '')}</i>")
+        if hang.get("safety_rule"):
+            lines.append(f"  • {hang.get('safety_rule')}")
+
+    lines.append("")
+    lines.append(f"🌿 Букет: <i>{notes_str}</i> | ❄️ Подача: <b>{data.get('serving', 'Комнатная / Охлажденным')}</b>")
+    lines.append("")
+    lines.append("💬 <i>Вы в режиме сомелье. Пришлите ФОТО бутылки/этикетки (вино, водка, коньяк, виски, ром и др.) или напишите название — я сделаю мгновенный разбор!</i>")
+    return "\n".join(lines)
+
+
 # --- MAIN ENTRY POINT ---
 
 @router.message(Command("gourmet"))
@@ -454,6 +505,17 @@ async def cb_start_beer(callback: types.CallbackQuery, state: FSMContext):
     data = await get_craft_beer_guide(user_id)
     text = format_craft_beer_message(data)
     await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Крафтовое пиво"))
+    await callback.answer()
+
+
+@router.callback_query(F.data == "mode_start_wine_spirits")
+async def cb_start_wine_spirits(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.wine_spirits_mode)
+    user_id = callback.from_user.id
+    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    data = await get_wine_spirits_guide(user_id)
+    text = format_wine_spirits_message(data)
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Вино & Крепкое"))
     await callback.answer()
 
 
@@ -668,6 +730,50 @@ async def handle_beer_dialog(message: types.Message, state: FSMContext):
             except Exception:
                 pass
         await message.answer(f"⚠️ Ошибка обработки: {e}. Попробуйте отправить другое фото или написать название пива текстом.", reply_markup=get_mode_keyboard("Крафтовое пиво"))
+
+
+@router.message(ActiveModeStates.wine_spirits_mode)
+async def handle_wine_spirits_dialog(message: types.Message, state: FSMContext):
+    text = message.text or message.caption or ""
+    if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
+        await state.clear()
+        await message.answer("🏁 <b>Режим «Вино & Крепкое» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        return
+
+    user_id = message.from_user.id
+    status_msg = None
+    try:
+        if message.photo:
+            status_msg = await message.answer("🍷 <i>Изучаю фото этикетки, ищу оценки на Vivino / Whiskybase и рассчитываю похмельный индекс...</i>", parse_mode=ParseMode.HTML)
+            photo = message.photo[-1]
+            buf = io.BytesIO()
+            await message.bot.download(photo, destination=buf)
+            image_bytes = buf.getvalue()
+            data = await get_wine_spirits_guide(user_id, image_bytes=image_bytes)
+        else:
+            await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+            data = await get_wine_spirits_guide(user_id, query=text)
+
+        reply = format_wine_spirits_message(data)
+        if status_msg:
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
+
+        try:
+            await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Вино & Крепкое"))
+        except Exception:
+            await message.answer(reply, reply_markup=get_mode_keyboard("Вино & Крепкое"))
+
+    except Exception as e:
+        logger.error(f"Error in handle_wine_spirits_dialog: {e}")
+        if status_msg:
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
+        await message.answer(f"⚠️ Ошибка обработки: {e}. Попробуйте отправить другое фото или написать название напитка текстом.", reply_markup=get_mode_keyboard("Вино & Крепкое"))
 
 
 @router.message(ActiveModeStates.barman_mode)

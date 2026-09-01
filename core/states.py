@@ -14,6 +14,7 @@ class ActiveModeStates(StatesGroup):
     restaurant_sauces_mode = State()
     asian_cuisine_mode = State()
     craft_beer_mode = State()
+    wine_spirits_mode = State()
     
     # Freebies & Promos
     promos_mode = State()
