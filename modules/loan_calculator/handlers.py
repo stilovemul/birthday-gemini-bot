@@ -94,7 +94,7 @@ def is_user_in_loan_wizard(message: types.Message) -> bool:
 @router.message(Command("loan"))
 @router.message(Command("mortgage"))
 @router.message(Command("calc_loan"))
-@router.message(F.text == "🔢 Кредитный калькулятор")
+@router.message(F.text.in_(["🔢 Калькулятор кредитов", "🔢 Кредитный калькулятор", "Калькулятор кредитов", "Кредитный калькулятор"]))
 async def cmd_credit_calculator(message: types.Message):
     user_id = message.from_user.id
     if user_id in user_loan_wizard:
@@ -102,7 +102,7 @@ async def cmd_credit_calculator(message: types.Message):
 
     text_body = message.text or ""
     # Strip command prefix
-    for cmd in ["/credit", "/loan", "/mortgage", "/calc_loan", "Кредитный калькулятор"]:
+    for cmd in ["/credit", "/loan", "/mortgage", "/calc_loan", "🔢 Калькулятор кредитов", "🔢 Кредитный калькулятор", "Калькулятор кредитов", "Кредитный калькулятор"]:
         if text_body.startswith(cmd):
             text_body = text_body[len(cmd):].strip()
             break

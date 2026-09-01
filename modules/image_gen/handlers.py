@@ -63,9 +63,12 @@ def get_engine_selection_keyboard(current_engine: str = "realvis") -> InlineKeyb
 @router.message(Command("image"))
 @router.message(Command("draw"))
 @router.message(Command("art"))
+@router.message(F.text.in_(["🎨 Генерация картинок", "🎨 Генерация картинок (RealVisXL)", "🎨 Картинки"]))
 async def cmd_generate_image(message: types.Message, bot: Bot):
     text = (message.text or "").strip()
     prompt = re.sub(r"^/(?:image|draw|art)\s*", "", text, flags=re.IGNORECASE).strip()
+    if prompt in ["🎨 Генерация картинок", "🎨 Генерация картинок (RealVisXL)", "🎨 Картинки"]:
+        prompt = ""
     user_id = message.from_user.id
     
     if not prompt:
