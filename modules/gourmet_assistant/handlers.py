@@ -253,10 +253,16 @@ def format_asian_message(data: dict) -> str:
 
 
 def format_craft_beer_message(data: dict) -> str:
+    fn = data.get("flavor_notes", "")
+    if isinstance(fn, list):
+        fn_str = ", ".join(str(x) for x in fn)
+    else:
+        fn_str = str(fn) if fn else "Солодовые и хмелевые ноты"
+
     lines = [
         f"🍺 <b>{data.get('beer_name', 'Крафтовое пиво')}</b>",
         f"🏭 Пивоварня: <b>{data.get('brewery', 'Крафтовая')}</b> | Стиль: <i>{data.get('style', 'Ale')}</i>",
-        f"📊 Крепость: <b>{data.get('abv', '6.0%')}</b> | Горечь: <b>{data.get('ibu', '35 IBU')}</b> | ⭐️ <b>Untappd: {data.get('untappd_rating', '4.0/5')}</b>",
+        f"📊 Крепость: <b>{data.get('abv', '5.0%')}</b> | Горечь: <b>{data.get('ibu', '20 IBU')}</b> | ⭐️ <b>Untappd: {data.get('untappd_rating', '4.0/5')}</b>",
         "",
         f"👅 <b>Вкусное или нет? (Консенсус отзывов):</b>\n{data.get('taste_verdict', '')}",
         "",
@@ -265,17 +271,20 @@ def format_craft_beer_message(data: dict) -> str:
         "🍟 <b>ИДЕАЛЬНЫЕ ЗАКУСКИ (FOOD PAIRING):</b>"
     ]
     snacks = data.get("snacks", {})
-    if snacks.get("croutons"):
-        lines.append(f"  🍞 <b>Сухарики/гренки:</b> <i>{snacks.get('croutons')}</i>")
-    if snacks.get("fish"):
-        lines.append(f"  🐟 <b>Рыбка/морепродукты:</b> <i>{snacks.get('fish')}</i>")
-    if snacks.get("chips"):
-        lines.append(f"  🥔 <b>Чипсы/снеки:</b> <i>{snacks.get('chips')}</i>")
-    if snacks.get("hot_food"):
-        lines.append(f"  🍔 <b>Горячее/сыры:</b> <i>{snacks.get('hot_food')}</i>")
+    if isinstance(snacks, dict):
+        if snacks.get("croutons"):
+            lines.append(f"  🍞 <b>Сухарики/гренки:</b> <i>{snacks.get('croutons')}</i>")
+        if snacks.get("fish"):
+            lines.append(f"  🐟 <b>Рыбка/морепродукты:</b> <i>{snacks.get('fish')}</i>")
+        if snacks.get("chips"):
+            lines.append(f"  🥔 <b>Чипсы/снеки:</b> <i>{snacks.get('chips')}</i>")
+        if snacks.get("hot_food"):
+            lines.append(f"  🍔 <b>Горячее/сыры:</b> <i>{snacks.get('hot_food')}</i>")
+    elif isinstance(snacks, str) and snacks:
+        lines.append(f"  🍿 <b>Рекомендованные закуски:</b> <i>{snacks}</i>")
 
     hang = data.get("hangover_risk", {})
-    if hang:
+    if isinstance(hang, dict) and hang:
         lines.append("")
         lines.append("🤕 <b>БУДЕТ ЛИ УТРОМ БОЛЕТЬ ГОЛОВА? (Похмельный фактор):</b>")
         lines.append(f"  • Риск: <b>{hang.get('risk_level', 'Низкий')}</b>")
@@ -284,7 +293,7 @@ def format_craft_beer_message(data: dict) -> str:
             lines.append(f"  • {hang.get('hangover_cure')}")
 
     lines.append("")
-    lines.append(f"🌿 Вкусовые ноты: <i>{data.get('flavor_notes', '')}</i> | ❄️ Подача: <b>{data.get('serving_temp', '8-10°C')}</b>")
+    lines.append(f"🌿 Вкусовые ноты: <i>{fn_str}</i> | ❄️ Подача: <b>{data.get('serving_temp', '6-8°C')}</b>")
     lines.append("")
     lines.append("💬 <i>Вы в режиме сомелье. Пришлите ФОТО банки/этикетки пива или напишите название — я сделаю мгновенный разбор!</i>")
     return "\n".join(lines)
@@ -491,24 +500,46 @@ async def handle_fastfood_dialog(message: types.Message, state: FSMContext):
 
 @router.message(ActiveModeStates.fridge_chef_mode)
 async def handle_fridge_dialog(message: types.Message, state: FSMContext):
-    text = message.text or ""
+    text = message.text or message.caption or ""
     if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
         await state.clear()
         await message.answer("🏁 <b>Режим «Шеф-Холодильник» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
         return
+
     user_id = message.from_user.id
-    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    if message.photo:
-        photo = message.photo[-1]
-        file_info = await message.bot.get_file(photo.file_id)
-        buf = io.BytesIO()
-        await message.bot.download_file(file_info.file_path, buf)
-        image_bytes = buf.getvalue()
-        data = await cook_from_fridge(user_id, image_bytes=image_bytes)
-    else:
-        data = await cook_from_fridge(user_id, ingredients_text=text)
-    reply = format_fridge_message(data)
-    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Шеф-Холодильник"))
+    status_msg = None
+    try:
+        if message.photo:
+            status_msg = await message.answer("🧊 <i>Распознаю продукты на фото вашего холодильника и придумываю 3 блюда...</i>", parse_mode=ParseMode.HTML)
+            photo = message.photo[-1]
+            buf = io.BytesIO()
+            await message.bot.download(photo, destination=buf)
+            image_bytes = buf.getvalue()
+            data = await cook_from_fridge(user_id, image_bytes=image_bytes)
+        else:
+            await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+            data = await cook_from_fridge(user_id, ingredients_text=text)
+
+        reply = format_fridge_message(data)
+        if status_msg:
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
+
+        try:
+            await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Шеф-Холодильник"))
+        except Exception:
+            await message.answer(reply, reply_markup=get_mode_keyboard("Шеф-Холодильник"))
+
+    except Exception as e:
+        logger.error(f"Error in handle_fridge_dialog: {e}")
+        if status_msg:
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
+        await message.answer(f"⚠️ Ошибка обработки: {e}. Попробуйте отправить другое фото или список продуктов текстом.", reply_markup=get_mode_keyboard("Шеф-Холодильник"))
 
 
 @router.message(ActiveModeStates.steak_timer_mode)
@@ -597,26 +628,46 @@ async def handle_asian_dialog(message: types.Message, state: FSMContext):
 
 @router.message(ActiveModeStates.craft_beer_mode)
 async def handle_beer_dialog(message: types.Message, state: FSMContext):
-    text = message.text or ""
+    text = message.text or message.caption or ""
     if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
         await state.clear()
         await message.answer("🏁 <b>Режим «Крафтовое пиво» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
         return
 
     user_id = message.from_user.id
-    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    if message.photo:
-        photo = message.photo[-1]
-        file_info = await message.bot.get_file(photo.file_id)
-        buf = io.BytesIO()
-        await message.bot.download_file(file_info.file_path, buf)
-        image_bytes = buf.getvalue()
-        data = await get_craft_beer_guide(user_id, image_bytes=image_bytes)
-    else:
-        data = await get_craft_beer_guide(user_id, query=text)
+    status_msg = None
+    try:
+        if message.photo:
+            status_msg = await message.answer("🍺 <i>Изучаю фото этикетки, ищу отзывы в Untappd и рассчитываю похмельный индекс...</i>", parse_mode=ParseMode.HTML)
+            photo = message.photo[-1]
+            buf = io.BytesIO()
+            await message.bot.download(photo, destination=buf)
+            image_bytes = buf.getvalue()
+            data = await get_craft_beer_guide(user_id, image_bytes=image_bytes)
+        else:
+            await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+            data = await get_craft_beer_guide(user_id, query=text)
 
-    reply = format_craft_beer_message(data)
-    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Крафтовое пиво"))
+        reply = format_craft_beer_message(data)
+        if status_msg:
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
+
+        try:
+            await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Крафтовое пиво"))
+        except Exception:
+            await message.answer(reply, reply_markup=get_mode_keyboard("Крафтовое пиво"))
+
+    except Exception as e:
+        logger.error(f"Error in handle_beer_dialog: {e}")
+        if status_msg:
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
+        await message.answer(f"⚠️ Ошибка обработки: {e}. Попробуйте отправить другое фото или написать название пива текстом.", reply_markup=get_mode_keyboard("Крафтовое пиво"))
 
 
 @router.message(ActiveModeStates.barman_mode)
