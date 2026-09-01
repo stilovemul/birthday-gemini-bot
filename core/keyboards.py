@@ -24,9 +24,7 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="🎨 Генерация картинок")
         ],
         [
-            KeyboardButton(text="🚗 Drive2 Уведомления"),
-            KeyboardButton(text="🔵 VK Уведомления"),
-            KeyboardButton(text="💬 MAX Уведомления")
+            KeyboardButton(text="📬 Входящие: Drive2, VK & MAX")
         ],
         [
             KeyboardButton(text="🥗 Сканер еды & КБЖУ"),

@@ -23,6 +23,7 @@ from modules.food_tracker.handlers import router as food_router
 from modules.drive2_tracker.handlers import router as drive2_router
 from modules.vk_tracker.handlers import router as vk_router
 from modules.max_tracker.handlers import router as max_router
+from modules.unified_monitor.handlers import router as unified_monitor_router
 from modules.secret_vault.handlers import router as vault_router
 from modules.weather_synoptic.handlers import router as weather_router
 from modules.sleep_calculator.handlers import router as sleep_router
@@ -55,6 +56,7 @@ dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(digest_router)
 dp.include_router(smart_home_router)
 dp.include_router(voice_router)
+dp.include_router(unified_monitor_router)
 dp.include_router(drive2_router)
 dp.include_router(vk_router)
 dp.include_router(max_router)
