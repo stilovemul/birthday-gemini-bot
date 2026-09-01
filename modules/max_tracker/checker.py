@@ -188,6 +188,14 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                 c_id_hex = ext_to_hex(c.get("id"))
                 last_msg = c.get("lastMessage")
                 
+                # Resolve partner name from participants/members
+                recipients = [ext_to_hex(x) for x in c.get("participants", []) or c.get("members", []) or []]
+                partner_name = ""
+                for r in recipients:
+                    if r != my_id_hex and r in contact_names:
+                        partner_name = contact_names[r]
+                        break
+
                 if isinstance(last_msg, dict):
                     sender_raw = last_msg.get("sender")
                     sender_hex = ext_to_hex(sender_raw)
@@ -196,18 +204,22 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                     msg_text = last_msg.get("text", "")
                     
                     is_incoming = (sender_hex != my_id_hex)
-                    if is_incoming and not c_title:
-                        c_title = contact_names.get(sender_hex, "Личный диалог")
+                    sender_display = contact_names.get(sender_hex, "Собеседник") if is_incoming else "Вы"
 
                     if not c_title:
-                        c_title = "Диалог MAX"
+                        if partner_name:
+                            c_title = partner_name
+                        elif is_incoming and sender_display != "Собеседник":
+                            c_title = sender_display
+                        else:
+                            c_title = "Личный диалог"
 
                     recent_messages.append({
                         "chat_id": c_id_hex,
                         "title": c_title,
                         "msg_id": msg_id_hex,
                         "is_incoming": is_incoming,
-                        "sender_name": contact_names.get(sender_hex, "Собеседник"),
+                        "sender_name": sender_display,
                         "text": msg_text[:80]
                     })
 
