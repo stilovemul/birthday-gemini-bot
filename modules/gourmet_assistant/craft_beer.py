@@ -33,7 +33,8 @@ async def get_craft_beer_guide(user_id: int, query: str = "", image_bytes: Optio
         "   - 🥔 Чипсы/снеки\n"
         "   - 🍔 Горячие блюда/сыры\n"
         "6. БУДЕТ ЛИ УТРОМ БОЛЕТЬ ГОЛОВА? (Похмельный фактор: уровень риска, почему, и лайфхак как пить без тяжелого утра).\n"
-        "7. Вкусовой профиль и оптимальная температура подачи.\n\n"
+        "7. Вкусовой профиль и ноты аромата (flavor_notes): СТРОГО НА РУССКОМ ЯЗЫКЕ (например: 'сочное спелое манго, маракуйя, цитрусовая цедра, сосновая хвоя' — обязательно переводи все английские термины вроде citrus, pine, resin, floral, malt, hops, tropical на сочный русский язык).\n"
+        "8. ВСЕ поля JSON (включая закуски и вердикт) должны быть ТОЛЬКО НА КРАСИВОМ И ПОНЯТНОМ РУССКОМ ЯЗЫКЕ.\n\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
         '  "beer_name": "🍺 Zagovor - Decontrol (Double IPA)",\n'
@@ -55,7 +56,7 @@ async def get_craft_beer_guide(user_id: int, query: str = "", image_bytes: Optio
         '    "morning_forecast": "Крепость 8.0% и высокая плотность дают коварный эффект: пьется как сок, но 2-3 банки на утро дадут тяжелую голову из-за сахаров и градусов.",\n'
         '    "hangover_cure": "💡 Пейте 1 стакан воды на каждую банку и обязательно плотно поешьте перед дегустацией!"\n'
         '  },\n'
-        '  "flavor_notes": "Манго, маракуйя, цитрусовая цедра, сосновая смола",\n'
+        '  "flavor_notes": "Спелое манго, маракуйя, цитрусовая цедра, сосновая смола",\n'
         '  "serving_temp": "8-10°C (бокал тюльпан или снифтер)"\n'
         "}"
     )
@@ -68,6 +69,7 @@ async def get_craft_beer_guide(user_id: int, query: str = "", image_bytes: Optio
             "beer_name, brewery, style, abv, ibu, untappd_rating, taste_verdict (вкусное или нет), "
             "buy_verdict (стоит ли брать), snacks (croutons, fish, chips, hot_food), "
             "hangover_risk (risk_level, morning_forecast, hangover_cure), flavor_notes, serving_temp.\n"
+            "Все текстовые поля и вкусовые ноты (flavor_notes) СТРОГО НА РУССКОМ ЯЗЫКЕ!\n"
             "Верни ТОЛЬКО чистый JSON!"
         )
         resp = await ask_gemini(user_id, prompt_vision, image_bytes=image_bytes)

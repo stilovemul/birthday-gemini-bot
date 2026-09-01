@@ -1,3 +1,4 @@
+import re
 import io
 import logging
 from aiogram import Router, types, F
@@ -256,12 +257,34 @@ def format_asian_message(data: dict) -> str:
     return "\n".join(lines)
 
 
+def translate_flavor_notes(text: str) -> str:
+    if not text:
+        return "Солодовые и хмелевые ноты"
+    t = str(text)
+    mapping = {
+        "citrus": "цитрусы", "pine": "хвоя", "resin": "хвойная смола",
+        "tropical": "тропические фрукты", "grapefruit": "грейпфрут", "mango": "манго",
+        "passionfruit": "маракуйя", "peach": "персик", "hops": "хмель", "hoppy": "хмелевой",
+        "malt": "солод", "malty": "солодовый", "caramel": "карамель", "coffee": "кофе",
+        "chocolate": "шоколад", "vanilla": "ваниль", "oak": "дуб", "smoke": "копченые ноты",
+        "berries": "лесные ягоды", "cherry": "вишня", "banana": "банан", "clove": "гвоздика",
+        "coriander": "кориандр", "orange peel": "цедра апельсина", "lemon": "лимон",
+        "lime": "лайм", "herbal": "пряные травы", "floral": "цветочные ноты",
+        "spicy": "пряности", "crisp": "хрустящий освежающий", "roasted": "обжаренный солод",
+        "toffee": "ириска", "biscuit": "бисквит", "honey": "мед"
+    }
+    for eng, rus in mapping.items():
+        t = re.sub(r'\b' + re.escape(eng) + r'\b', rus, t, flags=re.IGNORECASE)
+    return t
+
+
 def format_craft_beer_message(data: dict) -> str:
     fn = data.get("flavor_notes", "")
     if isinstance(fn, list):
         fn_str = ", ".join(str(x) for x in fn)
     else:
         fn_str = str(fn) if fn else "Солодовые и хмелевые ноты"
+    fn_str = translate_flavor_notes(fn_str)
 
     lines = [
         f"🍺 <b>{data.get('beer_name', 'Крафтовое пиво')}</b>",
@@ -275,17 +298,41 @@ def format_craft_beer_message(data: dict) -> str:
         "🍟 <b>ИДЕАЛЬНЫЕ ЗАКУСКИ (FOOD PAIRING):</b>"
     ]
     snacks = data.get("snacks", {})
+    snack_lines = []
     if isinstance(snacks, dict):
-        if snacks.get("croutons"):
-            lines.append(f"  🍞 <b>Сухарики/гренки:</b> <i>{snacks.get('croutons')}</i>")
-        if snacks.get("fish"):
-            lines.append(f"  🐟 <b>Рыбка/морепродукты:</b> <i>{snacks.get('fish')}</i>")
-        if snacks.get("chips"):
-            lines.append(f"  🥔 <b>Чипсы/снеки:</b> <i>{snacks.get('chips')}</i>")
-        if snacks.get("hot_food"):
-            lines.append(f"  🍔 <b>Горячее/сыры:</b> <i>{snacks.get('hot_food')}</i>")
-    elif isinstance(snacks, str) and snacks:
-        lines.append(f"  🍿 <b>Рекомендованные закуски:</b> <i>{snacks}</i>")
+        croutons = snacks.get("croutons") or snacks.get("crouton") or snacks.get("сухарики") or snacks.get("гренки") or snacks.get("bread")
+        fish = snacks.get("fish") or snacks.get("seafood") or snacks.get("рыба") or snacks.get("морепродукты") or snacks.get("fish_seafood")
+        chips = snacks.get("chips") or snacks.get("crisps") or snacks.get("чипсы") or snacks.get("снеки") or snacks.get("snacks")
+        hot_food = snacks.get("hot_food") or snacks.get("hot") or snacks.get("dishes") or snacks.get("cheese") or snacks.get("сыр") or snacks.get("горячее") or snacks.get("meat")
+
+        if croutons:
+            snack_lines.append(f"  🍞 <b>Сухарики/гренки:</b> <i>{croutons}</i>")
+        if fish:
+            snack_lines.append(f"  🐟 <b>Рыбка/морепродукты:</b> <i>{fish}</i>")
+        if chips:
+            snack_lines.append(f"  🥔 <b>Чипсы/снеки:</b> <i>{chips}</i>")
+        if hot_food:
+            snack_lines.append(f"  🍔 <b>Горячее/сыры:</b> <i>{hot_food}</i>")
+
+        if not snack_lines:
+            for k, v in snacks.items():
+                if v:
+                    snack_lines.append(f"  • <b>{k.replace('_', ' ').capitalize()}:</b> <i>{v}</i>")
+    elif isinstance(snacks, list):
+        for s in snacks:
+            if s:
+                snack_lines.append(f"  • <i>{s}</i>")
+    elif isinstance(snacks, str) and snacks.strip():
+        snack_lines.append(f"  🍿 <i>{snacks.strip()}</i>")
+
+    if not snack_lines:
+        snack_lines = [
+            "  🍞 <b>Сухарики/гренки:</b> <i>Чесночные бородинские гренки с сырным соусом</i>",
+            "  🐟 <b>Рыбка/морепродукты:</b> <i>Вяленая горбуша, корюшка или кольца кальмара</i>",
+            "  🍔 <b>Горячее/сыры:</b> <i>Сочный бургер, крылышки Баффало, сыр Чеддер</i>"
+        ]
+
+    lines.extend(snack_lines)
 
     hang = data.get("hangover_risk", {})
     if isinstance(hang, dict) and hang:
@@ -331,6 +378,7 @@ def format_wine_spirits_message(data: dict) -> str:
         notes_str = ", ".join(str(x) for x in notes)
     else:
         notes_str = str(notes) if notes else "Благородный сбалансированный букет"
+    notes_str = translate_flavor_notes(notes_str)
 
     lines = [
         f"🍷 <b>{data.get('drink_name', 'Алкогольный напиток')}</b>",
@@ -344,17 +392,40 @@ def format_wine_spirits_message(data: dict) -> str:
         "🧀 <b>ИДЕАЛЬНЫЕ ГАСТРОНОМИЧЕСКИЕ ПАРЫ:</b>"
     ]
     pairings = data.get("pairings", {})
+    pairing_lines = []
     if isinstance(pairings, dict):
-        if pairings.get("cheeses_meats"):
-            lines.append(f"  🧀 <b>Сыры/Мясные деликатесы:</b> <i>{pairings.get('cheeses_meats')}</i>")
-        if pairings.get("hot_dishes"):
-            lines.append(f"  🥩 <b>Горячие блюда:</b> <i>{pairings.get('hot_dishes')}</i>")
-        if pairings.get("traditional_snacks"):
-            lines.append(f"  🍋 <b>Закуски под крепкое:</b> <i>{pairings.get('traditional_snacks')}</i>")
-        if pairings.get("fruits_desserts"):
-            lines.append(f"  🥖 <b>Десерты/Фрукты:</b> <i>{pairings.get('fruits_desserts')}</i>")
-    elif isinstance(pairings, str) and pairings:
-        lines.append(f"  🍽 <b>Рекомендованные блюда:</b> <i>{pairings}</i>")
+        cheeses_meats = pairings.get("cheeses_meats") or pairings.get("cheese") or pairings.get("meat") or pairings.get("сыры") or pairings.get("мясо")
+        hot_dishes = pairings.get("hot_dishes") or pairings.get("hot") or pairings.get("main_dishes") or pairings.get("горячее") or pairings.get("блюда")
+        traditional = pairings.get("traditional_snacks") or pairings.get("snacks") or pairings.get("traditional") or pairings.get("закуски")
+        fruits = pairings.get("fruits_desserts") or pairings.get("desserts") or pairings.get("fruits") or pairings.get("десерты") or pairings.get("фрукты")
+
+        if cheeses_meats:
+            pairing_lines.append(f"  🧀 <b>Сыры/Мясные деликатесы:</b> <i>{cheeses_meats}</i>")
+        if hot_dishes:
+            pairing_lines.append(f"  🥩 <b>Горячие блюда:</b> <i>{hot_dishes}</i>")
+        if traditional:
+            pairing_lines.append(f"  🍋 <b>Закуски под крепкое:</b> <i>{traditional}</i>")
+        if fruits:
+            pairing_lines.append(f"  🥖 <b>Десерты/Фрукты:</b> <i>{fruits}</i>")
+
+        if not pairing_lines:
+            for k, v in pairings.items():
+                if v:
+                    pairing_lines.append(f"  • <b>{k.replace('_', ' ').capitalize()}:</b> <i>{v}</i>")
+    elif isinstance(pairings, list):
+        for p in pairings:
+            if p:
+                pairing_lines.append(f"  • <i>{p}</i>")
+    elif isinstance(pairings, str) and pairings.strip():
+        pairing_lines.append(f"  🍽 <i>{pairings.strip()}</i>")
+
+    if not pairing_lines:
+        pairing_lines = [
+            "  🧀 <b>Сыры/Мясные деликатесы:</b> <i>Сырная тарелка (Пармезан, Гауда), сыровяленый окорок</i>",
+            "  🥩 <b>Горячие блюда:</b> <i>Стейк из говядины или запеченная утка с яблоками</i>"
+        ]
+
+    lines.extend(pairing_lines)
 
     hang = data.get("hangover_risk", {})
     if isinstance(hang, dict) and hang:
