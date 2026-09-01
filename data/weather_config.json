@@ -1,0 +1,10 @@
+{
+  "157236577": {
+    "city": "Санкт-Петербург",
+    "district": "Каменка",
+    "lat": 60.0394,
+    "lon": 30.2031,
+    "alerts_enabled": true,
+    "last_alert_time": 0
+  }
+}

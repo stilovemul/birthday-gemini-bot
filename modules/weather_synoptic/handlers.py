@@ -42,7 +42,14 @@ def get_weather_keyboard(alerts_enabled: bool = True) -> InlineKeyboardMarkup:
 @router.message(F.text.in_(["🌤 Погода", "🌤 Погода & Осадки", "Погода", "Погода & Осадки"]))
 async def cmd_weather(message: types.Message, bot: Bot):
     user_id = message.from_user.id
-    args = (message.text or "").split(maxsplit=1)
+    raw_text = (message.text or "").strip()
+    custom_query = ""
+
+    # Only parse custom query if user sent explicit command /weather <city>
+    if raw_text.startswith("/weather"):
+        parts = raw_text.split(maxsplit=1)
+        if len(parts) > 1 and parts[1].strip():
+            custom_query = parts[1].strip()
 
     config = get_user_weather_config(user_id)
     city = config.get("city", "Санкт-Петербург")
@@ -50,8 +57,7 @@ async def cmd_weather(message: types.Message, bot: Bot):
     lat = config.get("lat", 59.9386)
     lon = config.get("lon", 30.3141)
 
-    if len(args) > 1 and args[1].strip() and args[1].strip() != "Погода & Осадки":
-        custom_query = args[1].strip()
+    if custom_query:
         geo = await geocode_location(custom_query)
         if geo:
             city, district, lat, lon = geo
