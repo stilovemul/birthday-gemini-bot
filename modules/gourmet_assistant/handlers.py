@@ -253,27 +253,40 @@ def format_asian_message(data: dict) -> str:
 
 
 def format_craft_beer_message(data: dict) -> str:
-    chars = data.get("characteristics", {})
     lines = [
-        f"🍺 <b>{data.get('style_name', 'Крафтовое пиво')}</b>",
+        f"🍺 <b>{data.get('beer_name', 'Крафтовое пиво')}</b>",
+        f"🏭 Пивоварня: <b>{data.get('brewery', 'Крафтовая')}</b> | Стиль: <i>{data.get('style', 'Ale')}</i>",
+        f"📊 Крепость: <b>{data.get('abv', '6.0%')}</b> | Горечь: <b>{data.get('ibu', '35 IBU')}</b> | ⭐️ <b>Untappd: {data.get('untappd_rating', '4.0/5')}</b>",
         "",
-        "📊 <b>Характеристики стиля:</b>",
-        f"  • Крепость (ABV): <b>{chars.get('abv', '6.0%')}</b>",
-        f"  • Горечь (IBU): <b>{chars.get('ibu', '35 IBU')}</b>",
-        f"  • Цвет: <i>{chars.get('color', 'Золотистый')}</i>",
-        f"  • Аромат: <i>{chars.get('aroma', 'Хмелевой')}</i>",
+        f"👅 <b>Вкусное или нет? (Консенсус отзывов):</b>\n{data.get('taste_verdict', '')}",
         "",
-        f"👅 <b>Вкусовой профиль:</b>\n{data.get('flavor_profile', '')}",
+        f"🛒 <b>Вердикт сомелье:</b>\n{data.get('buy_verdict', '')}",
         "",
-        "🍔 <b>Идеальные гастрономические пары (Food Pairing):</b>"
+        "🍟 <b>ИДЕАЛЬНЫЕ ЗАКУСКИ (FOOD PAIRING):</b>"
     ]
-    for pair in data.get("food_pairings", []):
-        lines.append(f"  {pair}")
-    if data.get("sommelier_advice"):
+    snacks = data.get("snacks", {})
+    if snacks.get("croutons"):
+        lines.append(f"  🍞 <b>Сухарики/гренки:</b> <i>{snacks.get('croutons')}</i>")
+    if snacks.get("fish"):
+        lines.append(f"  🐟 <b>Рыбка/морепродукты:</b> <i>{snacks.get('fish')}</i>")
+    if snacks.get("chips"):
+        lines.append(f"  🥔 <b>Чипсы/снеки:</b> <i>{snacks.get('chips')}</i>")
+    if snacks.get("hot_food"):
+        lines.append(f"  🍔 <b>Горячее/сыры:</b> <i>{snacks.get('hot_food')}</i>")
+
+    hang = data.get("hangover_risk", {})
+    if hang:
         lines.append("")
-        lines.append(f"{data['sommelier_advice']}")
+        lines.append("🤕 <b>БУДЕТ ЛИ УТРОМ БОЛЕТЬ ГОЛОВА? (Похмельный фактор):</b>")
+        lines.append(f"  • Риск: <b>{hang.get('risk_level', 'Низкий')}</b>")
+        lines.append(f"  • Прогноз: <i>{hang.get('morning_forecast', '')}</i>")
+        if hang.get("hangover_cure"):
+            lines.append(f"  • {hang.get('hangover_cure')}")
+
     lines.append("")
-    lines.append("💬 <i>Спросите про любой стиль (например: «Имперский стаут», «Кислый гозе с маракуйей», «DIPA vs NEIPA»):</i>")
+    lines.append(f"🌿 Вкусовые ноты: <i>{data.get('flavor_notes', '')}</i> | ❄️ Подача: <b>{data.get('serving_temp', '8-10°C')}</b>")
+    lines.append("")
+    lines.append("💬 <i>Вы в режиме сомелье. Пришлите ФОТО банки/этикетки пива или напишите название — я сделаю мгновенный разбор!</i>")
     return "\n".join(lines)
 
 
@@ -589,9 +602,19 @@ async def handle_beer_dialog(message: types.Message, state: FSMContext):
         await state.clear()
         await message.answer("🏁 <b>Режим «Крафтовое пиво» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
         return
+
     user_id = message.from_user.id
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    data = await get_craft_beer_guide(user_id, style_query=text)
+    if message.photo:
+        photo = message.photo[-1]
+        file_info = await message.bot.get_file(photo.file_id)
+        buf = io.BytesIO()
+        await message.bot.download_file(file_info.file_path, buf)
+        image_bytes = buf.getvalue()
+        data = await get_craft_beer_guide(user_id, image_bytes=image_bytes)
+    else:
+        data = await get_craft_beer_guide(user_id, query=text)
+
     reply = format_craft_beer_message(data)
     await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Крафтовое пиво"))
 

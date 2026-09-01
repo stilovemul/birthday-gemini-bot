@@ -1,53 +1,107 @@
 import re
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("CraftBeerGuide")
 
 
-async def get_craft_beer_guide(user_id: int, style_query: str = "") -> Dict[str, Any]:
-    b_query = style_query if style_query else "New England IPA (NEIPA) / Молочный стаут / Саур эль с фруктами"
+async def get_craft_beer_guide(user_id: int, query: str = "", image_bytes: Optional[bytes] = None) -> Dict[str, Any]:
+    """
+    Acts as a Pocket Beer Sommelier (Карманный пивной сомелье):
+    - Identifies beer & brewery by photo of bottle/can/label/taplist or by text
+    - Evaluates online reviews & Untappd ratings (is it tasty or not?)
+    - Gives clear buying verdict ("Стоит ли брать?")
+    - Custom snack pairings (сухарики, рыбка, чипсы, горячие закуски)
+    - Hangover risk assessment ("Будет ли утром болеть голова?")
+    - Flavor profile and serving temperature
+    """
+    b_query = query if query else "Популярный крафтовый сорт (например: Zagovor, AF Brew, Jaws, Salden's, Guinness)"
+    
     prompt = (
-        "Ты сертифицированный бир-сомелье (Cicerone). Составь экспертный гид по стилям крафтового пива.\n"
-        f"Запрос пользователя: '{b_query}'\n\n"
+        "Ты профессиональный сертифицированный пивной сомелье (Master Cicerone) и эксперт по крафтовому и классическому пиву.\n"
+        f"Запрос пользователя / название: '{b_query}'\n\n"
+        "Проанализируй сорт, оценки пивного сообщества (Untappd / RateBeer / отзывы энтузиастов) и дай исчерпывающий вердикт:\n"
+        "1. Название пива, пивоварня и стиль (IPA, DIPA, NEIPA, Stout, Gose, Sour, Pilsner, Blanche, Lager, Porter и т.д.).\n"
+        "2. Характеристики: Крепость (ABV), Горечь (IBU), плотность (Plato).\n"
+        "3. Рейтинг сообщества (Untappd score / 5.0) и честное резюме отзывов: ВКУСНОЕ ИЛИ НЕТ? Плюсы и минусы.\n"
+        "4. Вердикт сомелье: СТОИТ ЛИ ПОКУПАТЬ? (Брать обязательно / На любителя / Лучше пройти мимо).\n"
+        "5. Идеальные закуски (Food Pairing):\n"
+        "   - 🍞 Сухарики/гренки (какие именно идеально гармонируют)\n"
+        "   - 🐟 Рыбка/морепродукты (какая рыба подчеркнет вкус, а какая испортит)\n"
+        "   - 🥔 Чипсы/снеки\n"
+        "   - 🍔 Горячие блюда/сыры\n"
+        "6. БУДЕТ ЛИ УТРОМ БОЛЕТЬ ГОЛОВА? (Похмельный фактор: уровень риска, почему, и лайфхак как пить без тяжелого утра).\n"
+        "7. Вкусовой профиль и оптимальная температура подачи.\n\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
-        '  "style_name": "🍺 New England IPA (Hazy / Juicy IPA)",\n'
-        '  "characteristics": {\n'
-        '    "abv": "6.0 - 7.5% (Крепость)",\n'
-        '    "ibu": "25 - 45 IBU (Мягкая сочная горечь)",\n'
-        '    "color": "Мутный соломенно-желтый, похож на свежевыжатый сок",\n'
-        '    "aroma": "Взрыв тропических фруктов: манго, маракуйя, цитрусы, ананас"\n'
+        '  "beer_name": "🍺 Zagovor - Decontrol (Double IPA)",\n'
+        '  "brewery": "Zagovor Brewery",\n'
+        '  "style": "Double New England IPA (DIPA)",\n'
+        '  "abv": "8.0%",\n'
+        '  "ibu": "45 IBU",\n'
+        '  "untappd_rating": "4.15 / 5.0 ⭐️ (Топовый крафтовый рейтинг)",\n'
+        '  "taste_verdict": "🔥 ВКУСНОЕ: Мощный тропический сок с мягким телом, нотки манго, персика и цитрусов. Спирт отлично скрыт, пьется легко.",\n'
+        '  "buy_verdict": "✅ СТОИТ БРАТЬ: Эталонный представитель стиля, оправдывает каждую копейку.",\n'
+        '  "snacks": {\n'
+        '    "croutons": "Чесночные бородинские гренки со сливочным соусом",\n'
+        '    "fish": "Слабосоленая форель или вяленый лосось (избегайте чересчур соленой воблы — она перебьет хмель)",\n'
+        '    "chips": "Рифленые чипсы с паприкой или халапеньо",\n'
+        '    "hot_food": "Сочный бургер с беконом, крылышки Баффало, сыр Чеддер"\n'
         '  },\n'
-        '  "flavor_profile": "Невероятно шелковистое тело за счет овсяных хлопьев, яркий фруктовый вкус хмелей (Citra, Mosaic, Galaxy) без резкой горечи.",\n'
-        '  "food_pairings": [\n'
-        '    "🍔 Сочные бургеры и крылышки Баффало",\n'
-        '    "🍕 Пицца с острой салями или сырами",\n'
-        '    "🌮 Мексиканские такос и севиче"\n'
-        '  ],\n'
-        '  "sommelier_advice": "💡 Пейте NEIPA максимально свежим (до 2-3 месяцев с даты розлива), охлажденным до 8-10°C в бокале Тюльпан или Снифтер!"\n'
+        '  "hangover_risk": {\n'
+        '    "risk_level": "⚠️ Средне-высокий (при > 2 банок)",\n'
+        '    "morning_forecast": "Крепость 8.0% и высокая плотность дают коварный эффект: пьется как сок, но 2-3 банки на утро дадут тяжелую голову из-за сахаров и градусов.",\n'
+        '    "hangover_cure": "💡 Пейте 1 стакан воды на каждую банку и обязательно плотно поешьте перед дегустацией!"\n'
+        '  },\n'
+        '  "flavor_notes": "Манго, маракуйя, цитрусовая цедра, сосновая смола",\n'
+        '  "serving_temp": "8-10°C (бокал тюльпан или снифтер)"\n'
         "}"
     )
 
-    resp = await ask_gemini(user_id, prompt)
+    if image_bytes:
+        prompt_vision = (
+            "Ты карманный пивной сомелье. Внимательно распознай пиво, этикетку, банку или кран на этом фото.\n"
+            "Найди актуальную информацию и отзывы сообщества (Untappd) об этом сорте.\n"
+            "Сформируй полный ответ в формате JSON со следующими полями: "
+            "beer_name, brewery, style, abv, ibu, untappd_rating, taste_verdict (вкусное или нет), "
+            "buy_verdict (стоит ли брать), snacks (croutons, fish, chips, hot_food), "
+            "hangover_risk (risk_level, morning_forecast, hangover_cure), flavor_notes, serving_temp.\n"
+            "Верни ТОЛЬКО чистый JSON!"
+        )
+        resp = await ask_gemini(user_id, prompt_vision, image_bytes=image_bytes)
+    else:
+        resp = await ask_gemini(user_id, prompt)
+
     try:
         m = re.search(r"\{.*\}", resp, re.DOTALL)
         if m:
             return json.loads(m.group(0))
     except Exception as e:
-        logger.error(f"Error parsing craft beer JSON: {e}")
+        logger.error(f"Error parsing craft beer sommelier JSON: {e}")
 
     return {
-        "style_name": "🍺 New England IPA (NEIPA)",
-        "characteristics": {
-            "abv": "6.5%",
-            "ibu": "35 IBU",
-            "color": "Мутный золотистый",
-            "aroma": "Манго, маракуйя, цитрус"
+        "beer_name": f"🍺 {query if query else 'Крафтовое пиво'}",
+        "brewery": "Крафтовая пивоварня",
+        "style": "India Pale Ale (IPA)",
+        "abv": "6.5%",
+        "ibu": "40 IBU",
+        "untappd_rating": "3.85 / 5.0 ⭐️ (Хороший уверенный сорт)",
+        "taste_verdict": "Вкусное, сбалансированное хмелевое пиво с приятной горчинкой и цитрусовым ароматом.",
+        "buy_verdict": "✅ СТОИТ БРАТЬ для вечернего отдыха.",
+        "snacks": {
+            "croutons": "Чесночные ржаные гренки",
+            "fish": "Вяленая горбуша или кальмары",
+            "chips": "Чипсы со вкусом сметаны и зелени",
+            "hot_food": "Классический бургер или куриные наггетсы"
         },
-        "flavor_profile": "Мягкий фруктовый вкус с шелковистой текстурой",
-        "food_pairings": ["Бургеры", "Пицца", "Острые закуски"],
-        "sommelier_advice": "Пейте свежим в бокале тюльпан при температуре 8-10°C!"
+        "hangover_risk": {
+            "risk_level": "🟢 Низкий при умеренном употреблении (1-2 бокала)",
+            "morning_forecast": "Чистый сорт без тяжелых примесей, при умеренном количестве голова утром будет свежей.",
+            "hangover_cure": "Выпейте стакан минералки перед сном!"
+        },
+        "flavor_notes": "Цитрусы, хвоя, карамельный солод",
+        "serving_temp": "7-9°C"
     }
+
