@@ -32,7 +32,10 @@ def get_birthdays_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="🗑 Удалить запись", callback_data="bday_delete_menu")
             ],
             [
-                InlineKeyboardButton(text="🔍 Найти день рождения", callback_data="bday_search_prompt"),
+                InlineKeyboardButton(text="📥 Импорт друзей из VK", callback_data="bday_import_vk"),
+                InlineKeyboardButton(text="🔍 Поиск", callback_data="bday_search_prompt")
+            ],
+            [
                 InlineKeyboardButton(text="🔄 Обновить список", callback_data="bday_refresh")
             ]
         ]
@@ -100,6 +103,86 @@ async def cb_bday_refresh(callback: types.CallbackQuery, state: FSMContext):
     except Exception:
         pass
     await callback.answer("🔄 Список обновлен из облака!")
+
+
+@router.callback_query(F.data == "bday_import_vk")
+async def cb_bday_import_vk(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    
+    from core.config import DATA_DIR
+    import json
+    import aiohttp
+    
+    vk_cfg_file = DATA_DIR / "vk_config.json"
+    if not vk_cfg_file.exists():
+        await callback.answer("❌ Настройки VK не найдены.", show_alert=True)
+        return
+        
+    try:
+        with open(vk_cfg_file, "r", encoding="utf-8") as f:
+            vk_cfg = json.load(f)
+        user_cfg = vk_cfg.get(str(callback.from_user.id)) or next(iter(vk_cfg.values()))
+        token = user_cfg["token"]
+    except Exception as e:
+        await callback.answer(f"❌ Ошибка токена VK: {e}", show_alert=True)
+        return
+
+    url = f"https://api.vk.com/method/friends.get?fields=bdate,first_name,last_name,deactivated&v=5.199&access_token={token}"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                data = await resp.json()
+        items = data.get("response", {}).get("items", [])
+    except Exception as e:
+        await callback.answer(f"❌ Ошибка связи с VK API: {e}", show_alert=True)
+        return
+
+    existing = load_birthdays()
+    existing_names = {e["name"].lower().strip() for e in existing}
+    
+    added_count = 0
+    for f in items:
+        if f.get("deactivated"):
+            continue
+        first = f.get("first_name", "").strip()
+        last = f.get("last_name", "").strip()
+        full_name = f"{first} {last}".strip()
+        bdate = f.get("bdate", "")
+        if not bdate:
+            continue
+        if any(ign in full_name.lower() for ign in ["барбершоп", "кошка", "ремонт", "доставка", "маникюр"]):
+            continue
+
+        parts = bdate.split(".")
+        if len(parts) >= 2:
+            try:
+                day = int(parts[0])
+                month = int(parts[1])
+                year = int(parts[2]) if len(parts) == 3 else None
+                
+                if full_name.lower() in existing_names:
+                    continue
+                if first.lower() in existing_names and not last:
+                    continue
+
+                add_birthday(full_name, day, month, year, note="Импорт из VK")
+                existing_names.add(full_name.lower())
+                added_count += 1
+            except Exception:
+                pass
+
+    if added_count > 0:
+        push_birthdays_to_github()
+        text = format_birthdays_card()
+        try:
+            await callback.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=get_birthdays_keyboard())
+        except Exception:
+            pass
+        await callback.answer(f"🎉 Успешно импортировано {added_count} друзей из VK!", show_alert=True)
+    else:
+        await callback.answer("ℹ️ Все дни рождения из VK уже добавлены в календарь!", show_alert=True)
+
 
 
 @router.callback_query(F.data == "bday_add_prompt")
