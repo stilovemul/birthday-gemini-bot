@@ -174,6 +174,8 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                 cid = ext_to_hex(ct.get("id"))
                 c_names = ct.get("names", [])
                 c_name = c_names[0].get("name") if c_names else ct.get("phone", "Собеседник")
+                if "нина" in c_name.lower():
+                    c_name = "Нина (Мама)"
                 contact_names[cid] = c_name
 
             names = my_contact.get("names", [])
