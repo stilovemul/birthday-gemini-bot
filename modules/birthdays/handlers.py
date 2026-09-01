@@ -1,8 +1,14 @@
 import re
+import logging
 from aiogram import Router, types, F
-from aiogram.enums import ParseMode
+from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import Command
-from core.keyboards import get_main_menu, get_birthday_submenu
+from aiogram.fsm.context import FSMContext
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+from core.keyboards import get_main_menu, get_mode_keyboard
+from core.states import BirthdayStates
+from core.gemini import ask_gemini, reset_chat_session
 from modules.birthdays.storage import (
     load_birthdays,
     add_birthday,
@@ -12,227 +18,211 @@ from modules.birthdays.storage import (
     format_age_word,
     parse_date_string
 )
-from modules.birthdays.notifier import check_and_notify
+from modules.birthdays.sync import pull_birthdays_from_github, push_birthdays_to_github
 
+logger = logging.getLogger("BirthdayHandlers")
 router = Router(name="birthdays")
 
 
-def parse_add_arguments(text: str):
-    cleaned = re.sub(r"^/add\s+", "", text.strip(), flags=re.IGNORECASE).strip()
-    if not cleaned:
-        return None
-
-    patterns = [
-        r"(\d{1,2}[./\-]\d{1,2}(?:[./\-]\d{2,4})?)",
-        r"(\d{4}-\d{1,2}-\d{1,2})",
-        r"(\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{2,4})?)"
-    ]
-
-    for pat in patterns:
-        m = re.search(pat, cleaned, re.IGNORECASE)
-        if m:
-            date_part = m.group(1)
-            start, end = m.span()
-            name_part = cleaned[:start].strip()
-            note_part = cleaned[end:].strip()
-
-            if not name_part:
-                rest = cleaned[end:].strip().split(maxsplit=1)
-                if rest:
-                    name_part = rest[0]
-                    note_part = rest[1] if len(rest) > 1 else ""
-
-            if name_part and parse_date_string(date_part):
-                return name_part, date_part, note_part
-
-    return None
+def get_birthdays_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="➕ Добавить день рождения", callback_data="bday_add_prompt"),
+                InlineKeyboardButton(text="🗑 Удалить запись", callback_data="bday_delete_menu")
+            ],
+            [
+                InlineKeyboardButton(text="🔍 Найти день рождения", callback_data="bday_search_prompt"),
+                InlineKeyboardButton(text="🔄 Обновить список", callback_data="bday_refresh")
+            ]
+        ]
+    )
 
 
-def search_birthday_by_query(query: str):
-    q = query.lower().strip()
-    # Normalize common words
-    q = re.sub(r"^(?:когда|какого\s+числа|узнай|посмотри|день\s+рождения|др|у)\s*", "", q).strip()
-    q = re.sub(r"[?!.,]", "", q).strip()
-    
-    items = get_sorted_birthdays()
-    # 1. Exact or partial substring match
-    for item in items:
-        name = item["name"].lower()
-        if q in name or name in q:
-            return item
-        # check mama / mamy / pape
-        if ("мам" in q and "мам" in name) or ("пап" in q and "пап" in name) or ("жен" in q and "жен" in name) or ("брат" in q and "брат" in name):
-            return item
-    return None
-
-
-@router.message(F.text == "🎂 Дни рождения")
-async def cmd_birthday_menu(message: types.Message):
-    await message.answer("🎂 <b>Раздел: Дни рождения</b>\nВыберите действие в меню ниже 👇", parse_mode=ParseMode.HTML, reply_markup=get_birthday_submenu())
-
-
-@router.message(F.text == "🔙 Главное меню")
-async def cmd_back_main(message: types.Message):
-    await message.answer("🏠 Главное меню:", reply_markup=get_main_menu())
-
-
-@router.message(Command("when"))
-@router.message(Command("bday"))
-async def cmd_when_birthday(message: types.Message):
-    parts = (message.text or "").split(maxsplit=1)
-    if len(parts) < 2:
-        await message.answer("🔍 Укажите имя: <code>/when Мама</code> или <code>/when Папа</code>", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
-        return
-
-    query = parts[1].strip()
-    target = search_birthday_by_query(query)
-    if target:
-        date_str = format_date_entry(target)
-        days_left = target["days_left"]
-        age_str = f" (исполняется <b>{format_age_word(target['turning_age'])}</b>)" if target.get("turning_age") else ""
-        left_str = "🔥 <b>СЕГОДНЯ!</b>" if days_left == 0 else (f"⏳ <b>Завтра!</b>" if days_left == 1 else f"через <b>{days_left} дн.</b>")
-        note_str = f"\n🎁 <i>Заметка: {target['note']}</i>" if target.get("note") else ""
-
-        text = (
-            f"🎂 <b>День рождения: {target['name']}</b>\n\n"
-            f"🗓 <b>Дата:</b> {date_str}{age_str}\n"
-            f"⏳ <b>Осталось:</b> {left_str}{note_str}"
-        )
-        await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
-    else:
-        await message.answer(f"🔍 В базе пока нет дня рождения для «{query}». Добавить: <code>/add {query} ДД.ММ.ГГГГ</code>", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
-
-
-@router.message(F.text.regexp(r"(?i)^(?:когда|какого\s+числа)\s+(?:день\s+рождения|др)\s+(?:у\s+)?(.+)"))
-async def handle_natural_when_birthday(message: types.Message):
-    match = re.search(r"(?i)^(?:когда|какого\s+числа)\s+(?:день\s+рождения|др)\s+(?:у\s+)?(.+)", message.text)
-    if match:
-        query = match.group(1).strip()
-        target = search_birthday_by_query(query)
-        if target:
-            date_str = format_date_entry(target)
-            days_left = target["days_left"]
-            age_str = f" (исполнится <b>{format_age_word(target['turning_age'])}</b>)" if target.get("turning_age") else ""
-            left_str = "🔥 <b>СЕГОДНЯ!</b>" if days_left == 0 else (f"⏳ <b>Завтра!</b>" if days_left == 1 else f"через <b>{days_left} дн.</b>")
-            note_str = f"\n🎁 <i>Заметка: {target['note']}</i>" if target.get("note") else ""
-
-            text = (
-                f"🎂 <b>День рождения: {target['name']}</b>\n\n"
-                f"🗓 <b>Дата:</b> {date_str}{age_str}\n"
-                f"⏳ <b>Осталось:</b> {left_str}{note_str}"
-            )
-            await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
-            return
-
-    # If not found, let Gemini AI answer with context
-    pass
-
-
-@router.message(Command("add"))
-async def cmd_add(message: types.Message):
-    text = message.text or ""
-    parsed = parse_add_arguments(text)
-    if not parsed:
-        await message.answer(
-            "❌ Не удалось распознать запись.\nФормат: <code>/add Имя ДД.ММ.ГГГГ [Заметка]</code>\nПример: <code>/add Мама 06.04.1964 Цветы</code>",
-            parse_mode=ParseMode.HTML,
-            reply_markup=get_main_menu()
-        )
-        return
-
-    name, date_str, note = parsed
-    success, reply_msg, _ = add_birthday(name, date_str, note)
-    await message.answer(reply_msg, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
-
-
-@router.message(Command("del"))
-async def cmd_del(message: types.Message):
-    parts = (message.text or "").split(maxsplit=1)
-    if len(parts) < 2:
-        await message.answer("❌ Укажите имя или ID для удаления: <code>/del Иван</code>", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
-        return
-
-    identifier = parts[1].strip()
-    success, reply_msg = delete_birthday(identifier)
-    await message.answer(reply_msg, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
-
-
-@router.message(Command("list"))
-@router.message(F.text == "📋 Все дни рождения")
-async def cmd_list(message: types.Message):
+def format_birthdays_card() -> str:
     items = get_sorted_birthdays()
     if not items:
-        await message.answer("📭 Список дней рождения пока пуст.\nДобавьте: <code>/add Имя ДД.ММ.ГГГГ</code>", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
-        return
+        return (
+            "🎂 <b>Календарь дней рождения:</b>\n\n"
+            "📭 <i>Список пуст. Нажмите «➕ Добавить день рождения», чтобы сохранить даты близких.</i>"
+        )
 
-    lines = [f"📋 <b>Список всех дней рождения ({len(items)}):</b>\n"]
+    lines = [
+        f"🎂 <b>Все сохраненные дни рождения ({len(items)} чел.):</b>\n"
+    ]
+
+    upcoming_count = sum(1 for b in items if b["days_left"] <= 30)
+
     for idx, item in enumerate(items, 1):
         name = item["name"]
         date_str = format_date_entry(item)
         days_left = item["days_left"]
-        item_id = item["id"]
         note = item.get("note", "").strip()
 
         age_info = f" ({format_age_word(item['turning_age'])})" if item.get("turning_age") else ""
-        left_badge = "🔥 <b>СЕГОДНЯ!</b>" if days_left == 0 else (f"⏳ <b>Завтра</b>" if days_left == 1 else f"через {days_left} дн.")
-        note_str = f"\n   └ 🎁 <i>{note}</i>" if note else ""
-        lines.append(f"{idx}. <b>{name}</b> — {date_str}{age_info}\n   └ 🗓 {left_badge} <code>[id:{item_id}]</code>{note_str}")
+        if days_left == 0:
+            left_badge = "🔥 <b>СЕГОДНЯ!</b>"
+        elif days_left == 1:
+            left_badge = "⏳ <b>ЗАВТРА!</b>"
+        elif days_left <= 14:
+            left_badge = f"⚡️ <b>через {days_left} дн.</b>"
+        else:
+            left_badge = f"через {days_left} дн."
 
-    await message.answer("\n\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        note_str = f" • <i>{note}</i>" if note else ""
+        lines.append(f"{idx}. <b>{name}</b> — {date_str}{age_info}\n   └ 🗓 {left_badge}{note_str} <code>[id:{item['id']}]</code>")
+
+    lines.append(f"\n💡 <i>Ближайших в этом месяце: <b>{upcoming_count}</b>. Бот напомнит заранее в 09:00 MSK!</i>")
+    return "\n".join(lines)
 
 
-@router.message(Command("upcoming"))
-@router.message(F.text == "📅 Ближайшие ДР")
-async def cmd_upcoming(message: types.Message):
-    items = get_sorted_birthdays()
-    upcoming = [b for b in items if b["days_left"] <= 30]
+@router.message(Command("birthdays"))
+@router.message(Command("bday"))
+@router.message(Command("list"))
+@router.message(F.text.in_([
+    "🎂 Дни рождения", "🎂 Дни Рождения", "📋 Все дни рождения",
+    "📋 Список всех ДР", "📋 Список всех дней рождения", "📋 Все ДР"
+]))
+async def cmd_birthdays_overview(message: types.Message, state: FSMContext):
+    await state.clear()
+    pull_birthdays_from_github()
+    text = format_birthdays_card()
+    await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_birthdays_keyboard())
 
-    if not upcoming:
-        await message.answer("🌴 В ближайшие 30 дней дней рождения нет.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+
+@router.callback_query(F.data == "bday_refresh")
+async def cb_bday_refresh(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    pull_birthdays_from_github()
+    text = format_birthdays_card()
+    try:
+        await callback.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=get_birthdays_keyboard())
+    except Exception:
+        pass
+    await callback.answer("🔄 Список обновлен из облака!")
+
+
+@router.callback_query(F.data == "bday_add_prompt")
+async def cb_bday_add_prompt(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(BirthdayStates.waiting_for_birthday_text)
+    prompt_text = (
+        "🎂 <b>Режим добавления дней рождения:</b>\n\n"
+        "Напишите текст или надиктуйте голосом одно или сразу несколько имен с датами:\n\n"
+        "👉 <code>Мама 06.04.1964</code>\n"
+        "👉 <code>Саша Ломанова 15 сентября</code>\n"
+        "👉 <code>Иван 12.08.1990 любит кофе</code>\n\n"
+        "💡 <i>В этом режиме любые имена и даты будут сохранены в базу дней рождения!</i>"
+    )
+    await callback.message.answer(prompt_text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Дни рождения"))
+    await callback.answer()
+
+
+@router.message(BirthdayStates.waiting_for_birthday_text)
+async def handle_birthday_waiting_input(message: types.Message, state: FSMContext):
+    text = message.text or ""
+    if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
+        await state.clear()
+        card_text = format_birthdays_card()
+        await message.answer("🏁 <b>Режим добавления ДР завершен.</b>\n\n" + card_text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
         return
 
-    lines = [f"📅 <b>Ближайшие дни рождения на 30 дней ({len(upcoming)}):</b>\n"]
-    for idx, item in enumerate(upcoming, 1):
-        name = item["name"]
-        next_dt = item["next_date"].strftime("%d.%m")
-        days_left = item["days_left"]
-        note = item.get("note", "").strip()
-        age_info = f" ({format_age_word(item['turning_age'])})" if item.get("turning_age") else ""
-        badge = "🎉 <b>СЕГОДНЯ!</b>" if days_left == 0 else (f"⏳ <b>ЗАВТРА!</b>" if days_left == 1 else f"через {days_left} дн. ({next_dt})")
-        note_str = f"\n   └ 🎁 <i>{note}</i>" if note else ""
-        lines.append(f"{idx}. <b>{name}</b>{age_info} — {badge}{note_str}")
+    user_id = message.from_user.id
+    # NLP parser for single or batch birthdays
+    prompt = (
+        f"Пользователь находится в режиме добавления дней рождения и прислал данные:\n'{text}'\n\n"
+        "Твоя задача — извлечь ВСЕ имена и даты в массив объектов. "
+        "Для каждого объекта определи: "
+        "- name: имя и фамилия (например: 'Мама', 'Саша Ломанова', 'Кирилл Коротков') "
+        "- day: день месяца (число 1-31) "
+        "- month: месяц (число 1-12) "
+        "- year: год рождения (число например 1995 или null если не указан) "
+        "- note: примечание/подарок если есть "
+        "Верни ТОЛЬКО валидный JSON в формате:\n"
+        '{"items": [{"name": "Саша Ломанова", "day": 15, "month": 9, "year": 1995, "note": ""}]}'
+    )
+    ai_resp = await ask_gemini(user_id, prompt)
+    try:
+        import json
+        m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
+        if m:
+            data = json.loads(m.group(0))
+            items = data.get("items", [])
+            if items and isinstance(items, list):
+                added_msgs = []
+                for it in items:
+                    name = it.get("name", "").strip()
+                    d = it.get("day")
+                    m_num = it.get("month")
+                    y = it.get("year")
+                    nt = it.get("note", "")
+                    if name and d and m_num:
+                        d_str = f"{d}.{m_num}.{y}" if y else f"{d}.{m_num}"
+                        success, reply_msg, _ = add_birthday(name, d_str, nt)
+                        if success:
+                            added_msgs.append(f"• <b>{name}</b> ({d_str})")
 
-    await message.answer("\n\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                if added_msgs:
+                    await state.clear()
+                    reset_chat_session(user_id)
+                    res_text = (
+                        f"✅ <b>Успешно сохранено в базу ({len(added_msgs)}):</b>\n" +
+                        "\n".join(added_msgs) +
+                        "\n\n☁️ <i>Синхронизировано с GitHub облаком!</i>\n\n" +
+                        format_birthdays_card()
+                    )
+                    await message.answer(res_text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+                    return
+    except Exception as e:
+        logger.warning(f"Error parsing birthday FSM: {e}")
+
+    await message.answer("⚠️ Не удалось распознать дату. Попробуйте в формате: <code>Имя 15.09.1995</code> или <code>Имя 15 сентября</code>", parse_mode=ParseMode.HTML)
 
 
-@router.message(Command("today"))
-@router.message(F.text == "🎂 Сегодня")
-async def cmd_today(message: types.Message):
+@router.callback_query(F.data == "bday_delete_menu")
+async def cb_bday_delete_menu(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
     items = get_sorted_birthdays()
-    today_items = [b for b in items if b["days_left"] == 0]
-
-    if not today_items:
-        await message.answer("🍃 Сегодня ни у кого нет дня рождения.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+    if not items:
+        await callback.answer("Список пуст.", show_alert=True)
         return
 
-    lines = ["🎂🎉 <b>СЕГОДНЯ ДЕНЬ РОЖДЕНИЯ!</b> 🎉🎂\n"]
-    for item in today_items:
-        name = item["name"]
-        date_str = format_date_entry(item)
-        note = item.get("note", "").strip()
-        age_str = f" (исполняется <b>{format_age_word(item['turning_age'])}</b>!)" if item.get("turning_age") else ""
-        note_str = f"\n🎁 <i>Заметка: {note}</i>" if note else ""
-        lines.append(f"👤 <b>{name}</b>{age_str}\n🗓 {date_str}{note_str}")
+    kb_rows = []
+    for b in items:
+        btn_text = f"❌ {b['name']} ({b['day']}.{b['month']})"
+        kb_rows.append([InlineKeyboardButton(text=btn_text, callback_data=f"bday_del_{b['id']}")])
+    kb_rows.append([InlineKeyboardButton(text="🔙 Назад к списку", callback_data="bday_refresh")])
 
-    await message.answer("\n\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+    await callback.message.edit_text(
+        "🗑 <b>Выберите запись для удаления:</b>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=kb_rows)
+    )
+    await callback.answer()
 
 
-@router.message(Command("check"))
-@router.message(F.text == "🔔 Проверить ДР")
-async def cmd_check(message: types.Message):
-    await message.answer("🔍 Проверяю базу и отправляю актуальные напоминания...")
-    sent = check_and_notify(force_send=True, chat_id=message.chat.id)
-    if sent:
-        await message.answer(f"✅ Отправлено {len(sent)} напоминаний:\n• " + "\n• ".join(sent), reply_markup=get_main_menu())
+@router.callback_query(F.data.startswith("bday_del_"))
+async def cb_bday_del_item(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    b_id = callback.data.replace("bday_del_", "")
+    success, reply_msg = delete_birthday(b_id)
+    reset_chat_session(callback.from_user.id)
+    if success:
+        await callback.answer("✅ Запись удалена!", show_alert=False)
     else:
-        await message.answer("👌 На ближайшие дни напоминаний нет.", reply_markup=get_main_menu())
+        await callback.answer("⚠️ Не удалось удалить.", show_alert=True)
+
+    text = format_birthdays_card()
+    try:
+        await callback.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=get_birthdays_keyboard())
+    except Exception:
+        pass
+
+
+@router.callback_query(F.data == "bday_search_prompt")
+async def cb_bday_search_prompt(callback: types.CallbackQuery):
+    await callback.message.answer(
+        "🔍 <b>Поиск дня рождения:</b>\n"
+        "Напишите в чат имя: <code>/when Мама</code> или просто спросите: <i>«Когда день рождения у Папы?»</i>",
+        parse_mode=ParseMode.HTML
+    )
+    await callback.answer()
