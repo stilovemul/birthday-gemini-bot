@@ -103,9 +103,17 @@ def decode_max_packet(data: bytes) -> Optional[Dict[str, Any]]:
     return {"cmd": cmd, "seq": seq, "opcode": opcode, "payload": payload}
 
 
+def ext_to_hex(val: Any) -> str:
+    if hasattr(val, "data"):
+        return val.data.hex()
+    if isinstance(val, bytes):
+        return val.hex()
+    return str(val)
+
+
 async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict[str, Any], str]:
     """
-    Connects to MAX via WebSocket, authenticates with token, and fetches unread message counts.
+    Connects to MAX via WebSocket, authenticates with token, and fetches chats and latest incoming messages.
     """
     if not token:
         return False, {}, "Токен MAX не указан."
@@ -154,26 +162,53 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
 
             p = decoded["payload"]
             chats = p.get("chats", [])
+            contacts = p.get("contacts", [])
             profile = p.get("profile", {})
-            names = profile.get("contact", {}).get("names", [])
+            my_contact = profile.get("contact", {})
+            my_id_raw = my_contact.get("id")
+            my_id_hex = ext_to_hex(my_id_raw) if my_id_raw else ""
+
+            # Build contacts directory
+            contact_names = {}
+            for ct in contacts:
+                cid = ext_to_hex(ct.get("id"))
+                c_names = ct.get("names", [])
+                c_name = c_names[0].get("name") if c_names else ct.get("phone", "Собеседник")
+                contact_names[cid] = c_name
+
+            names = my_contact.get("names", [])
             first_name = names[0].get("name", "Олег") if names else "Олег"
 
+            recent_messages = []
             unread_chats = 0
             unread_messages = 0
-            details = []
 
             for c in chats:
-                u_cnt = c.get("unreadCount", c.get("unread", 0))
-                if u_cnt > 0:
-                    unread_chats += 1
-                    unread_messages += u_cnt
-                    title = c.get("title", c.get("name", "Диалог"))
-                    last_msg = c.get("lastMessage", {})
-                    text = last_msg.get("text", "") if isinstance(last_msg, dict) else ""
-                    details.append({
-                        "title": title,
-                        "unread": u_cnt,
-                        "text": text[:60]
+                c_title = c.get("title") or c.get("name")
+                c_id_hex = ext_to_hex(c.get("id"))
+                last_msg = c.get("lastMessage")
+                
+                if isinstance(last_msg, dict):
+                    sender_raw = last_msg.get("sender")
+                    sender_hex = ext_to_hex(sender_raw)
+                    msg_id_raw = last_msg.get("id")
+                    msg_id_hex = ext_to_hex(msg_id_raw)
+                    msg_text = last_msg.get("text", "")
+                    
+                    is_incoming = (sender_hex != my_id_hex)
+                    if is_incoming and not c_title:
+                        c_title = contact_names.get(sender_hex, "Личный диалог")
+
+                    if not c_title:
+                        c_title = "Диалог MAX"
+
+                    recent_messages.append({
+                        "chat_id": c_id_hex,
+                        "title": c_title,
+                        "msg_id": msg_id_hex,
+                        "is_incoming": is_incoming,
+                        "sender_name": contact_names.get(sender_hex, "Собеседник"),
+                        "text": msg_text[:80]
                     })
 
             return True, {
@@ -181,7 +216,7 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                 "unread_messages": unread_messages,
                 "unread_chats": unread_chats,
                 "total_chats": len(chats),
-                "details": details
+                "recent_messages": recent_messages
             }, "OK"
 
     except Exception as e:
@@ -190,7 +225,7 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
 
 
 async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = True) -> Optional[str]:
-    """Checks MAX messenger events for a specific user."""
+    """Checks MAX messenger events for a specific user and sends instant notifications for new incoming messages."""
     config = get_user_max_config(user_id)
     if not config or not config.get("enabled", True):
         return None
@@ -200,62 +235,70 @@ async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = Tru
     if not token:
         return None
 
-    last_msg = config.get("last_messages", 0)
-    last_chats = config.get("last_unread_chats", 0)
+    seen_ids = set(config.get("last_event_ids", []))
+    is_initial_run = (len(seen_ids) == 0)
 
     success, data, err_info = await fetch_max_updates(token, viewer_id)
     if not success:
         logger.warning(f"MAX check failed for user {user_id}: {err_info}")
         return None
 
-    cur_msgs = data.get("unread_messages", 0)
-    cur_chats = data.get("unread_chats", 0)
-    total_chats = data.get("total_chats", 0)
     user_name = data.get("user_name", "Олег")
-    details = data.get("details", [])
+    total_chats = data.get("total_chats", 0)
+    recent_msgs = data.get("recent_messages", [])
 
-    new_msgs = max(0, cur_msgs - last_msg) if cur_msgs > last_msg else 0
+    new_incoming = []
+    current_all_ids = []
 
+    for m in recent_msgs:
+        m_id = m.get("msg_id")
+        if m_id:
+            current_all_ids.append(m_id)
+            if m.get("is_incoming"):
+                if m_id not in seen_ids and not is_initial_run:
+                    new_incoming.append(m)
+
+    # Update seen message IDs (keep up to 100 recent)
+    updated_seen = list(set(current_all_ids + list(seen_ids)))[-100:]
     update_max_state(
         user_id=user_id,
-        messages_count=cur_msgs,
-        unread_chats_count=cur_chats
+        messages_count=len(new_incoming),
+        unread_chats_count=len(new_incoming),
+        event_ids=updated_seen
     )
 
-    if new_msgs > 0 and notify_only_new:
+    if new_incoming and notify_only_new:
         alert_lines = [
-            "💬🔔 <b>Новые сообщения в мессенджере MAX (web.max.ru):</b>\n",
-            f"✉️ Новых входящих: <b>+{new_msgs}</b> (всего непрочитанных: {cur_msgs})"
+            f"💬🔔 <b>Новое сообщение в MAX (web.max.ru)!</b>\n"
         ]
-        if details:
-            alert_lines.append("\n📋 <b>Свежие диалоги:</b>")
-            for d in details[:3]:
-                alert_lines.append(f"• <b>{d['title']}:</b> <i>{d['text']}</i> (+{d['unread']})")
+        for m in new_incoming[:5]:
+            chat_name = m.get("title", "Диалог")
+            msg_snippet = m.get("text", "")
+            if not msg_snippet:
+                msg_snippet = "📷 [Вложение / Фото / Файл]"
+            alert_lines.append(f"👤 <b>{chat_name}:</b>\n<i>«{msg_snippet}»</i>\n")
 
-        alert_lines.append("\n👉 <a href='https://web.max.ru/'>Открыть web.max.ru</a>")
+        alert_lines.append("👉 <a href='https://web.max.ru/'>Открыть web.max.ru</a>")
         alert_text = "\n".join(alert_lines)
 
         try:
             await bot.send_message(user_id, alert_text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-            logger.info(f"MAX Push notification sent to user {user_id}")
+            logger.info(f"MAX Push notification sent to user {user_id} ({len(new_incoming)} msgs)")
         except Exception as e:
             logger.error(f"Failed to send MAX push to user {user_id}: {e}")
 
-    detail_lines = []
-    if details:
-        detail_lines.append("\n📋 <b>Непрочитанные диалоги:</b>")
-        for d in details:
-            detail_lines.append(f"• <b>{d['title']}</b>: <i>{d['text']}</i> (+{d['unread']})")
+    recent_display = []
+    for m in recent_msgs[:4]:
+        ic = "📥" if m.get("is_incoming") else "📤"
+        t_preview = m.get("text") or "📷 [Вложение]"
+        recent_display.append(f"{ic} <b>{m.get('title')}:</b> <i>{t_preview[:50]}</i>")
 
     status_report = (
         f"💬 <b>Центр мониторинга MAX ({user_name})</b>\n\n"
         "📊 <b>Состояние:</b> 🟢 Активен (проверка каждые 60с)\n"
         f"💬 <b>Всего активных чатов:</b> {total_chats}\n\n"
-        "📬 <b>Текущие счетчики:</b>\n"
-        f"• ✉️ Непрочитанных сообщений: <b>{cur_msgs}</b>\n"
-        f"• 💬 Чатов с новыми сообщениями: <b>{cur_chats}</b>\n"
-        + "\n".join(detail_lines) + "\n\n"
-        + ("✨ <i>Все сообщения прочитаны!</i>" if cur_msgs == 0 else "⚡ <i>Есть новые входящие в MAX!</i>")
+        "📬 <b>Последние диалоги:</b>\n"
+        + ("\n".join(recent_display) if recent_display else "• <i>Диалогов нет</i>")
         + "\n\n🔗 <a href='https://web.max.ru/'>Открыть web.max.ru</a>"
     )
     return status_report
