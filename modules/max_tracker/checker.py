@@ -267,13 +267,14 @@ async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = Tru
         event_ids=updated_seen
     )
 
+    import html
     if new_incoming and notify_only_new:
         alert_lines = [
             f"💬🔔 <b>Новое сообщение в MAX (web.max.ru)!</b>\n"
         ]
         for m in new_incoming[:5]:
-            chat_name = m.get("title", "Диалог")
-            msg_snippet = m.get("text", "")
+            chat_name = html.escape(str(m.get("title", "Диалог")))
+            msg_snippet = html.escape(str(m.get("text", "")))
             if not msg_snippet:
                 msg_snippet = "📷 [Вложение / Фото / Файл]"
             alert_lines.append(f"👤 <b>{chat_name}:</b>\n<i>«{msg_snippet}»</i>\n")
@@ -290,11 +291,13 @@ async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = Tru
     recent_display = []
     for m in recent_msgs[:4]:
         ic = "📥" if m.get("is_incoming") else "📤"
-        t_preview = m.get("text") or "📷 [Вложение]"
-        recent_display.append(f"{ic} <b>{m.get('title')}:</b> <i>{t_preview[:50]}</i>")
+        t_raw = m.get("text") or "📷 [Вложение]"
+        title_esc = html.escape(str(m.get("title", "Диалог")))
+        text_esc = html.escape(str(t_raw[:50]))
+        recent_display.append(f"{ic} <b>{title_esc}:</b> <i>{text_esc}</i>")
 
     status_report = (
-        f"💬 <b>Центр мониторинга MAX ({user_name})</b>\n\n"
+        f"💬 <b>Центр мониторинга MAX ({html.escape(str(user_name))})</b>\n\n"
         "📊 <b>Состояние:</b> 🟢 Активен (проверка каждые 60с)\n"
         f"💬 <b>Всего активных чатов:</b> {total_chats}\n\n"
         "📬 <b>Последние диалоги:</b>\n"

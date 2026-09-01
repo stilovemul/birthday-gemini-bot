@@ -37,7 +37,7 @@ def get_max_keyboard(is_configured: bool = False, enabled: bool = True) -> Inlin
 
 @router.message(Command("max"))
 @router.message(Command("max_check"))
-@router.message(F.text == "💬 MAX Уведомления")
+@router.message(F.text.in_(["💬 MAX Уведомления", "💬 МАХ Уведомления", "MAX Уведомления", "МАХ Уведомления"]))
 async def cmd_max_dashboard(message: types.Message, bot: Bot):
     user_id = message.from_user.id
     config = get_user_max_config(user_id)
@@ -60,12 +60,19 @@ async def cmd_max_dashboard(message: types.Message, bot: Bot):
         return
 
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    report = await check_max_for_user(user_id, bot, notify_only_new=False)
-
-    if report:
-        await message.answer(report, parse_mode=ParseMode.HTML, reply_markup=get_max_keyboard(True, enabled), disable_web_page_preview=True)
-    else:
-        await message.answer("⚠️ Не удалось получить данные от MAX. Попробуйте нажать «Проверить сейчас».", reply_markup=get_max_keyboard(True, enabled))
+    try:
+        report = await check_max_for_user(user_id, bot, notify_only_new=False)
+        if report:
+            try:
+                await message.answer(report, parse_mode=ParseMode.HTML, reply_markup=get_max_keyboard(True, enabled), disable_web_page_preview=True)
+            except Exception as e:
+                logger.error(f"HTML error in MAX answer: {e}")
+                await message.answer(report, reply_markup=get_max_keyboard(True, enabled), disable_web_page_preview=True)
+        else:
+            await message.answer("⚠️ Не удалось получить данные от MAX. Попробуйте нажать «Проверить сейчас».", reply_markup=get_max_keyboard(True, enabled))
+    except Exception as e:
+        logger.error(f"Error in cmd_max_dashboard: {e}")
+        await message.answer(f"⚠️ Ошибка проверки MAX: {e}", reply_markup=get_max_keyboard(True, enabled))
 
 
 @router.message(Command("max_token"))

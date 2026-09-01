@@ -93,7 +93,8 @@ def update_max_state(
     messages_count: int,
     unread_chats_count: int = 0,
     notifications_count: int = 0,
-    new_event_ids: Optional[list] = None
+    new_event_ids: Optional[list] = None,
+    event_ids: Optional[list] = None
 ) -> None:
     configs = load_max_configs()
     uid = str(user_id)
@@ -101,6 +102,7 @@ def update_max_state(
         configs[uid]["last_messages"] = messages_count
         configs[uid]["last_unread_chats"] = unread_chats_count
         configs[uid]["last_notifications"] = notifications_count
-        if new_event_ids is not None:
-            configs[uid]["last_event_ids"] = new_event_ids[-50:]
+        e_ids = event_ids if event_ids is not None else new_event_ids
+        if e_ids is not None:
+            configs[uid]["last_event_ids"] = e_ids[-100:]
         save_max_configs(configs)
