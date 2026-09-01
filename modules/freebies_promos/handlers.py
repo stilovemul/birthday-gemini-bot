@@ -132,7 +132,7 @@ def format_ps5_card(data: dict, filter_mode: str = "all", is_direct_query: bool 
 
 @router.message(Command("promos"))
 @router.message(Command("games"))
-@router.message(F.text.in_(["🎁 Промокоды & 🎮 Игры", "🍕 Промокоды на доставку", "🎮 Раздачи игр", "🎮 Игры PS5", "🎮 PlayStation 5"]))
+@router.message(F.text.in_(["🎁 Промо & PS", "🎁 Промокоды & 🎮 Игры", "Промо & PS", "🍕 Промокоды на доставку", "🎮 Раздачи игр", "🎮 Игры PS5", "🎮 PlayStation 5"]))
 async def cmd_freebies_menu(message: types.Message, state: FSMContext):
     await state.clear()
     kb = InlineKeyboardMarkup(

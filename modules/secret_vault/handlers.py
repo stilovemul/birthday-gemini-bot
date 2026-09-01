@@ -50,7 +50,7 @@ def is_in_vault_input_state(message: types.Message) -> bool:
 
 
 @router.message(Command("vault"))
-@router.message(F.text == "🔐 Секретный сейф")
+@router.message(F.text.in_(["🔐 Сейф", "🔐 Секретный сейф", "Сейф", "Секретный сейф"]))
 async def cmd_vault(message: types.Message):
     user_id = message.from_user.id
 

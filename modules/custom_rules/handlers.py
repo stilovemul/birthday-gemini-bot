@@ -89,7 +89,7 @@ def format_rules_card(user_id: int) -> str:
 
 @router.message(Command("rules"))
 @router.message(Command("automations"))
-@router.message(F.text == "🧩 Мои правила")
+@router.message(F.text.in_(["🧩 Правила", "🧩 Мои правила", "Правила", "Мои правила"]))
 async def cmd_custom_rules(message: types.Message, state: FSMContext):
     await state.clear()
     user_id = message.from_user.id

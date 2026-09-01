@@ -264,7 +264,7 @@ def build_room_devices_keyboard(info: dict, room_id: str) -> tuple[str, InlineKe
 
 @router.message(Command("home"))
 @router.message(Command("smarthome"))
-@router.message(F.text == "🏠 Умный дом")
+@router.message(F.text.in_(["🏠 Дом", "🏠 Умный дом", "Умный дом", "Дом"]))
 async def cmd_smart_home(message: types.Message, bot: Bot):
     user_id = message.from_user.id
     config = get_user_smart_home_config(user_id)

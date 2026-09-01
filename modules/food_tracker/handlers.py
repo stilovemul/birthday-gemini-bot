@@ -69,7 +69,7 @@ def format_daily_summary_text(summary: Dict[str, Any]) -> str:
 @router.message(Command("food"))
 @router.message(Command("calories"))
 @router.message(Command("today_food"))
-@router.message(F.text == "🥗 Сканер еды & КБЖУ")
+@router.message(F.text.in_(["🥗 КБЖУ", "🥗 Сканер еды & КБЖУ", "КБЖУ", "Сканер еды"]))
 async def cmd_food_menu(message: types.Message):
     user_id = message.from_user.id
     summary = get_daily_summary(user_id)

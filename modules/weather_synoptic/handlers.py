@@ -39,7 +39,7 @@ def get_weather_keyboard(alerts_enabled: bool = True) -> InlineKeyboardMarkup:
 
 
 @router.message(Command("weather"))
-@router.message(F.text == "🌤 Погода & Осадки")
+@router.message(F.text.in_(["🌤 Погода", "🌤 Погода & Осадки", "Погода", "Погода & Осадки"]))
 async def cmd_weather(message: types.Message, bot: Bot):
     user_id = message.from_user.id
     args = (message.text or "").split(maxsplit=1)

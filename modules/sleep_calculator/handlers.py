@@ -68,7 +68,7 @@ def format_bedtimes_report(wake_str: str, results: list) -> str:
 
 @router.message(Command("sleep"))
 @router.message(Command("sleep_calc"))
-@router.message(F.text == "😴 Калькулятор сна")
+@router.message(F.text.in_(["😴 Сон", "😴 Калькулятор сна", "Сон", "Калькулятор сна"]))
 async def cmd_sleep_calculator(message: types.Message):
     args = (message.text or "").split(maxsplit=1)
 

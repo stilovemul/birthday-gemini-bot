@@ -80,8 +80,8 @@ def format_birthdays_card() -> str:
 @router.message(Command("bday"))
 @router.message(Command("list"))
 @router.message(F.text.in_([
-    "🎂 Дни рождения", "🎂 Дни Рождения", "📋 Все дни рождения",
-    "📋 Список всех ДР", "📋 Список всех дней рождения", "📋 Все ДР"
+    "🎂 Дни рожд.", "🎂 Дни рождения", "🎂 Дни Рождения", "Дни рожд.",
+    "📋 Все дни рождения", "📋 Список всех ДР", "📋 Список всех дней рождения", "📋 Все ДР"
 ]))
 async def cmd_birthdays_overview(message: types.Message, state: FSMContext):
     await state.clear()

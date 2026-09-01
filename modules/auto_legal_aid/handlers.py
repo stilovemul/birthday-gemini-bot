@@ -42,7 +42,7 @@ def format_dtp_step(step_data: dict, current_step: int) -> tuple[str, InlineKeyb
 
 @router.message(Command("dtp"))
 @router.message(Command("rights"))
-@router.message(F.text.in_(["🚗 Авто-Юрист & 🚨 ДТП", "🚨 Алгоритм при ДТП", "👮‍♂️ Шпаргалка водителя", "⚖️ Оспорить штраф"]))
+@router.message(F.text.in_(["🚗 Авто-Юрист", "🚗 Авто-Юрист & 🚨 ДТП", "Авто-Юрист", "🚨 Алгоритм при ДТП", "👮‍♂️ Шпаргалка водителя", "⚖️ Оспорить штраф"]))
 async def cmd_auto_legal_menu(message: types.Message, state: FSMContext):
     await state.clear()
     kb = InlineKeyboardMarkup(

@@ -37,7 +37,7 @@ def format_spam_card(data: dict) -> str:
 
 @router.message(Command("num"))
 @router.message(Command("spamcheck"))
-@router.message(F.text.in_(["📵 Проверить номер", "📵 Антиспам", "📵 Чекер номеров"]))
+@router.message(F.text.in_(["📵 Антиспам", "📵 Проверить номер", "Антиспам", "Проверить номер", "📵 Чекер номеров"]))
 async def cmd_check_number_menu(message: types.Message, state: FSMContext):
     await state.set_state(ActiveModeStates.antispam_mode)
     text = (

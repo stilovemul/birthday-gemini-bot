@@ -60,7 +60,7 @@ def format_factcheck_card(data: dict) -> str:
 
 
 @router.message(Command("research"))
-@router.message(F.text.in_(["🔬 Deep Research & 🛡 Фактчек", "🔬 Deep Research", "🔬 Исследования"]))
+@router.message(F.text.in_(["🔬 Ресерч", "🔬 Deep Research & 🛡 Фактчек", "🔬 Deep Research", "🔬 Исследования", "Ресерч", "Deep Research"]))
 async def cmd_research_menu(message: types.Message, state: FSMContext):
     await state.clear()
     kb = InlineKeyboardMarkup(

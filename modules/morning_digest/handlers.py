@@ -12,8 +12,7 @@ router = Router(name="morning_digest")
 
 @router.message(Command("digest"))
 @router.message(Command("morning"))
-@router.message(F.text == "🌅 Утренний дайджест")
-@router.message(F.text == "📰 Сводка на день")
+@router.message(F.text.in_(["🌅 Дайджест", "🌅 Утренний дайджест", "Дайджест", "Утренний дайджест", "📰 Сводка на день"]))
 async def cmd_morning_digest(message: types.Message, bot: Bot):
     user_id = message.from_user.id
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)

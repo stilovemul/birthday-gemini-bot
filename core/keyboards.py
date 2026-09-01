@@ -10,52 +10,42 @@ WEBAPP_URL = "https://birthday-gemini-bot.onrender.com/app"
 
 
 def get_main_menu() -> ReplyKeyboardMarkup:
-    """Returns main multi-functional keyboard with collapsible layout."""
+    """Returns ultra-compact 4-column multi-functional keyboard."""
     kb = [
         [
             KeyboardButton(text="📱 Открыть Дашборд (App)", web_app=WebAppInfo(url=WEBAPP_URL))
         ],
         [
-            KeyboardButton(text="🏠 Умный дом"),
-            KeyboardButton(text="🌅 Утренний дайджест")
-        ],
-        [
+            KeyboardButton(text="🏠 Дом"),
+            KeyboardButton(text="🌅 Дайджест"),
             KeyboardButton(text="🤖 Gemini AI"),
-            KeyboardButton(text="🎨 Генерация картинок")
+            KeyboardButton(text="🎨 Фото")
         ],
         [
-            KeyboardButton(text="📬 Входящие: Drive2, VK & MAX")
+            KeyboardButton(text="📬 Входящие"),
+            KeyboardButton(text="🥗 КБЖУ"),
+            KeyboardButton(text="🌤 Погода"),
+            KeyboardButton(text="😴 Сон")
         ],
         [
-            KeyboardButton(text="🥗 Сканер еды & КБЖУ"),
-            KeyboardButton(text="🌤 Погода & Осадки")
+            KeyboardButton(text="🔢 Кредиты"),
+            KeyboardButton(text="🔐 Сейф"),
+            KeyboardButton(text="⏰ Напоминания"),
+            KeyboardButton(text="🎂 Дни рожд.")
         ],
         [
-            KeyboardButton(text="😴 Калькулятор сна"),
-            KeyboardButton(text="🔢 Калькулятор кредитов")
-        ],
-        [
-            KeyboardButton(text="🔐 Секретный сейф"),
-            KeyboardButton(text="⏰ Напоминания")
-        ],
-        [
-            KeyboardButton(text="🎂 Дни рождения"),
-            KeyboardButton(text="📝 Заметки")
-        ],
-        [
+            KeyboardButton(text="📝 Заметки"),
             KeyboardButton(text="💳 Подписки"),
-            KeyboardButton(text="🧩 Мои правила")
+            KeyboardButton(text="🧩 Правила"),
+            KeyboardButton(text="🍽 Еда")
         ],
         [
-            KeyboardButton(text="🍽 Еда"),
-            KeyboardButton(text="🎁 Промокоды & 🎮 Игры")
+            KeyboardButton(text="🎁 Промо & PS"),
+            KeyboardButton(text="🚗 Авто-Юрист"),
+            KeyboardButton(text="🔬 Ресерч"),
+            KeyboardButton(text="📵 Антиспам")
         ],
         [
-            KeyboardButton(text="🚗 Авто-Юрист & 🚨 ДТП"),
-            KeyboardButton(text="🔬 Deep Research & 🛡 Фактчек")
-        ],
-        [
-            KeyboardButton(text="📵 Проверить номер"),
             KeyboardButton(text="❓ Справка")
         ]
     ]
