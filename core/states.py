@@ -2,9 +2,18 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class ActiveModeStates(StatesGroup):
-    # Gourmet
+    # Gourmet & Culinary Hub
     breakfast_mode = State()
     barman_mode = State()
+    healthy_fastfood_mode = State()
+    fridge_chef_mode = State()
+    steak_timer_mode = State()
+    express_meals_mode = State()
+    weekly_meal_plan_mode = State()
+    shashlik_calc_mode = State()
+    restaurant_sauces_mode = State()
+    asian_cuisine_mode = State()
+    craft_beer_mode = State()
     
     # Freebies & Promos
     promos_mode = State()

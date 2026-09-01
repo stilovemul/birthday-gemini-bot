@@ -49,7 +49,7 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="🧩 Мои правила")
         ],
         [
-            KeyboardButton(text="🍳 Завтрак & 🍸 Бармен"),
+            KeyboardButton(text="🍽 Еда"),
             KeyboardButton(text="🎁 Промокоды & 🎮 Игры")
         ],
         [
