@@ -44,6 +44,17 @@ from modules.manipulation_shield.handlers import router as shield_router
 from modules.icebreakers.handlers import router as icebreakers_router
 from modules.cognitive_biases.handlers import router as biases_router
 from modules.cinema_matchmaker.handlers import router as cinema_router
+from modules.mystic_spb.handlers import router as mystic_spb_router
+from modules.weekend_trips.handlers import router as weekend_trips_router
+from modules.geo_gastro.handlers import router as geo_gastro_router
+from modules.country_relax.handlers import router as country_relax_router
+from modules.gift_generator.handlers import router as gift_generator_router
+from modules.book_sommelier.handlers import router as book_sommelier_router
+from modules.music_sommelier.handlers import router as music_sommelier_router
+from modules.photo_spots.handlers import router as photo_spots_router
+from modules.career_interview.handlers import router as career_interview_router
+from modules.auto_scam_shield.handlers import router as auto_scam_shield_router
+from modules.dark_kitchen.handlers import router as dark_kitchen_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -88,6 +99,17 @@ dp.include_router(shield_router)
 dp.include_router(icebreakers_router)
 dp.include_router(biases_router)
 dp.include_router(cinema_router)
+dp.include_router(mystic_spb_router)
+dp.include_router(weekend_trips_router)
+dp.include_router(geo_gastro_router)
+dp.include_router(country_relax_router)
+dp.include_router(gift_generator_router)
+dp.include_router(book_sommelier_router)
+dp.include_router(music_sommelier_router)
+dp.include_router(photo_spots_router)
+dp.include_router(career_interview_router)
+dp.include_router(auto_scam_shield_router)
+dp.include_router(dark_kitchen_router)
 dp.include_router(webapp_bot_router)
 dp.include_router(ai_router)  # Catch-all AI router last
 

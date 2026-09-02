@@ -43,6 +43,22 @@ class ActiveModeStates(StatesGroup):
     cognitive_biases_mode = State()
     cinema_matchmaker_mode = State()
 
+    # 14 New Mega Modules
+    mystic_spb_mode = State()
+    weekend_planner_mode = State()
+    roadtrips_mode = State()
+    events_afisha_mode = State()
+    geo_gastro_mode = State()
+    speakeasy_bars_mode = State()
+    country_relax_mode = State()
+    gift_generator_mode = State()
+    book_sommelier_mode = State()
+    music_sommelier_mode = State()
+    photo_spots_mode = State()
+    career_interview_mode = State()
+    auto_scam_shield_mode = State()
+    dark_kitchen_mode = State()
+
 
 class SubTrackerStates(StatesGroup):
     waiting_for_sub_text = State()

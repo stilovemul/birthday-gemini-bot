@@ -1,0 +1,1 @@
+# Photo Spots package
