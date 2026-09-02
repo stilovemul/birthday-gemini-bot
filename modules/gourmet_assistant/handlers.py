@@ -544,6 +544,7 @@ async def cb_gourmet_category(callback: types.CallbackQuery, state: FSMContext):
 
     await callback.message.answer(
         f"👇 <b>{cat_title} — готовые пресеты:</b>",
+        parse_mode=ParseMode.HTML,
         reply_markup=get_category_presets_keyboard(cat)
     )
     await callback.answer()

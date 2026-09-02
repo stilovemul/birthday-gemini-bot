@@ -64,9 +64,11 @@ logging.basicConfig(
 logger = logging.getLogger("SuperBotApp")
 
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 
-# Telegram Bot & Dispatcher
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
+# Telegram Bot & Dispatcher with global HTML parse mode
+bot = Bot(token=TELEGRAM_BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
 
 # Register modular routers in logical order:
