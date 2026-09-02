@@ -156,6 +156,20 @@ def build_full_user_context(user_id: int = 157236577) -> str:
     w_cfg = get_user_weather_config(user_id)
     w_loc = f"{w_cfg.get('city', 'Санкт-Петербург')} ({w_cfg.get('district', 'Приморский р-н')})"
 
+    # 12. Cinema Memory
+    try:
+        from modules.cinema_matchmaker.storage import get_user_cinema_memory
+        cm_mem = get_user_cinema_memory(user_id)
+        cm_watched = cm_mem.get("watched_movies", [])
+        cm_liked = [w["title"] for w in cm_watched if w.get("status") == "liked"]
+        cm_taste = cm_mem.get("taste_summary", "")
+        if cm_liked or cm_taste:
+            cinema_section = f"Вкусовой профиль: {cm_taste or 'Формируется'}. Любимые фильмы (👍): {', '.join(cm_liked[:6])}."
+        else:
+            cinema_section = "Профиль вкуса формируется."
+    except Exception:
+        cinema_section = "Формируется."
+
     context = f"""=== АКТУАЛЬНЫЕ ДАННЫЕ ПОЛЬЗОВАТЕЛЯ (Олег, {now_str}) ===
 📍 Локация пользователя: {w_loc}
 
@@ -170,6 +184,9 @@ def build_full_user_context(user_id: int = 157236577) -> str:
 
 🧩 АКТИВНЫЕ ПЕРСОНАЛЬНЫЕ ПРАВИЛА:
 {rules_section}
+
+🎬 КИНО И ВКУСОВОЙ ПРОФИЛЬ:
+{cinema_section}
 
 🥗 ПИТАНИЕ И КБЖУ СЕГОДНЯ:
 {food_section}
