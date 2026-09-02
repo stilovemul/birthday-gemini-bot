@@ -17,7 +17,10 @@ from modules.gourmet_assistant.storage import (
     add_seen_recipe,
     get_seen_recipes,
     set_user_last_gourmet,
-    get_user_last_gourmet
+    get_user_last_gourmet,
+    set_shelf_session,
+    get_shelf_session,
+    clear_shelf_session
 )
 from modules.gourmet_assistant.shopping_list import generate_shopping_list_text
 from modules.gourmet_assistant.curated_catalog import CURATED_PRESETS, get_preset_by_id
@@ -39,7 +42,12 @@ from modules.gourmet_assistant.sauces import get_restaurant_sauce
 from modules.gourmet_assistant.asian_cuisine import get_asian_dish_recipe
 from modules.gourmet_assistant.craft_beer import get_craft_beer_guide
 from modules.gourmet_assistant.wine_spirits import get_wine_spirits_guide
-from modules.gourmet_assistant.shelf_advisor import analyze_alcohol_shelf, format_shelf_advisor_message
+from modules.gourmet_assistant.shelf_advisor import (
+    analyze_alcohol_shelf,
+    format_shelf_advisor_message,
+    ask_shelf_followup,
+    is_shelf_followup_question
+)
 
 logger = logging.getLogger("GourmetHandlers")
 router = Router(name="gourmet_assistant")
@@ -971,17 +979,47 @@ async def handle_universal_gourmet_input(message: types.Message, state: FSMConte
         elif cat == "beer":
             if image_bytes:
                 data = await analyze_alcohol_shelf(user_id, image_bytes=image_bytes, user_preference=extracted_text, alcohol_category="beer")
+                set_shelf_session(user_id, image_bytes, data)
                 formatted_text = format_shelf_advisor_message(data)
             else:
-                data = await get_craft_beer_guide(user_id, query=extracted_text, seen_titles=seen)
-                formatted_text = format_craft_beer_message(data)
+                shelf_sess = get_shelf_session(user_id)
+                if shelf_sess and (is_shelf_followup_question(extracted_text) or not extracted_text.startswith("/")):
+                    followup_ans = await ask_shelf_followup(
+                        user_id=user_id,
+                        question=extracted_text,
+                        shelf_data=shelf_sess.get("shelf_data", {}),
+                        image_bytes=shelf_sess.get("image_bytes")
+                    )
+                    try:
+                        await message.answer(followup_ans, parse_mode=ParseMode.HTML, reply_markup=get_gourmet_result_keyboard(cat, has_shoplist=True))
+                    except Exception:
+                        await message.answer(followup_ans, reply_markup=get_gourmet_result_keyboard(cat, has_shoplist=True))
+                    return
+                else:
+                    data = await get_craft_beer_guide(user_id, query=extracted_text, seen_titles=seen)
+                    formatted_text = format_craft_beer_message(data)
         elif cat == "wine_spirits":
             if image_bytes:
                 data = await analyze_alcohol_shelf(user_id, image_bytes=image_bytes, user_preference=extracted_text, alcohol_category="wine_spirits")
+                set_shelf_session(user_id, image_bytes, data)
                 formatted_text = format_shelf_advisor_message(data)
             else:
-                data = await get_wine_spirits_guide(user_id, query=extracted_text, seen_titles=seen)
-                formatted_text = format_wine_spirits_message(data)
+                shelf_sess = get_shelf_session(user_id)
+                if shelf_sess and (is_shelf_followup_question(extracted_text) or not extracted_text.startswith("/")):
+                    followup_ans = await ask_shelf_followup(
+                        user_id=user_id,
+                        question=extracted_text,
+                        shelf_data=shelf_sess.get("shelf_data", {}),
+                        image_bytes=shelf_sess.get("image_bytes")
+                    )
+                    try:
+                        await message.answer(followup_ans, parse_mode=ParseMode.HTML, reply_markup=get_gourmet_result_keyboard(cat, has_shoplist=True))
+                    except Exception:
+                        await message.answer(followup_ans, reply_markup=get_gourmet_result_keyboard(cat, has_shoplist=True))
+                    return
+                else:
+                    data = await get_wine_spirits_guide(user_id, query=extracted_text, seen_titles=seen)
+                    formatted_text = format_wine_spirits_message(data)
         elif cat == "barman":
             is_non_alc = "безалк" in extracted_text.lower() or "моктейл" in extracted_text.lower()
             data = await craft_cocktail(user_id, bar_stock=extracted_text, non_alcoholic=is_non_alc, seen_titles=seen)

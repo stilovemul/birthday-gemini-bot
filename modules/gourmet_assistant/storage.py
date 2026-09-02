@@ -98,11 +98,44 @@ def get_user_last_gourmet(user_id: int) -> Dict[str, Any]:
 
 
 def clear_user_seen(user_id: int, category: Optional[str] = None):
-    """Clears history if user wants to reset."""
+    """Clears seen history for a specific category or entire user history."""
     _load_history()
     if user_id in _memory_cache:
         if category:
-            _memory_cache[user_id].get("seen", {}).pop(category, None)
+            _memory_cache[user_id].get("seen", {})[category] = []
         else:
             _memory_cache[user_id]["seen"] = {}
         _save_history()
+
+
+# In-memory shelf session cache: {user_id: {"image_bytes": bytes, "shelf_data": dict, "timestamp": float}}
+_shelf_sessions: Dict[int, Dict[str, Any]] = {}
+
+
+def set_shelf_session(user_id: int, image_bytes: bytes, shelf_data: dict):
+    """Saves the uploaded shelf photo and complete scanned inventory for interactive dialogue."""
+    import time
+    global _shelf_sessions
+    _shelf_sessions[user_id] = {
+        "image_bytes": image_bytes,
+        "shelf_data": shelf_data,
+        "timestamp": time.time()
+    }
+
+
+def get_shelf_session(user_id: int) -> Optional[Dict[str, Any]]:
+    """Retrieves active shelf session with scanned inventory and image bytes."""
+    import time
+    sess = _shelf_sessions.get(user_id)
+    if not sess:
+        return None
+    # Expire after 3 hours
+    if time.time() - sess.get("timestamp", 0) > 3 * 3600:
+        _shelf_sessions.pop(user_id, None)
+        return None
+    return sess
+
+
+def clear_shelf_session(user_id: int):
+    """Clears the active shelf session."""
+    _shelf_sessions.pop(user_id, None)

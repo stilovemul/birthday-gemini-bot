@@ -30,6 +30,13 @@ from modules.image_gen.generator import (
     get_image_session
 )
 from modules.image_gen.handlers import get_image_action_keyboard
+from modules.gourmet_assistant.shelf_advisor import (
+    analyze_alcohol_shelf,
+    format_shelf_advisor_message,
+    ask_shelf_followup,
+    is_shelf_followup_question
+)
+from modules.gourmet_assistant.storage import set_shelf_session, get_shelf_session
 
 logger = logging.getLogger("AIAssistantHandler")
 router = Router(name="ai_assistant")
@@ -183,20 +190,17 @@ async def handle_photo(message: types.Message, bot: Bot):
             )
             return
 
-        # 2. If not food plate: Smart Vision (detects alcohol shelf/bottles or general image)
-        prompt_text = (
-            "Если на фото изображена полка, витрина, барная карта или бутылки с пивом, вином или алкоголем:\n"
-            "Выступи как профессиональный сомелье и эксперт по крафту (Master Sommelier & Cicerone). Дай структурированный гид:\n"
-            "🥇 #1 ТОП ВЫБОР (Точное название, стиль, рейтинг Untappd/Vivino, почему лучший на полке, вкус и идеальная закуска)\n"
-            "🥈 #2 Надежная классика (поспокойнее)\n"
-            "🥉 #3 Яркий эксперимент (для необычных вкусов)\n"
-            "🚫 Что на этой полке лучше пропустить (водянистое, спиртуозное или переоцененное)\n"
-            "🤕 Похмельный прогноз (риск и правило безопасности).\n"
-            f"Пожелание: '{caption}'.\n\n"
-            "Если на фото НЕ алкоголь и НЕ напитки — подробно и полезно ответь на вопрос пользователя или опиши фото."
-        ) if not caption else (
-            f"{caption}\n(Если это фото полок/бутылок с пивом или алкоголем — обязательно укажи ТОП-1 рекомендацию с рейтингом Untappd/Vivino, вкус, закуску, альтернативу и чего избегать!)"
-        )
+        # 2. Check if photo is an alcohol shelf/drink bottles
+        shelf_data = await analyze_alcohol_shelf(user_id, image_bytes=image_bytes, user_preference=caption or "")
+        top_name = shelf_data.get("top_pick", {}).get("name", "")
+        if shelf_data and (shelf_data.get("shelves") or (top_name and "топовый" not in top_name.lower())):
+            set_shelf_session(user_id, image_bytes, shelf_data)
+            card_text = format_shelf_advisor_message(shelf_data)
+            await message.answer(card_text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+            return
+
+        # 3. Fallback to general vision prompt
+        prompt_text = caption or "Подробно и полезно ответь на вопрос пользователя или опиши изображение."
         reply_text = await ask_gemini(user_id, prompt_text, image_bytes=image_bytes)
         
         try:
@@ -214,6 +218,22 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     text = (message.text or "").strip()
     user_id = message.from_user.id
     t_lower = text.lower()
+
+    # Check if user is asking an interactive follow-up about a recently scanned shelf
+    shelf_sess = get_shelf_session(user_id)
+    if shelf_sess and is_shelf_followup_question(text):
+        await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        resp = await ask_shelf_followup(
+            user_id=user_id,
+            question=text,
+            shelf_data=shelf_sess.get("shelf_data", {}),
+            image_bytes=shelf_sess.get("image_bytes")
+        )
+        try:
+            await message.answer(resp, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        except Exception:
+            await message.answer(resp, reply_markup=get_main_menu())
+        return
 
     # 1. Check if user is in an ACTIVE IMAGE STUDIO SESSION
     if is_in_image_session(user_id):
