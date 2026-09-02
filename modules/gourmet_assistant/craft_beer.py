@@ -1,27 +1,26 @@
 import re
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("CraftBeerGuide")
 
 
-async def get_craft_beer_guide(user_id: int, query: str = "", image_bytes: Optional[bytes] = None) -> Dict[str, Any]:
-    """
-    Acts as a Pocket Beer Sommelier (Карманный пивной сомелье):
-    - Identifies beer & brewery by photo of bottle/can/label/taplist or by text
-    - Evaluates online reviews & Untappd ratings (is it tasty or not?)
-    - Gives clear buying verdict ("Стоит ли брать?")
-    - Custom snack pairings (сухарики, рыбка, чипсы, горячие закуски)
-    - Hangover risk assessment ("Будет ли утром болеть голова?")
-    - Flavor profile and serving temperature
-    """
+async def get_craft_beer_guide(
+    user_id: int,
+    query: str = "",
+    image_bytes: Optional[bytes] = None,
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
     b_query = query if query else "Популярный крафтовый сорт (например: Zagovor, AF Brew, Jaws, Salden's, Guinness)"
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже исследовал следующие сорта: {', '.join(seen_titles[-10:])}. Предложи ДРУГОЙ уникальный сорт!"
     
     prompt = (
         "Ты профессиональный сертифицированный пивной сомелье (Master Cicerone) и эксперт по крафтовому и классическому пиву.\n"
-        f"Запрос пользователя / название: '{b_query}'\n\n"
+        f"Запрос пользователя / название: '{b_query}'.{anti_repeat}\n\n"
         "Проанализируй сорт, оценки пивного сообщества (Untappd / RateBeer / отзывы энтузиастов) и дай исчерпывающий вердикт:\n"
         "1. Название пива, пивоварня и стиль (IPA, DIPA, NEIPA, Stout, Gose, Sour, Pilsner, Blanche, Lager, Porter и т.д.).\n"
         "2. Характеристики: Крепость (ABV), Горечь (IBU), плотность (Plato).\n"
@@ -68,9 +67,7 @@ async def get_craft_beer_guide(user_id: int, query: str = "", image_bytes: Optio
             "Сформируй полный ответ в формате JSON со следующими полями: "
             "beer_name, brewery, style, abv, ibu, untappd_rating, taste_verdict (вкусное или нет), "
             "buy_verdict (стоит ли брать), snacks (croutons, fish, chips, hot_food), "
-            "hangover_risk (risk_level, morning_forecast, hangover_cure), flavor_notes, serving_temp.\n"
-            "Все текстовые поля и вкусовые ноты (flavor_notes) СТРОГО НА РУССКОМ ЯЗЫКЕ!\n"
-            "Верни ТОЛЬКО чистый JSON!"
+            "hangover_risk (risk_level, morning_forecast, hangover_cure), flavor_notes (НА РУССКОМ), serving_temp."
         )
         resp = await ask_gemini(user_id, prompt_vision, image_bytes=image_bytes)
     else:
@@ -81,29 +78,28 @@ async def get_craft_beer_guide(user_id: int, query: str = "", image_bytes: Optio
         if m:
             return json.loads(m.group(0))
     except Exception as e:
-        logger.error(f"Error parsing craft beer sommelier JSON: {e}")
+        logger.error(f"Error parsing craft beer JSON: {e}")
 
     return {
-        "beer_name": f"🍺 {query if query else 'Крафтовое пиво'}",
-        "brewery": "Крафтовая пивоварня",
-        "style": "India Pale Ale (IPA)",
-        "abv": "6.5%",
-        "ibu": "40 IBU",
-        "untappd_rating": "3.85 / 5.0 ⭐️ (Хороший уверенный сорт)",
-        "taste_verdict": "Вкусное, сбалансированное хмелевое пиво с приятной горчинкой и цитрусовым ароматом.",
-        "buy_verdict": "✅ СТОИТ БРАТЬ для вечернего отдыха.",
+        "beer_name": "🍺 Zagovor Brewery - DIPA",
+        "brewery": "Zagovor",
+        "style": "New England DIPA",
+        "abv": "8.0%",
+        "ibu": "45 IBU",
+        "untappd_rating": "4.15 / 5.0",
+        "taste_verdict": "🔥 ВКУСНОЕ: Сочный тропический хмелевой сок, алкоголь отлично скрыт.",
+        "buy_verdict": "✅ СТОИТ БРАТЬ: Один из лучших крафтовых сортов.",
         "snacks": {
-            "croutons": "Чесночные ржаные гренки",
-            "fish": "Вяленая горбуша или кальмары",
-            "chips": "Чипсы со вкусом сметаны и зелени",
-            "hot_food": "Классический бургер или куриные наггетсы"
+            "croutons": "Чесночные бородинские гренки",
+            "fish": "Вяленый лосось или кальмар",
+            "chips": "Чипсы с паприкой",
+            "hot_food": "Бургер или острые крылья"
         },
         "hangover_risk": {
-            "risk_level": "🟢 Низкий при умеренном употреблении (1-2 бокала)",
-            "morning_forecast": "Чистый сорт без тяжелых примесей, при умеренном количестве голова утром будет свежей.",
-            "hangover_cure": "Выпейте стакан минералки перед сном!"
+            "risk_level": "Средний (при более 2 банок)",
+            "morning_forecast": "Плотный эль требует умеренности.",
+            "hangover_cure": "Пейте воду параллельно!"
         },
-        "flavor_notes": "Цитрусы, хвоя, карамельный солод",
-        "serving_temp": "7-9°C"
+        "flavor_notes": "Манго, персик, грейпфрут, хвоя",
+        "serving_temp": "8-10°C"
     }
-

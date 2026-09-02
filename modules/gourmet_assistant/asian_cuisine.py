@@ -1,17 +1,25 @@
 import re
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("AsianCuisine")
 
 
-async def get_asian_dish_recipe(user_id: int, dish_name: str = "") -> Dict[str, Any]:
+async def get_asian_dish_recipe(
+    user_id: int,
+    dish_name: str = "",
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
     d_name = dish_name if dish_name else "Насыщенный Рамен со свининой тясю и маринованным яйцом ажитама"
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже готовил: {', '.join(seen_titles[-10:])}. Предложи АБСОЛЮТНО ДРУГОЕ азиатское блюдо!"
+
     prompt = (
         "Ты шеф-повар паназиатской кухни. Составь аутентичный, но доступный рецепт азиатского блюда для дома.\n"
-        f"Блюдо: '{d_name}'\n\n"
+        f"Блюдо: '{d_name}'.{anti_repeat}\n\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
         '  "title": "🍜 Домашний Рамен с яйцом ажитама и курочкой/свининой",\n'

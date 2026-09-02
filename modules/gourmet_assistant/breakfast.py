@@ -1,20 +1,31 @@
 import re
 import json
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("BreakfastGenerator")
 
 
-async def generate_express_breakfast(user_id: int, ingredients: str = "", mood: str = "энергичный", target_calories: int = 450) -> Dict[str, Any]:
+async def generate_express_breakfast(
+    user_id: int,
+    ingredients: str = "",
+    mood: str = "энергичный",
+    target_calories: int = 450,
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
     """
     Generates a 10-minute breakfast recipe with precise KBJU and step-by-step instructions.
+    Avoids recipes already seen by user.
     """
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже видел и готовил следующие блюда: {', '.join(seen_titles[-10:])}. Предложи АБСОЛЮТНО НОВОЕ, другое блюдо!"
+
     prompt = (
         f"Ты шеф-повар и нутрициолог. Создай быстрый, сытный и вкусный завтрак за 10 минут.\n"
         f"Ингредиенты у пользователя: '{ingredients if ingredients else 'любые базовые продукты (яйца, овсянка, сыр, хлеб, творог, овощи)'}'.\n"
-        f"Настроение/стиль: {mood}. Целевая калорийность: около {target_calories} ккал.\n\n"
+        f"Настроение/стиль: {mood}. Целевая калорийность: около {target_calories} ккал.{anti_repeat}\n\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
         '  "title": "🍳 Пышный омлет с томатами и сыром сулугуни",\n'

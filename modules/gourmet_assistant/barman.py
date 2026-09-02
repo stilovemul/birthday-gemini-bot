@@ -1,21 +1,31 @@
 import re
 import json
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("AIBarman")
 
 
-async def craft_cocktail(user_id: int, bar_stock: str, non_alcoholic: bool = False, vibe: str = "вечерний чилл") -> Dict[str, Any]:
+async def craft_cocktail(
+    user_id: int,
+    bar_stock: str,
+    non_alcoholic: bool = False,
+    vibe: str = "вечерний чилл",
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
     """
     Creates cocktail recipe based on available ingredients at home.
     """
     alcol_type = "безалкогольный (mocktail)" if non_alcoholic else "авторский или классический коктейль"
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже готовил: {', '.join(seen_titles[-10:])}. Предложи АБСОЛЮТНО ДРУГОЙ коктейль!"
+
     prompt = (
         f"Ты профессиональный шеф-бармен и миксолог. Создай {alcol_type}.\n"
         f"Домашний бар пользователя / ингредиенты: '{bar_stock if bar_stock else 'джин, тоник, лимон, лед, мята'}'.\n"
-        f"Атмосфера / повод: {vibe}.\n\n"
+        f"Атмосфера / повод: {vibe}.{anti_repeat}\n\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
         '  "title": "🍸 Изумрудный Джин-Тоник с мятой и огурцом",\n'

@@ -1,17 +1,25 @@
 import re
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("ExpressMeals")
 
 
-async def generate_15min_meal(user_id: int, query: str = "") -> Dict[str, Any]:
+async def generate_15min_meal(
+    user_id: int,
+    query: str = "",
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
     q_str = query if query else "сытный ужин с мясом/птицей и пастой или рисом"
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже видел и готовил: {', '.join(seen_titles[-10:])}. Предложи АБСОЛЮТНО ДРУГОЕ экспресс-блюдо!"
+
     prompt = (
         "Ты шеф-повар экспресс-кулинарии. Придумай полноценное, ресторанно-вкусное горячее блюдо ровно за 15 минут.\n"
-        f"Пожелание пользователя: '{q_str}'\n\n"
+        f"Пожелание пользователя: '{q_str}'.{anti_repeat}\n\n"
         "Блюдо должно требовать минимум посуды (1 сковорода или сотейник) и простых ингредиентов.\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
@@ -58,6 +66,6 @@ async def generate_15min_meal(user_id: int, query: str = "") -> Dict[str, Any]:
         "carbs": 54,
         "utensils": "1 сковорода",
         "ingredients": ["Паста 80г", "Куриное филе 150г", "Сливки 100мл", "Черри", "Сыр 20г"],
-        "steps": ["Обжарить курицу 4 мин", "Добавить сливки и овощи", "Соединить с пастой и сыром"],
-        "express_hack": "Кипятите воду в электрочайнике для мгновенной варки!"
+        "steps": ["Обжарить курицу 4 мин", "Добавить черри и сливки", "Смешать со сваренной пастой"],
+        "express_hack": "Вскипятите воду в чайнике!"
     }

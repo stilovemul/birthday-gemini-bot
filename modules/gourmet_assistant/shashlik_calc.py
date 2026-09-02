@@ -1,22 +1,32 @@
 import re
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("ShashlikCalc")
 
 
-async def calculate_shashlik_marinade(user_id: int, meat_type: str = "Свиная шея", weight_kg: float = 2.0, style: str = "классический луковый") -> Dict[str, Any]:
+async def calculate_shashlik_marinade(
+    user_id: int,
+    meat_type: str = "Свиная шея",
+    weight_kg: float = 2.0,
+    style: str = "классический луковый",
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
     onion_g = int(weight_kg * 400)
     salt_g = int(weight_kg * 11)
     pepper_g = int(weight_kg * 3)
     coriander_g = int(weight_kg * 2)
     paprika_g = int(weight_kg * 4)
 
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже мариновал: {', '.join(seen_titles[-10:])}. Предложи другой авторский стиль маринада или специй!"
+
     prompt = (
         "Ты признанный мастер мангала и шашлыка. Рассчитай точнейшие пропорции маринада и технологию жарки.\n"
-        f"Тип мяса: {meat_type}. Вес: {weight_kg} кг. Стиль маринада: {style}.\n\n"
+        f"Тип мяса: {meat_type}. Вес: {weight_kg} кг. Стиль маринада: {style}.{anti_repeat}\n\n"
         "Сформируй расчет ингредиентов строго по граммам на указанный вес, время маринования, количество углей и секреты сочности БЕЗ уксуса.\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"

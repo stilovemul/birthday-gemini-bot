@@ -1,17 +1,26 @@
 import re
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("FridgeChef")
 
 
-async def cook_from_fridge(user_id: int, ingredients_text: str = "", image_bytes: Optional[bytes] = None) -> Dict[str, Any]:
+async def cook_from_fridge(
+    user_id: int,
+    ingredients_text: str = "",
+    image_bytes: Optional[bytes] = None,
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
     ing_str = ingredients_text if ingredients_text else "яйца, сыр, остатки запеченной курицы, помидор, банка фасоли, соевый соус"
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже видел и готовил: {', '.join(seen_titles[-10:])}. Предложи 3 НОВЫХ, других блюда!"
+
     prompt = (
         "Ты звездный шеф-повар. Твоя задача — спасти пользователя от голода и приготовить шедевр из того, что есть в холодильнике.\n"
-        f"Список продуктов у пользователя: '{ing_str}'\n\n"
+        f"Список продуктов у пользователя: '{ing_str}'.{anti_repeat}\n\n"
         "Предложи 3 отличных варианта блюд от самого быстрого до более сытного.\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
@@ -44,7 +53,11 @@ async def cook_from_fridge(user_id: int, ingredients_text: str = "", image_bytes
     )
 
     if image_bytes:
-        prompt_vision = "Определи все продукты на этом фото из холодильника и составь 3 рецепта блюд в формате JSON с полями fridge_summary, recipes (name, time, calories, used_ingredients, instructions), pro_tip."
+        prompt_vision = (
+            "Определи все продукты на этом фото из холодильника и составь 3 блюда в формате JSON: "
+            "fridge_summary, recipes (name, time, calories, used_ingredients, instructions), pro_tip."
+            f"{anti_repeat}"
+        )
         resp = await ask_gemini(user_id, prompt_vision, image_bytes=image_bytes)
     else:
         resp = await ask_gemini(user_id, prompt)

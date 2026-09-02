@@ -1,16 +1,25 @@
 import re
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("WeeklyMealPlan")
 
 
-async def generate_weekly_meal_plan(user_id: int, goal: str = "поддержание формы и высокая энергия", calorie_target: int = 2000) -> Dict[str, Any]:
+async def generate_weekly_meal_plan(
+    user_id: int,
+    goal: str = "поддержание формы и высокая энергия",
+    calorie_target: int = 2000,
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже пробовал прошлый рацион: {', '.join(seen_titles[-5:])}. Предложи новые разнообразные блюда на каждый день!"
+
     prompt = (
         "Ты главный диетолог и шеф-повар. Составь сбалансированный рацион правильного питания на 7 дней (Пн-Вс).\n"
-        f"Цель пользователя: {goal}. Средняя суточная калорийность: ~{calorie_target} ккал.\n\n"
+        f"Цель пользователя: {goal}. Средняя суточная калорийность: ~{calorie_target} ккал.{anti_repeat}\n\n"
         "Сформируй понятный рацион (Завтрак, Обед, Ужин на каждый день) и АВТОМАТИЧЕСКИЙ структурированный список покупок в супермаркете по отделам.\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"

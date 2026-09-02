@@ -1,18 +1,26 @@
 import re
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("HealthyFastFood")
 
 
-async def generate_healthy_fastfood(user_id: int, dish_query: str = "") -> Dict[str, Any]:
+async def generate_healthy_fastfood(
+    user_id: int,
+    dish_query: str = "",
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
     query_str = dish_query if dish_query else "ПП-шаверма сочная с курицей и чесночно-йогуртовым соусом"
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже готовил: {', '.join(seen_titles[-10:])}. Предложи АБСОЛЮТНО ДРУГОЙ вариант полезного фастфуда!"
+
     prompt = (
         "Ты шеф-повар и эксперт по здоровому фастфуду (Healthy Fast Food). "
         "Пользователь хочет приготовить полезную версию популярного фастфуда.\n"
-        f"Запрос пользователя: '{query_str}'\n\n"
+        f"Запрос пользователя: '{query_str}'.{anti_repeat}\n\n"
         "Сформируй рецепт с КБЖУ, сравнением с классическим ресторанным фастфудом и секретами сочности без лишних калорий.\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
@@ -58,5 +66,5 @@ async def generate_healthy_fastfood(user_id: int, dish_query: str = "") -> Dict[
         "fastfood_comparison": "В 2 раза меньше калорий, чем в покупной (410 ккал vs 850 ккал)",
         "ingredients": ["Куриное филе 160г", "Лаваш 60г", "Греческий йогурт 2% 60г", "Овощи (капуста, томат, огурец)", "Специи"],
         "steps": ["Обжарить курочку со специями", "Смешать соус из йогурта и чеснока", "Собрать лаваш с овощами и мясом", "Подрумянить на гриле 2 мин"],
-        "chef_secret": "Подрумяньте на сухом гриле для хруста!"
+        "chef_secret": "Хрустящая корочка на сухой сковороде запечатывает соки внутри!"
     }

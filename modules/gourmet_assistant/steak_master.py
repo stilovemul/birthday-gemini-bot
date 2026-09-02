@@ -1,16 +1,27 @@
 import re
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("SteakMaster")
 
 
-async def get_steak_guide(user_id: int, cut: str = "Рибай", doneness: str = "Medium Rare", thickness_cm: float = 2.5) -> Dict[str, Any]:
+async def get_steak_guide(
+    user_id: int,
+    cut: str = "Рибай",
+    doneness: str = "Medium Rare",
+    thickness_cm: float = 2.5,
+    image_bytes: Optional[bytes] = None,
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже смотрел: {', '.join(seen_titles[-10:])}. Предложи другой интересный отруб или нюанс прожарки!"
+
     prompt = (
         "Ты бренд-шеф мясного стейкхауса. Рассчитай идеальный тайминг и технологию приготовления стейка.\n"
-        f"Отруб: {cut}. Желаемая прожарка: {doneness}. Толщина куска: {thickness_cm} см.\n\n"
+        f"Отруб: {cut}. Желаемая прожарка: {doneness}. Толщина куска: {thickness_cm} см.{anti_repeat}\n\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
         '  "steak_title": "🥩 Идеальный стейк Рибай (Medium Rare)",\n'
@@ -30,7 +41,16 @@ async def get_steak_guide(user_id: int, cut: str = "Рибай", doneness: str =
         "}"
     )
 
-    resp = await ask_gemini(user_id, prompt)
+    if image_bytes:
+        prompt_vision = (
+            "Определи отруб мяса, мраморность и толщину по этому фото. "
+            "Рассчитай идеальный тайминг жарки и прожарки в формате JSON со следующими полями: "
+            "steak_title, target_core_temp, crust_sear_time, basting_time, rest_time, total_pan_time, steps, chef_rule."
+        )
+        resp = await ask_gemini(user_id, prompt_vision, image_bytes=image_bytes)
+    else:
+        resp = await ask_gemini(user_id, prompt)
+
     try:
         m = re.search(r"\{.*\}", resp, re.DOTALL)
         if m:

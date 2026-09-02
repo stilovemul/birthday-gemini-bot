@@ -1,17 +1,25 @@
 import re
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from core.gemini import ask_gemini
 
 logger = logging.getLogger("RestaurantSauces")
 
 
-async def get_restaurant_sauce(user_id: int, sauce_name: str = "") -> Dict[str, Any]:
+async def get_restaurant_sauce(
+    user_id: int,
+    sauce_name: str = "",
+    seen_titles: Optional[List[str]] = None
+) -> Dict[str, Any]:
     s_name = sauce_name if sauce_name else "Зеленый Песто по-генуэзски / Аргентинский Чимичурри к мясу"
+    anti_repeat = ""
+    if seen_titles:
+        anti_repeat = f"\nВАЖНО: Пользователь уже смотрел: {', '.join(seen_titles[-10:])}. Предложи АБСОЛЮТНО ДРУГОЙ ресторанный соус!"
+
     prompt = (
         "Ты соусье и шеф мишленовского уровня. Создай точный рецепт соуса ресторанного качества.\n"
-        f"Запрос соуса: '{s_name}'\n\n"
+        f"Запрос соуса: '{s_name}'.{anti_repeat}\n\n"
         "Верни ТОЛЬКО валидный JSON в формате:\n"
         "{\n"
         '  "title": "🌿 Аутентичный соус Чимичурри (Аргентина)",\n'
