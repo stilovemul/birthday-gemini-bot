@@ -1,3 +1,4 @@
+import html
 import logging
 from aiogram import Router, types, F
 from aiogram.enums import ParseMode, ChatAction
@@ -5,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from core.keyboards import get_main_menu, get_mode_keyboard
+from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
 from core.states import ActiveModeStates
 from modules.freebies_promos.promos import get_curated_delivery_promos
 from modules.freebies_promos.games_freebies import get_active_games_freebies
@@ -14,36 +15,64 @@ logger = logging.getLogger("FreebiesHandlers")
 router = Router(name="freebies_promos")
 
 
-def get_ps5_inline_keyboard() -> InlineKeyboardMarkup:
+def get_promos_inline_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="🔥 Распродажи PS Store", callback_data="ps5_filter_sales"),
-                InlineKeyboardButton(text="🎁 Входят в PS Plus", callback_data="ps5_filter_plus")
+                InlineKeyboardButton(text="🍕 Яндекс.Еда & Лавка", callback_data="pr_preset_yandex"),
+                InlineKeyboardButton(text="🛍 Купер & Самокат", callback_data="pr_preset_kuper")
             ],
             [
-                InlineKeyboardButton(text="⚠️ Удалят из подписки", callback_data="ps5_filter_leaving"),
-                InlineKeyboardButton(text="🔄 Полная сводка", callback_data="ps5_filter_all")
+                InlineKeyboardButton(text="🍕 Додо, Токио & Рестораны", callback_data="pr_preset_dodo"),
+                InlineKeyboardButton(text="🛒 ВкусВилл & Перекрёсток", callback_data="pr_preset_stores")
+            ],
+            [
+                InlineKeyboardButton(text="💄 Золотое Яблоко & Ozon", callback_data="pr_preset_shops"),
+                InlineKeyboardButton(text="🍔 Бургер Кинг & Вкусно и точка", callback_data="pr_preset_fastfood")
+            ],
+            [
+                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
             ]
         ]
     )
 
 
 def format_promos_card(data: dict) -> str:
+    title = html.escape(str(data.get("target_title", "Промокоды и Скидки")))
+    cat_type = html.escape(str(data.get("category_type", "Скидки")))
+    codes = data.get("active_codes", [])
+    combos = html.escape(str(data.get("secret_combos", "")))
+    bank = html.escape(str(data.get("bank_cashback_perks", "")))
+    tip = html.escape(str(data.get("pro_saving_tip", "")))
+
     lines = [
-        "🍕 <b>Промокоды: Яндекс.Еда & Перекрёсток Доставка:</b>\n"
+        f"🎁 <b>{title.upper()}</b> <i>({cat_type})</i>\n",
+        "🏷 <b>РАБОЧИЕ ПРОМОКОДЫ:</b>"
     ]
-    for s in data.get("services", []):
+
+    for idx, c in enumerate(codes, 1):
+        code_val = html.escape(str(c.get("code", "")))
+        discount = html.escape(str(c.get("discount", "")))
+        cond = html.escape(str(c.get("condition", "")))
+        aud = html.escape(str(c.get("target_audience", "Все клиенты")))
+
         lines.append(
-            f"🛒 <b>{s.get('name')}</b>\n"
-            f"   └ 🏷 <b>{s.get('discount')}</b> | Промокод: <code>{s.get('code')}</code>\n"
-            f"   └ 💬 <i>{s.get('condition')}</i>\n"
+            f"<b>{idx}. 🎟 Промокод:</b> <code>{code_val}</code>\n"
+            f"   └ 💰 <b>Выгода:</b> <b>{discount}</b>\n"
+            f"   └ 👥 <b>Для кого:</b> {aud}\n"
+            f"   └ 📋 <b>Условия:</b> <i>{cond}</i>\n"
         )
 
-    if data.get("lifehack"):
-        lines.append(f"{data['lifehack']}")
+    if combos:
+        lines.append(f"🍔 <b>Секретные комбо и акции:</b>\n{combos}\n")
 
-    lines.append("\n💬 <i>Вы в режиме промокодов. Напишите, на что именно нужен купон (рестораны, кулинария, магазины) или завершите режим кнопкой ниже.</i>")
+    if bank:
+        lines.append(f"💳 <b>Кэшбэк банков и баллы:</b>\n{bank}\n")
+
+    if tip:
+        lines.append(f"💡 <b>Лайфхак максимальной экономии:</b>\n<i>{tip}</i>\n")
+
+    lines.append("💬 <i>Напишите название ЛЮБОГО ресторана, доставки или магазина (например: «промокод на доставку из Frank», «скидка Спортмастер», «Купер на первый заказ»):</i>")
     return "\n".join(lines)
 
 
@@ -130,21 +159,36 @@ def format_ps5_card(data: dict, filter_mode: str = "all", is_direct_query: bool 
     return "\n".join(lines)
 
 
+def get_ps5_inline_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🔥 Распродажи PS Store", callback_data="ps5_filter_sales"),
+                InlineKeyboardButton(text="🎁 Входят в PS Plus", callback_data="ps5_filter_plus")
+            ],
+            [
+                InlineKeyboardButton(text="⚠️ Удалят из подписки", callback_data="ps5_filter_leaving"),
+                InlineKeyboardButton(text="🔄 Полная сводка", callback_data="ps5_filter_all")
+            ]
+        ]
+    )
+
+
 @router.message(Command("promos"))
 @router.message(Command("games"))
-@router.message(F.text.in_(["🎁 Промо & PS", "🎁 Промокоды & 🎮 Игры", "Промо & PS", "🍕 Промокоды на доставку", "🎮 Раздачи игр", "🎮 Игры PS5", "🎮 PlayStation 5"]))
+@router.message(F.text.in_(["🎁 Промо & PS", "🎁 Промокоды & 🎮 Игры", "Промо & PS", "🍕 Промокоды на доставку", "🎮 Раздачи игр", "🎮 Игры PS5", "🎮 PlayStation 5", "Промокоды", "Скидки"]))
 async def cmd_freebies_menu(message: types.Message, state: FSMContext):
     await state.clear()
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🍕 Яндекс.Еда & Перекрёсток", callback_data="mode_start_promos")],
+            [InlineKeyboardButton(text="🍕 Промокоды (Еда, Рестораны & Магазины)", callback_data="mode_start_promos")],
             [InlineKeyboardButton(text="🎮 PlayStation 5 (PS5 & PS Plus)", callback_data="mode_start_games")]
         ]
     )
     await message.answer(
-        "🎁 <b>Персональный радар скидок, игр и распродаж:</b>\n\n"
-        "• <b>Яндекс.Еда & Перекрёсток</b> — свежие промокоды на доставку еды и продуктов.\n"
-        "• <b>PlayStation 5 (PS5 & PS Plus)</b> — распродажи PS Store, новинки PS Plus и игры, которые скоро удалят из подписки.",
+        "🎁 <b>Персональный радар промокодов, скидок и PlayStation:</b>\n\n"
+        "• 🍕 <b>Промокоды на доставку и магазины</b> — Яндекс.Еда, Купер, Самокат, Додо, рестораны, маркетплейсы (Ozon, WB, Золотое Яблоко).\n"
+        "• 🎮 <b>PlayStation 5 (PS5 & PS Plus)</b> — распродажи PS Store, новинки PS Plus и игры на удаление.",
         parse_mode=ParseMode.HTML,
         reply_markup=kb
     )
@@ -154,18 +198,50 @@ async def cmd_freebies_menu(message: types.Message, state: FSMContext):
 async def cb_start_promos(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(ActiveModeStates.promos_mode)
     user_id = callback.from_user.id
-    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    data = await get_curated_delivery_promos(user_id)
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    data = await get_curated_delivery_promos(user_id, "Яндекс.Еда, Купер, Самокат и популярные рестораны")
     text = format_promos_card(data)
-    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Промокоды"), disable_web_page_preview=True)
+    await callback.message.answer(
+        "🎁 <b>Режим поиска промокодов и скидок активирован!</b>\n\n"
+        "💡 <i>Вы можете нажать кнопку ниже или написать в чат ЛЮБОЙ запрос:</i>\n"
+        "• <i>«промокод на доставку из ресторана Франк»</i>\n"
+        "• <i>«промокод на доставку яндекс еда»</i>\n"
+        "• <i>«скидка в золотом яблоке или спортмастере»</i>\n"
+        "• <i>«купон на первый заказ купер»</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_mode_keyboard("Промокоды")
+    )
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_promos_inline_keyboard(), disable_web_page_preview=True)
     await callback.answer()
+
+
+@router.callback_query(F.data.startswith("pr_preset_"))
+async def cb_promos_preset(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.promos_mode)
+    preset_key = callback.data.replace("pr_preset_", "")
+    user_id = callback.from_user.id
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+
+    presets = {
+        "yandex": "Яндекс Еда и Яндекс Лавка (первый заказ и повторные заказы)",
+        "kuper": "Купер (СберМаркет) и Самокат (доставка продуктов и готовой еды)",
+        "dodo": "Додо Пицца, Токио Сити, Bahroma, Суши Wok и доставка из ресторанов",
+        "stores": "ВкусВилл и Перекрёсток Доставка (Шеф Перекресток, сервис Пакет)",
+        "shops": "Золотое Яблоко, ЛЭТУАЛЬ, Ozon, Wildberries и Мегамаркет",
+        "fastfood": "Бургер Кинг, Вкусно и точка, Ростикс KFC и авто-кафе"
+    }
+    q = presets.get(preset_key, "Яндекс Еда и доставка продуктов")
+    await callback.answer(f"Ищу промокоды: {q[:25]}...")
+    data = await get_curated_delivery_promos(user_id, query=q)
+    text = format_promos_card(data)
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_promos_inline_keyboard(), disable_web_page_preview=True)
 
 
 @router.callback_query(F.data == "mode_start_games")
 async def cb_start_games(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(ActiveModeStates.games_mode)
     user_id = callback.from_user.id
-    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await get_active_games_freebies(user_id)
     text = format_ps5_card(data, filter_mode="all")
     await callback.message.answer(
@@ -180,7 +256,7 @@ async def cb_start_games(callback: types.CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "ps5_filter_sales")
 async def cb_ps5_filter_sales(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await get_active_games_freebies(user_id, query="актуальные распродажи и скидки в PS Store")
     text = format_ps5_card(data, filter_mode="sales")
     await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_ps5_inline_keyboard(), disable_web_page_preview=True)
@@ -190,7 +266,7 @@ async def cb_ps5_filter_sales(callback: types.CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "ps5_filter_plus")
 async def cb_ps5_filter_plus(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await get_active_games_freebies(user_id, query="новинки игр PS Plus Essential и пополнения каталога Extra/Deluxe")
     text = format_ps5_card(data, filter_mode="plus")
     await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_ps5_inline_keyboard(), disable_web_page_preview=True)
@@ -200,7 +276,7 @@ async def cb_ps5_filter_plus(callback: types.CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "ps5_filter_leaving")
 async def cb_ps5_filter_leaving(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await get_active_games_freebies(user_id, query="игры которые скоро удалят из подписки PS Plus Extra Deluxe Last Chance to Play")
     text = format_ps5_card(data, filter_mode="leaving")
     await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_ps5_inline_keyboard(), disable_web_page_preview=True)
@@ -210,26 +286,31 @@ async def cb_ps5_filter_leaving(callback: types.CallbackQuery, state: FSMContext
 @router.callback_query(F.data == "ps5_filter_all")
 async def cb_ps5_filter_all(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    await callback.message.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await get_active_games_freebies(user_id)
     text = format_ps5_card(data, filter_mode="all")
     await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_ps5_inline_keyboard(), disable_web_page_preview=True)
     await callback.answer("🔄 Полная сводка обновлена!")
 
 
-@router.message(ActiveModeStates.promos_mode)
+@router.message(ActiveModeStates.promos_mode, F.text)
 async def handle_promos_dialog(message: types.Message, state: FSMContext):
-    text = message.text or ""
-    if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
+    raw_text = message.text.strip() if message.text else ""
+    if is_exit_command(raw_text):
         await state.clear()
-        await message.answer("🏁 <b>Режим «Промокоды» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        if not raw_text.startswith("/"):
+            await message.answer(
+                "🏁 <b>Режим «Промокоды» завершен.</b> Вы вернулись в главное меню.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_main_menu()
+            )
         return
 
     user_id = message.from_user.id
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    data = await get_curated_delivery_promos(user_id, query=text)
+    data = await get_curated_delivery_promos(user_id, query=raw_text)
     reply = format_promos_card(data)
-    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Промокоды"), disable_web_page_preview=True)
+    await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_promos_inline_keyboard(), disable_web_page_preview=True)
 
 
 @router.message(ActiveModeStates.games_mode)
