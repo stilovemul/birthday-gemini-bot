@@ -48,7 +48,7 @@ async def cmd_gift_generator(message: types.Message, state: FSMContext):
         "2. ✍️ <b>Или напишите произвольно:</b> <i>«Подарок жене на 30 лет, бюджет 15 000 ₽, любит уют и путешествия»</i>, <i>«Что подарить другу-автомобилисту до 5 000 ₽»</i>."
     )
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Подарки"))
-    await message.answer("👇 <b>Выберите человека или напишите запрос:</b>", reply_markup=get_gift_keyboard())
+    await message.answer("👇 <b>Выберите человека или напишите запрос:</b>", parse_mode=ParseMode.HTML, reply_markup=get_gift_keyboard())
 
 
 @router.callback_query(F.data.startswith("gift_"))

@@ -96,7 +96,7 @@ async def cmd_set_city(message: types.Message):
     query = args[1].strip()
     geo = await geocode_location(query)
     if not geo:
-        await message.answer(f"❌ Не удалось найти «{query}». Попробуйте написать точнее: <code>Город, Район</code>.")
+        await message.answer(f"❌ Не удалось найти «{query}». Попробуйте написать точнее: <code>Город, Район</code>.", parse_mode=ParseMode.HTML)
         return
 
     city, district, lat, lon = geo

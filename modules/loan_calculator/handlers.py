@@ -184,7 +184,7 @@ async def handle_wizard_steps(message: types.Message):
                 parse_mode=ParseMode.HTML
             )
         else:
-            await message.answer("⚠️ Не удалось распознать сумму. Попробуйте написать, например: <code>3 000 000</code> или <code>5 млн</code>:")
+            await message.answer("⚠️ Не удалось распознать сумму. Попробуйте написать, например: <code>3 000 000</code> или <code>5 млн</code>:", parse_mode=ParseMode.HTML)
         return
 
     # STEP 2: Rate
@@ -201,7 +201,7 @@ async def handle_wizard_steps(message: types.Message):
                 parse_mode=ParseMode.HTML
             )
         except Exception:
-            await message.answer("⚠️ Введите числовую ставку (например: <code>18.5</code>):")
+            await message.answer("⚠️ Введите числовую ставку (например: <code>18.5</code>):", parse_mode=ParseMode.HTML)
         return
 
     # STEP 3: Term

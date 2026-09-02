@@ -42,7 +42,7 @@ async def cmd_music_sommelier(message: types.Message, state: FSMContext):
     await state.set_state(ActiveModeStates.music_sommelier_mode)
     text = (
         "🎧 <b>Музыкальный Сомелье & Генератор плейлистов под вайб:</b>\n\n"
-        "Я составляю идеальные сеты треков под конкретные ситуации жизни с **прямой ссылкой на Яндекс.Музыку**!\n\n"
+        "Я составляю идеальные сеты треков под конкретные ситуации жизни с <b>прямой ссылкой на Яндекс.Музыку</b>!\n\n"
         "💡 <b>Примеры запросов:</b>\n"
         "• <i>«Музыка для ночной поездки на машине по Питеру»</i>\n"
         "• <i>«Глубокий фокус для кодинга без слов»</i>\n"
@@ -51,7 +51,7 @@ async def cmd_music_sommelier(message: types.Message, state: FSMContext):
         "💬 <i>Напишите ваше настроение или выберите готовый сет:</i>"
     )
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Музыка"))
-    await message.answer("👇 <b>Готовые подборки под настроение:</b>", reply_markup=get_music_keyboard())
+    await message.answer("👇 <b>Готовые подборки под настроение:</b>", parse_mode=ParseMode.HTML, reply_markup=get_music_keyboard())
 
 
 @router.callback_query(F.data.startswith("mus_"))

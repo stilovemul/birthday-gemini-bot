@@ -61,7 +61,7 @@ async def cmd_mystic_spb(message: types.Message, state: FSMContext):
         "3. 🔘 <b>Или выберите знаменитую тайну на кнопках ниже!</b>"
     )
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_spb_gps_mode_keyboard())
-    await message.answer("👇 <b>Популярные мистические и детективные локации:</b>", reply_markup=get_mystic_keyboard())
+    await message.answer("👇 <b>Популярные мистические и детективные локации:</b>", parse_mode=ParseMode.HTML, reply_markup=get_mystic_keyboard())
 
 
 @router.callback_query(F.data.startswith("mspb_loc_"))

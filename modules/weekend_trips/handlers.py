@@ -131,7 +131,7 @@ async def cmd_weekend_trips(message: types.Message, state: FSMContext):
         "💬 <i>Напишите ваш запрос или выберите кнопку:</i>"
     )
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Выходные"))
-    await message.answer("👇 <b>Быстрый выбор сценария:</b>", reply_markup=get_weekend_keyboard())
+    await message.answer("👇 <b>Быстрый выбор сценария:</b>", parse_mode=ParseMode.HTML, reply_markup=get_weekend_keyboard())
 
 
 @router.callback_query(F.data.startswith("wt_"))
@@ -142,7 +142,7 @@ async def cb_weekend_category(callback: types.CallbackQuery, state: FSMContext):
     # 1. Возврат к маршрутам
     if cat == "to_routes":
         await callback.answer()
-        await callback.message.answer("🌲 <b>Загородные маршруты и роадтрипы:</b>", reply_markup=get_weekend_keyboard())
+        await callback.message.answer("🌲 <b>Загородные маршруты и роадтрипы:</b>", parse_mode=ParseMode.HTML, reply_markup=get_weekend_keyboard())
         return
 
     # 2. Детское меню выбора возраста и категорий

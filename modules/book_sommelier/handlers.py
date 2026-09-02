@@ -49,7 +49,7 @@ async def cmd_book_sommelier(message: types.Message, state: FSMContext):
         "💬 <i>Напишите название книги или тему:</i>"
     )
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Книги"))
-    await message.answer("👇 <b>Быстрые выжимки мировых бестселлеров:</b>", reply_markup=get_book_keyboard())
+    await message.answer("👇 <b>Быстрые выжимки мировых бестселлеров:</b>", parse_mode=ParseMode.HTML, reply_markup=get_book_keyboard())
 
 
 @router.callback_query(F.data.startswith("bk_"))

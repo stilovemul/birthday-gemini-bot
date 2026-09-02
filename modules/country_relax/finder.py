@@ -1,63 +1,128 @@
 import re
 import json
+import random
 import logging
-from typing import Dict, Any
-from core.gemini import ask_gemini
+from typing import Dict, Any, List
+from core.gemini import get_genai_client, CANDIDATE_MODELS
+from modules.country_relax.curated_catalog import CURATED_COUNTRY_RESORTS
+from modules.country_relax.storage import (
+    get_seen_resorts,
+    add_seen_resort,
+    clear_seen_resorts,
+    set_user_last_country
+)
 
 logger = logging.getLogger("CountryRelaxFinder")
 
-async def find_country_resorts(user_id: int, query: str) -> Dict[str, Any]:
-    prompt = f"""Ты — эксперт по загородному премиальному и семейному отдыху в СПб, Ленобласти и Карелии.
-Запрос пользователя / Пожелания / Бюджет: '{query}'
+CATEGORY_TAG_MAP = {
+    "pool": "pool",
+    "banya": "banya",
+    "glamp": "glamping",
+    "family": "family",
+    "kids": "kids",
+    "lake": "lake",
+    "romantic": "romantic",
+    "random": "general",
+    "general": "general"
+}
 
-Подбери 3 идеальные загородные базы отдыха, отеля или глэмпинга под этот запрос (баня, спа, теплый бассейн, коттеджи, детская площадка, рыбалка, берег озера).
+
+def pick_curated_resort(user_id: int, category: str = "general") -> Dict[str, Any]:
+    """
+    Выбирает проверенную загородную базу/отель из каталога,
+    исключая ранее показанные пользователю варианты.
+    """
+    seen = get_seen_resorts(user_id)
+    tag = CATEGORY_TAG_MAP.get(category, "general")
+
+    # Фильтруем те, которые пользователь еще не видел
+    unseen = [r for r in CURATED_COUNTRY_RESORTS if r["name"] not in seen]
+
+    # Если просмотрел все 22, сбрасываем историю
+    if not unseen:
+        clear_seen_resorts(user_id)
+        unseen = list(CURATED_COUNTRY_RESORTS)
+
+    # Ищем совпадения по категории/тегу
+    matching = [r for r in unseen if tag in r.get("tags", [])]
+    pool = matching if matching else unseen
+
+    chosen = random.choice(pool)
+    add_seen_resort(user_id, chosen["name"])
+    return chosen
+
+
+async def find_country_resorts(
+    user_id: int,
+    query: str,
+    category: str = "general",
+    is_another: bool = False
+) -> Dict[str, Any]:
+    """
+    Интеллектуальный подбор загородного отдыха:
+    - При запросе пресетов или свободном запросе подбирает лучший вариант.
+    - Исключает уже показанные базы (гарантия разнообразия и кнопки «Ещё»).
+    - Использует Gemini Flash с ротацией моделей и fallback на экспертный каталог.
+    """
+    set_user_last_country(user_id, query, category)
+    seen = get_seen_resorts(user_id)
+    seen_text = "\n".join([f"- {s}" for s in seen[-6:]]) if seen else "Ранее базы не предлагались."
+
+    variation_instruction = ""
+    if is_another or seen:
+        variation_instruction = (
+            f"\n\nКАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО предлагать или повторять следующие уже просмотренные базы:\n"
+            f"{seen_text}\n"
+            f"ОБЯЗАТЕЛЬНО предложи совершенно ДРУГУЮ загородную базу/отель/глэмпинг/баню!"
+        )
+
+    prompt = f"""Ты — персональный консьерж по загородному премиальному и семейному отдыху в Санкт-Петербурге, Ленобласти и Карелии.
+Категория: {category}
+Запрос пользователя / Пожелания / Бюджет: '{query}'
+{variation_instruction}
+
+Подбери ОДНУ конкретную идеальную загородную базу отдыха, спа-отель, глэмпинг или банный комплекс под этот запрос.
+Укажи честные актуальные данные: реальное расстояние от СПб, трассу, цены, особенности инфраструктуры и лайфхак бронирования.
 
 СТРУКТУРА JSON:
-1. "title": Заголовок подборки
-2. "resorts": Список 3 баз/отелей:
-   - "name": Название
-   - "location": Район / Удаленность от СПб (км и время в пути)
-   - "price_range": Ориентировочная стоимость за сутки
-   - "features": Спа, баня на дровах, бассейн с подогревом, рестораны
-   - "kid_rating": Что есть для детей (площадка, детская комната, контактный зоопарк, анимация)
-   - "why_best": Почему это идеальное попадание в запрос
-3. "booking_tip": Совет по бронированию и выбору коттеджа/номера.
-
-Верни ответ СТРОГО в формате JSON:
 {{
-  "title": "Топ-3 загородных спа-отелей и коттеджей для семейного отдыха",
-  "resorts": [
-    {{
-      "name": "Загородный клуб «Терийоки» (Terijoki)",
-      "location": "г. Зеленогорск, берег Финского залива (50 км от СПб, ~50 мин)",
-      "price_range": "от 12 000 до 25 000 ₽ / сутки",
-      "features": "Открытый подогреваемый бассейн с морской водой круглый год, спа-комплекс, панорамный ресторан «Пристань», русская баня.",
-      "kid_rating": "Детская игровая комната, прокат велосипедов, детское меню, безопасный пляж.",
-      "why_best": "Идеально для релакса у залива с теплым бассейном и высоким сервисом."
-    }}
-  ],
-  "booking_tip": "💡 На выходные бронируйте за 2-3 недели. Корпус 'Вилла' ближе всего к бассейну."
+  "name": "Название базы / отеля / глэмпинга",
+  "category": "Короткий атмосферный статус / категория (например: 🏊‍♂️ Спа & Теплый открытый бассейн)",
+  "location": "Район, ориентир, расстояние в км от СПб и время в пути (например: Курортный р-н, Зеленогорск, 50 км от СПб, ~45 мин по ЗСД)",
+  "price_range": "Ориентировочная стоимость за сутки (будни / выходные)",
+  "features": "Бассейн с подогревом, русская баня, спа, купель, ресторан, мангалы",
+  "kid_friendly": "Что есть для детей и семьи (площадки, анимация, детские комнаты, pet-friendly)",
+  "why_best": "Почему это место идеально попадает в запрос (1-2 предложения)",
+  "booking_tip": "Полезный совет по бронированию (какой домик/корпус лучше брать, когда бронировать, акции)",
+  "geo_query": "Точное название для поиска на Яндекс.Картах"
 }}
-"""
-    resp = await ask_gemini(user_id, prompt)
-    try:
-        m = re.search(r"\{.*\}", resp, re.DOTALL)
-        if m:
-            return json.loads(m.group(0))
-    except Exception as e:
-        logger.error(f"Error parsing country relax json: {e}")
 
-    return {
-        "title": "Загородный отдых в Ленобласти",
-        "resorts": [
-            {
-                "name": "Курорт «Игора»",
-                "location": "Приозерский р-н (54 км от СПб, 45 мин)",
-                "price_range": "от 10 000 ₽ / сутки",
-                "features": "Большой спа-комплекс, бассейн 25м, ледовый дворец, ресторан «Панорама».",
-                "kid_rating": "Детский городок, боулинг, инструкторы.",
-                "why_best": "Развитая инфраструктура круглый год."
-            }
-        ],
-        "booking_tip": "Бронируйте заранее на официальном сайте."
-    }
+Верни ответ СТРОГО в формате JSON без разметки markdown:
+"""
+
+    try:
+        client = get_genai_client()
+        for model_name in CANDIDATE_MODELS:
+            try:
+                resp = await client.aio.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                )
+                if resp and resp.text:
+                    m = re.search(r"\{.*\}", resp.text, re.DOTALL)
+                    if m:
+                        data = json.loads(m.group(0))
+                        name = data.get("name", "").strip()
+                        if name:
+                            # Проверяем на дубликат
+                            is_dup = any(prev.lower() in name.lower() for prev in seen[-5:])
+                            if not is_dup:
+                                add_seen_resort(user_id, name)
+                                return data
+            except Exception as ex:
+                logger.warning(f"Country Relax Gemini model {model_name} error: {ex}")
+    except Exception as e:
+        logger.error(f"Error calling Gemini in Country Relax finder: {e}")
+
+    # Надежный fallback из каталога 22 эталонных локаций без повторов
+    return pick_curated_resort(user_id, category)

@@ -62,7 +62,7 @@ async def cmd_geo_gastro(message: types.Message, state: FSMContext):
         "3. 🍸 <b>Нажмите кнопку «Секретные Спикизи-Бары»</b> для подбора баров с тайными входами и авторскими коктейлями!"
     )
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_gastro_gps_keyboard())
-    await message.answer("👇 <b>Категории и быстрый поиск:</b>", reply_markup=get_gastro_keyboard())
+    await message.answer("👇 <b>Категории и быстрый поиск:</b>", parse_mode=ParseMode.HTML, reply_markup=get_gastro_keyboard())
 
 
 @router.callback_query(F.data.startswith("gg_preset_"))
