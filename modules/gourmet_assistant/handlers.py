@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional, List
 
 from aiogram import Router, types, F
 from aiogram.enums import ParseMode, ChatAction
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -820,7 +820,7 @@ def _get_category_from_state(current_state_str: str) -> str:
     return mapping.get(current_state_str, "breakfast")
 
 
-@router.message(F.state.in_(GOURMET_STATE_LIST))
+@router.message(StateFilter(*GOURMET_STATE_LIST))
 async def handle_universal_gourmet_input(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
     cat = _get_category_from_state(str(current_state))
