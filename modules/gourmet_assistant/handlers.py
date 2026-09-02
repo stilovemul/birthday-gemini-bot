@@ -48,6 +48,10 @@ from modules.gourmet_assistant.shelf_advisor import (
     ask_shelf_followup,
     is_shelf_followup_question
 )
+from modules.gourmet_assistant.food_pairing import (
+    is_food_pairing_query,
+    get_food_pairing_recommendation
+)
 
 logger = logging.getLogger("GourmetHandlers")
 router = Router(name="gourmet_assistant")
@@ -942,6 +946,29 @@ async def handle_universal_gourmet_input(message: types.Message, state: FSMConte
             image_bytes = buf.getvalue()
         except Exception as e:
             logger.error(f"Error downloading photo in gourmet mode: {e}")
+
+    # 5. Check if user is asking for Food Pairing ("буду кушать пиццу, какое пиво взять?", "под стейк какое вино?", etc.)
+    if not image_bytes and is_food_pairing_query(extracted_text):
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        shelf_sess = get_shelf_session(user_id)
+        pairing_ans = await get_food_pairing_recommendation(
+            user_id=user_id,
+            query=extracted_text,
+            active_shelf_data=shelf_sess.get("shelf_data") if shelf_sess else None,
+            image_bytes=shelf_sess.get("image_bytes") if shelf_sess else None
+        )
+        try:
+            await message.answer(
+                pairing_ans,
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_gourmet_result_keyboard(cat, has_shoplist=True)
+            )
+        except Exception:
+            await message.answer(
+                pairing_ans,
+                reply_markup=get_gourmet_result_keyboard(cat, has_shoplist=True)
+            )
+        return
 
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     seen = get_seen_recipes(user_id, cat)

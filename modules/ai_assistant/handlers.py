@@ -36,6 +36,10 @@ from modules.gourmet_assistant.shelf_advisor import (
     ask_shelf_followup,
     is_shelf_followup_question
 )
+from modules.gourmet_assistant.food_pairing import (
+    is_food_pairing_query,
+    get_food_pairing_recommendation
+)
 from modules.gourmet_assistant.storage import set_shelf_session, get_shelf_session
 
 logger = logging.getLogger("AIAssistantHandler")
@@ -218,6 +222,22 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     text = (message.text or "").strip()
     user_id = message.from_user.id
     t_lower = text.lower()
+
+    # Check if user is asking for Food Pairing ("буду кушать пиццу, какое пиво взять?", "под стейк какое вино?", etc.)
+    if is_food_pairing_query(text):
+        await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        shelf_sess = get_shelf_session(user_id)
+        pairing_ans = await get_food_pairing_recommendation(
+            user_id=user_id,
+            query=text,
+            active_shelf_data=shelf_sess.get("shelf_data") if shelf_sess else None,
+            image_bytes=shelf_sess.get("image_bytes") if shelf_sess else None
+        )
+        try:
+            await message.answer(pairing_ans, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+        except Exception:
+            await message.answer(pairing_ans, reply_markup=get_main_menu())
+        return
 
     # Check if user is asking an interactive follow-up about a recently scanned shelf
     shelf_sess = get_shelf_session(user_id)
