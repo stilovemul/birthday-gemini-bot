@@ -39,6 +39,7 @@ from modules.gourmet_assistant.sauces import get_restaurant_sauce
 from modules.gourmet_assistant.asian_cuisine import get_asian_dish_recipe
 from modules.gourmet_assistant.craft_beer import get_craft_beer_guide
 from modules.gourmet_assistant.wine_spirits import get_wine_spirits_guide
+from modules.gourmet_assistant.shelf_advisor import analyze_alcohol_shelf, format_shelf_advisor_message
 
 logger = logging.getLogger("GourmetHandlers")
 router = Router(name="gourmet_assistant")
@@ -755,6 +756,34 @@ async def cb_mode_exit_to_main(callback: types.CallbackQuery, state: FSMContext)
     await callback.message.answer("🏁 Вы вернулись в <b>Главное меню</b>.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
 
+@router.callback_query(F.data.in_(["gourmet_tip_shelf_beer", "gourmet_tip_shelf_wine_spirits"]))
+async def cb_gourmet_shelf_tip(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("📸 Сфотографируйте полку")
+    is_wine = "wine" in callback.data
+    target_state = ActiveModeStates.wine_spirits_mode if is_wine else ActiveModeStates.craft_beer_mode
+    await state.set_state(target_state)
+    cat = "wine_spirits" if is_wine else "beer"
+
+    text = (
+        "📸 <b>ИИ-Сомелье: Подбор напитка по фото полки / витрины / меню</b>\n\n"
+        "1. <b>Сделайте фото</b> полки с пивом или алкоголем в магазине (К&Б, Перекрёсток, ВкусВилл, Винлаб, крафтовый бар) или барной карты.\n"
+        "2. <b>Отправьте фото сюда в чат</b> (можно с комментарием в подписи: <i>«хочу кислое ягодное»</i>, <i>«красное сухое к стейку»</i> или <i>«до 300 руб»</i>).\n\n"
+        "🤖 <i>ИИ-сомелье мгновенно распознает все этикетки, сравнит мировые рейтинги Untappd / Vivino, выберет <b>ТОП-1 напиток</b> на этой полке, назовет безопасную классику и предупредит, чего брать не стоит!</i>"
+    )
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🎲 Случайный сорт", callback_data=f"gourmet_rnd_{cat}"),
+                InlineKeyboardButton(text="🍽 Меню кулинарии", callback_data="gourmet_back_to_menu")
+            ],
+            [
+                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
+            ]
+        ]
+    )
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb)
+
+
 # --- UNIVERSAL DISPATCHER FOR ALL ACTIVE FOOD STATES (TEXT, VOICE, PHOTO) ---
 
 GOURMET_STATE_LIST = [
@@ -940,25 +969,35 @@ async def handle_universal_gourmet_input(message: types.Message, state: FSMConte
             data = await get_asian_dish_recipe(user_id, dish_name=extracted_text, seen_titles=seen)
             formatted_text = format_asian_message(data)
         elif cat == "beer":
-            data = await get_craft_beer_guide(user_id, query=extracted_text, image_bytes=image_bytes, seen_titles=seen)
-            formatted_text = format_craft_beer_message(data)
+            if image_bytes:
+                data = await analyze_alcohol_shelf(user_id, image_bytes=image_bytes, user_preference=extracted_text, alcohol_category="beer")
+                formatted_text = format_shelf_advisor_message(data)
+            else:
+                data = await get_craft_beer_guide(user_id, query=extracted_text, seen_titles=seen)
+                formatted_text = format_craft_beer_message(data)
         elif cat == "wine_spirits":
-            data = await get_wine_spirits_guide(user_id, query=extracted_text, image_bytes=image_bytes, seen_titles=seen)
-            formatted_text = format_wine_spirits_message(data)
+            if image_bytes:
+                data = await analyze_alcohol_shelf(user_id, image_bytes=image_bytes, user_preference=extracted_text, alcohol_category="wine_spirits")
+                formatted_text = format_shelf_advisor_message(data)
+            else:
+                data = await get_wine_spirits_guide(user_id, query=extracted_text, seen_titles=seen)
+                formatted_text = format_wine_spirits_message(data)
         elif cat == "barman":
             is_non_alc = "безалк" in extracted_text.lower() or "моктейл" in extracted_text.lower()
             data = await craft_cocktail(user_id, bar_stock=extracted_text, non_alcoholic=is_non_alc, seen_titles=seen)
             formatted_text = format_cocktail_message(data)
 
         if data:
-            title = data.get("title") or data.get("steak_title") or data.get("beer_name") or data.get("drink_name") or data.get("plan_title") or extracted_text or "Рецепт"
+            top_p = data.get("top_pick")
+            top_name = top_p.get("name") if isinstance(top_p, dict) else None
+            title = data.get("title") or data.get("steak_title") or data.get("beer_name") or data.get("drink_name") or top_name or data.get("plan_title") or extracted_text or "Рецепт"
             add_seen_recipe(user_id, cat, title, full_data=data)
             set_user_last_gourmet(user_id, cat, extracted_text, full_data=data)
 
         await message.answer(
             formatted_text,
             parse_mode=ParseMode.HTML,
-            reply_markup=get_gourmet_result_keyboard(cat, has_shoplist=(cat != "beer" and cat != "wine_spirits"))
+            reply_markup=get_gourmet_result_keyboard(cat, has_shoplist=(cat != "beer" and cat != "wine_spirits" or image_bytes is not None))
         )
     except Exception as e:
         logger.error(f"Error handling gourmet dialog for {cat}: {e}")

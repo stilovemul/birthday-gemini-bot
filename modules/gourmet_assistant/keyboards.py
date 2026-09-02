@@ -45,6 +45,12 @@ def get_category_presets_keyboard(category: str) -> InlineKeyboardMarkup:
     presets = CURATED_PRESETS.get(category, [])
     buttons = []
     
+    # For beer and wine/spirits, highlight the shelf photo scanning feature
+    if category == "beer":
+        buttons.append([InlineKeyboardButton(text="📸 Сфоткать полку с пивом (ИИ выберет лучшее)", callback_data="gourmet_tip_shelf_beer")])
+    elif category == "wine_spirits":
+        buttons.append([InlineKeyboardButton(text="📸 Сфоткать винную полку / витрину (ИИ выберет)", callback_data="gourmet_tip_shelf_wine_spirits")])
+
     # Add preset buttons in pairs or single
     for p in presets:
         buttons.append([InlineKeyboardButton(text=p["title"], callback_data=f"gourmet_pr_{p['id']}")])

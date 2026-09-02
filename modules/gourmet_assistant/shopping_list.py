@@ -41,6 +41,20 @@ def generate_shopping_list_text(recipe_data: Dict[str, Any]) -> str:
         ])
         return "\n".join(lines)
 
+    # Check if it's shelf advisor with shopping checklist
+    if recipe_data.get("shopping_checklist"):
+        checklist = recipe_data.get("shopping_checklist")
+        lines.append("\n🛒 <b>Корзина в магазине (напиток + закуски):</b>")
+        if isinstance(checklist, list):
+            for it in checklist:
+                lines.append(format_grocery_item(str(it)))
+        lines.extend([
+            "\n━━━━━━━━━━━━━━━━━━━",
+            "💡 <b>Лайфхак:</b> Скопируйте этот список перед подходом к кассе!",
+            "🏪 <i>ВкусВилл / Перекресток / К&Б / Винлаб / Самокат.</i>"
+        ])
+        return "\n".join(lines)
+
     # Standard recipe with ingredients list
     ingredients = recipe_data.get("ingredients") or recipe_data.get("proportions") or []
     if isinstance(ingredients, list) and ingredients:
