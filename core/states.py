@@ -34,6 +34,14 @@ class ActiveModeStates(StatesGroup):
     
     # AI General Chat
     gemini_chat_mode = State()
+    
+    # 6 New Smart Modules
+    prompt_studio_mode = State()
+    ai_humanizer_mode = State()
+    manipulation_shield_mode = State()
+    icebreakers_mode = State()
+    cognitive_biases_mode = State()
+    cinema_matchmaker_mode = State()
 
 
 class SubTrackerStates(StatesGroup):

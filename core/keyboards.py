@@ -46,6 +46,14 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="📵 Антиспам")
         ],
         [
+            KeyboardButton(text="🎬 Кино"),
+            KeyboardButton(text="✨ Промпты"),
+            KeyboardButton(text="✍️ Текст AI"),
+            KeyboardButton(text="🛡 Манипуляции")
+        ],
+        [
+            KeyboardButton(text="💬 Знакомства"),
+            KeyboardButton(text="🧠 Мышление"),
             KeyboardButton(text="❓ Справка")
         ]
     ]

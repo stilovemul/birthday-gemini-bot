@@ -38,6 +38,12 @@ from modules.freebies_promos.handlers import router as freebies_router
 from modules.auto_legal_aid.handlers import router as auto_legal_router
 from modules.ai_deep_research.handlers import router as research_router
 from modules.anti_spam_guard.handlers import router as antispam_router
+from modules.prompt_studio.handlers import router as prompt_studio_router
+from modules.ai_humanizer.handlers import router as humanizer_router
+from modules.manipulation_shield.handlers import router as shield_router
+from modules.icebreakers.handlers import router as icebreakers_router
+from modules.cognitive_biases.handlers import router as biases_router
+from modules.cinema_matchmaker.handlers import router as cinema_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -76,6 +82,12 @@ dp.include_router(freebies_router)
 dp.include_router(auto_legal_router)
 dp.include_router(research_router)
 dp.include_router(antispam_router)
+dp.include_router(prompt_studio_router)
+dp.include_router(humanizer_router)
+dp.include_router(shield_router)
+dp.include_router(icebreakers_router)
+dp.include_router(biases_router)
+dp.include_router(cinema_router)
 dp.include_router(webapp_bot_router)
 dp.include_router(ai_router)  # Catch-all AI router last
 
