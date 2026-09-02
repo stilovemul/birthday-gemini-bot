@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from core.keyboards import get_main_menu, get_mode_keyboard
+from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
 from core.states import ActiveModeStates
 from modules.ai_humanizer.humanizer import humanize_ai_text
 
@@ -42,6 +42,17 @@ async def cmd_ai_humanizer(message: types.Message, state: FSMContext):
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Очеловечиватель"))
 
 
+@router.callback_query(F.data == "mode_exit_to_main")
+async def cb_exit_humanizer(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.answer(
+        "🏁 <b>Режим «Очеловечиватель» завершен.</b> Вы вернулись в главное меню.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_menu()
+    )
+    await callback.answer("Вы вышли в главное меню")
+
+
 @router.callback_query(F.data == "hum_new_text")
 async def cb_humanizer_new(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(ActiveModeStates.ai_humanizer_mode)
@@ -55,8 +66,14 @@ async def cb_humanizer_new(callback: types.CallbackQuery, state: FSMContext):
 @router.message(ActiveModeStates.ai_humanizer_mode, F.text)
 async def handle_humanizer_text(message: types.Message, state: FSMContext):
     raw_text = message.text.strip()
-    if raw_text.startswith("/") or raw_text in ["🚪 Главное меню", "Главное меню", "Выход"]:
+    if is_exit_command(raw_text):
         await state.clear()
+        if not raw_text.startswith("/"):
+            await message.answer(
+                "🏁 <b>Режим «Очеловечиватель» завершен.</b> Вы вернулись в главное меню.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_main_menu()
+            )
         return
 
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)

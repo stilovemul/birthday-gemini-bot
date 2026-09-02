@@ -73,6 +73,31 @@ def get_mode_keyboard(mode_title: str = "Режим диалога") -> ReplyKey
     )
 
 
+def is_exit_command(text: str) -> bool:
+    """Checks if the user sent an exit / back to menu command or button."""
+    if not text:
+        return False
+    t = text.strip().lower()
+    exit_phrases = [
+        "🏁 закончить режим (главное меню)",
+        "🏁 закончить режим",
+        "закончить режим",
+        "главное меню",
+        "🚪 главное меню",
+        "🔙 главное меню",
+        "меню",
+        "выход",
+        "выйти",
+        "отмена",
+        "/stop",
+        "/exit",
+        "/cancel",
+        "/menu",
+        "/start"
+    ]
+    return t in exit_phrases or text.strip().startswith("/")
+
+
 def get_birthday_submenu() -> ReplyKeyboardMarkup:
     """Returns birthday management submenu keyboard."""
     kb = [

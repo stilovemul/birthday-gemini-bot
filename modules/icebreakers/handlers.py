@@ -7,7 +7,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from core.keyboards import get_main_menu, get_mode_keyboard
+from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
 from core.states import ActiveModeStates
 from modules.icebreakers.generator import generate_icebreakers, ICEBREAKER_MODES
 
@@ -51,6 +51,17 @@ async def cmd_icebreakers(message: types.Message, state: FSMContext):
         "💡 Я выдам 4 остроумных, цепляющих первых фразы под конкретную ситуацию!"
     )
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_icebreaker_keyboard("dating"))
+
+
+@router.callback_query(F.data == "mode_exit_to_main")
+async def cb_exit_icebreakers(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.answer(
+        "🏁 <b>Режим «Знакомства & Нетворкинг» завершен.</b> Вы вернулись в главное меню.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_menu()
+    )
+    await callback.answer("Вы вышли в главное меню")
 
 
 @router.callback_query(F.data.startswith("ib_set_"))
@@ -98,8 +109,14 @@ async def handle_icebreaker_photo(message: types.Message, state: FSMContext):
 @router.message(ActiveModeStates.icebreakers_mode, F.text)
 async def handle_icebreaker_text(message: types.Message, state: FSMContext):
     raw_text = message.text.strip()
-    if raw_text.startswith("/") or raw_text in ["🚪 Главное меню", "Главное меню", "Выход"]:
+    if is_exit_command(raw_text):
         await state.clear()
+        if not raw_text.startswith("/"):
+            await message.answer(
+                "🏁 <b>Режим «Знакомства & Нетворкинг» завершен.</b> Вы вернулись в главное меню.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_main_menu()
+            )
         return
 
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)

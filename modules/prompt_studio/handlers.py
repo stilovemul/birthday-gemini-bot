@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from core.keyboards import get_main_menu, get_mode_keyboard
+from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
 from core.states import ActiveModeStates
 from modules.prompt_studio.generator import generate_super_prompt, AI_TARGET_MODELS
 
@@ -56,6 +56,17 @@ async def cmd_prompt_studio(message: types.Message, state: FSMContext):
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_prompt_models_keyboard("chatgpt"))
 
 
+@router.callback_query(F.data == "mode_exit_to_main")
+async def cb_exit_prompt_studio(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.answer(
+        "🏁 <b>Режим «Генератор промптов» завершен.</b> Вы вернулись в главное меню.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_menu()
+    )
+    await callback.answer("Вы вышли в главное меню")
+
+
 @router.callback_query(F.data.startswith("ps_set_"))
 async def cb_set_prompt_model(callback: types.CallbackQuery, state: FSMContext):
     model_key = callback.data.replace("ps_set_", "")
@@ -90,8 +101,14 @@ async def cb_new_task(callback: types.CallbackQuery, state: FSMContext):
 @router.message(ActiveModeStates.prompt_studio_mode, F.text)
 async def handle_prompt_studio_input(message: types.Message, state: FSMContext):
     user_text = message.text.strip()
-    if user_text.startswith("/") or user_text in ["🚪 Главное меню", "Главное меню", "Выход"]:
+    if is_exit_command(user_text):
         await state.clear()
+        if not user_text.startswith("/"):
+            await message.answer(
+                "🏁 <b>Режим «Генератор промптов» завершен.</b> Вы вернулись в главное меню.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_main_menu()
+            )
         return
 
     data = await state.get_data()

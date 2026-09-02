@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from core.keyboards import get_main_menu, get_mode_keyboard
+from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
 from core.states import ActiveModeStates
 from modules.cinema_matchmaker.recommender import recommend_movies
 
@@ -43,6 +43,17 @@ async def cmd_cinema_matchmaker(message: types.Message, state: FSMContext):
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Киносомелье"))
 
 
+@router.callback_query(F.data == "mode_exit_to_main")
+async def cb_exit_cinema(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.answer(
+        "🏁 <b>Режим «Киносомелье» завершен.</b> Вы вернулись в главное меню.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_menu()
+    )
+    await callback.answer("Вы вышли в главное меню")
+
+
 @router.callback_query(F.data == "cm_new_search")
 async def cb_cinema_new(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(ActiveModeStates.cinema_matchmaker_mode)
@@ -56,8 +67,14 @@ async def cb_cinema_new(callback: types.CallbackQuery, state: FSMContext):
 @router.message(ActiveModeStates.cinema_matchmaker_mode, F.text)
 async def handle_cinema_text(message: types.Message, state: FSMContext):
     raw_text = message.text.strip()
-    if raw_text.startswith("/") or raw_text in ["🚪 Главное меню", "Главное меню", "Выход"]:
+    if is_exit_command(raw_text):
         await state.clear()
+        if not raw_text.startswith("/"):
+            await message.answer(
+                "🏁 <b>Режим «Киносомелье» завершен.</b> Вы вернулись в главное меню.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_main_menu()
+            )
         return
 
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)

@@ -7,7 +7,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from core.keyboards import get_main_menu, get_mode_keyboard
+from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
 from core.states import ActiveModeStates
 from modules.manipulation_shield.analyzer import analyze_manipulation
 
@@ -43,6 +43,17 @@ async def cmd_manipulation_shield(message: types.Message, state: FSMContext):
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Анти-Манипулятор"))
 
 
+@router.callback_query(F.data == "mode_exit_to_main")
+async def cb_exit_shield(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.answer(
+        "🏁 <b>Режим «Анти-Манипулятор» завершен.</b> Вы вернулись в главное меню.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_menu()
+    )
+    await callback.answer("Вы вышли в главное меню")
+
+
 @router.callback_query(F.data == "shield_new_analysis")
 async def cb_shield_new(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(ActiveModeStates.manipulation_shield_mode)
@@ -68,8 +79,14 @@ async def handle_manipulation_photo(message: types.Message, state: FSMContext):
 @router.message(ActiveModeStates.manipulation_shield_mode, F.text)
 async def handle_manipulation_text(message: types.Message, state: FSMContext):
     raw_text = message.text.strip()
-    if raw_text.startswith("/") or raw_text in ["🚪 Главное меню", "Главное меню", "Выход"]:
+    if is_exit_command(raw_text):
         await state.clear()
+        if not raw_text.startswith("/"):
+            await message.answer(
+                "🏁 <b>Режим «Анти-Манипулятор» завершен.</b> Вы вернулись в главное меню.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_main_menu()
+            )
         return
 
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
