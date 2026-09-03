@@ -874,6 +874,8 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
             <button class="capsule-btn" onclick="openInBot('🎨 Фото AI')">🎨 Фото AI</button>
             <button class="capsule-btn" onclick="openInBot('🔐 Сейф')">🔐 Сейф</button>
             <button class="capsule-btn" onclick="openInBot('📝 Заметки')">📝 Заметки</button>
+            <button class="capsule-btn" onclick="openInBot('📵 Антиспам')">📵 Антиспам</button>
+            <button class="capsule-btn" onclick="openInBot('🛡 Авто-Щит')">🛡 Авто-Щит</button>
             <button class="capsule-btn" onclick="openInBot('📸 Фото-споты')">📸 Фото-споты</button>
             <button class="capsule-btn" onclick="openInBot('🎧 Музыка')">🎧 Музыка</button>
             <button class="capsule-btn" onclick="openInBot('🚗 Drive2')">🚗 Drive2</button>
