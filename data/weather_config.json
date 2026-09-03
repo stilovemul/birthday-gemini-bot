@@ -6,5 +6,12 @@
     "lon": 30.2026,
     "alerts_enabled": true,
     "last_alert_time": 0
+  },
+  "999999999": {
+    "city": "Санкт-Петербург",
+    "district": "Каменка / округ Коломяги",
+    "lat": 60.0394,
+    "lon": 30.2031,
+    "alerts_enabled": true
   }
 }
