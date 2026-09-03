@@ -164,16 +164,13 @@ async def lifespan(app: FastAPI):
             types.BotCommand(command="sleep", description="😴 Калькулятор фаз сна"),
             types.BotCommand(command="weather", description="🌤 Погода и прогноз"),
             types.BotCommand(command="set_city", description="🏙 Установить мой город/район"),
-            types.BotCommand(command="vault", description="🔐 Секретный сейф заметок"),
             types.BotCommand(command="image", description="🎨 Сгенерировать фото"),
             types.BotCommand(command="remind", description="⏰ Умное напоминание"),
             types.BotCommand(command="reminders", description="📋 Мои напоминания"),
             types.BotCommand(command="when", description="🎂 Узнать дату дня рождения"),
             types.BotCommand(command="clear", description="🧹 Очистить диалог с ИИ"),
             types.BotCommand(command="add", description="🎂 Добавить день рождения"),
-            types.BotCommand(command="list", description="🎂 Список дней рождения"),
-            types.BotCommand(command="note", description="📝 Быстрая заметка"),
-            types.BotCommand(command="notes", description="📝 Список всех заметок")
+            types.BotCommand(command="list", description="🎂 Список дней рождения")
         ]
         await bot.set_my_commands(commands)
         logger.info("Команды Telegram успешно зарегистрированы в меню!")
