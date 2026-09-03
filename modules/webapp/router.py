@@ -285,6 +285,26 @@ async def get_dashboard_aggregated_data(refresh: bool = False):
     except Exception as e:
         logger.warning(f"Dashboard food summary error: {e}")
 
+    # 6. Featured Country Family Resorts
+    country_featured = []
+    try:
+        from modules.country_relax.curated_catalog import CURATED_COUNTRY_RESORTS
+        family_resorts = [r for r in CURATED_COUNTRY_RESORTS if "family" in r.get("tags", [])]
+        for r in family_resorts[:6]:
+            country_featured.append({
+                "name": r.get("name"),
+                "category": r.get("category"),
+                "location": r.get("location"),
+                "price": r.get("price_range"),
+                "features": r.get("features"),
+                "kid_friendly": r.get("kid_friendly"),
+                "why_best": r.get("why_best"),
+                "booking_tip": r.get("booking_tip"),
+                "geo_query": r.get("geo_query")
+            })
+    except Exception as e:
+        logger.warning(f"Dashboard country featured error: {e}")
+
     return {
         "server_time_msk": now_msk.strftime("%d.%m.%Y, %H:%M:%S"),
         "date_today_msk": now_msk.strftime("%Y-%m-%d"),
@@ -295,7 +315,8 @@ async def get_dashboard_aggregated_data(refresh: bool = False):
         "reminders": reminders_data,
         "food": food_data,
         "subscriptions": get_subscription_stats(user_id),
-        "custom_rules": get_user_rules(user_id)
+        "custom_rules": get_user_rules(user_id),
+        "country_featured": country_featured
     }
 
 

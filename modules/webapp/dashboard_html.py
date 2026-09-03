@@ -749,6 +749,34 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
           <span>Гастрономия & Гранд-Шеф</span>
         </div>
         <div class="grid grid-cols-1 gap-2">
+          <!-- GASTRO LOCATOR & RESTAURANTS -->
+          <div class="glass-card p-3.5 rounded-2xl flex flex-col justify-between gap-2.5 border border-amber-500/30 bg-gradient-to-r from-amber-950/20 via-slate-900 to-slate-900">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg border border-amber-500/30">
+                  🍽
+                </div>
+                <div>
+                  <div class="text-xs font-black text-white flex items-center gap-1.5">
+                    <span>Гастро-Локатор & Рестораны (GPS)</span>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">⭐️ 4.8+</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Стейки, спикизи, пицца, винные пары и живой диалог с сомелье</div>
+                </div>
+              </div>
+              <button onclick="openInBot('/restaurants')" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-transform whitespace-nowrap">
+                Открыть
+              </button>
+            </div>
+            <div class="flex items-center gap-1 pt-2 border-t border-white/5 overflow-x-auto no-scrollbar">
+              <button onclick="openInBot('🥩 Стейки')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[9px] text-slate-300 border border-white/10 whitespace-nowrap">🥩 Стейки</button>
+              <button onclick="openInBot('🍸 Спикизи')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[9px] text-slate-300 border border-white/10 whitespace-nowrap">🍸 Спикизи</button>
+              <button onclick="openInBot('🍕 Пицца')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[9px] text-slate-300 border border-white/10 whitespace-nowrap">🍕 Пицца</button>
+              <button onclick="openInBot('🍜 Азиатские')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[9px] text-slate-300 border border-white/10 whitespace-nowrap">🍜 Азия</button>
+              <button onclick="openInBot('рядом со мной')" class="px-2 py-0.5 rounded-md bg-cyan-500/20 text-[9px] text-cyan-300 border border-cyan-500/30 font-bold whitespace-nowrap">📍 Рядом GPS</button>
+            </div>
+          </div>
+
           <div class="glass-card p-3 rounded-2xl flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">🍗</div>
@@ -789,6 +817,58 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
           <span>Досуг, Культура & СПб</span>
         </div>
         <div class="grid grid-cols-1 gap-2">
+          <!-- COUNTRY RELAX & FAMILY VACATION -->
+          <div class="glass-card p-3.5 rounded-2xl flex flex-col justify-between gap-2.5 border border-emerald-500/30 bg-gradient-to-r from-emerald-950/20 via-slate-900 to-slate-900">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg border border-emerald-500/30">
+                  🏕
+                </div>
+                <div>
+                  <div class="text-xs font-black text-white flex items-center gap-1.5">
+                    <span>Загородный семейный отдых & Спа</span>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Семья & Дети</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">80 баз ЛО и Карелии, теплые бассейны, бани, Q&A диалог с консьержем</div>
+                </div>
+              </div>
+              <button onclick="openInBot('/countryside')" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition-transform whitespace-nowrap">
+                Открыть
+              </button>
+            </div>
+            <div class="flex items-center gap-1 pt-2 border-t border-white/5 overflow-x-auto no-scrollbar">
+              <button onclick="openInBot('Семейные курорты')" class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-[9px] text-emerald-300 border border-emerald-500/30 font-bold whitespace-nowrap">👨‍👩‍👧 С детьми</button>
+              <button onclick="openInBot('Бассейны')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[9px] text-slate-300 border border-white/10 whitespace-nowrap">🏊‍♂️ Бассейны</button>
+              <button onclick="openInBot('Русская баня')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[9px] text-slate-300 border border-white/10 whitespace-nowrap">🪵 Бани</button>
+              <button onclick="openInBot('Глэмпинг')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[9px] text-slate-300 border border-white/10 whitespace-nowrap">🏕 Глэмпинг</button>
+              <button onclick="openInBot('Рыбалка')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[9px] text-slate-300 border border-white/10 whitespace-nowrap">🎣 Озеро</button>
+            </div>
+          </div>
+
+          <!-- KIDS WEEKENDS 1-3 YEARS -->
+          <div class="glass-card p-3 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center font-bold">👶</div>
+              <div>
+                <div class="text-xs font-bold text-white">Выходные с малышом (1–3 года)</div>
+                <div class="text-[10px] text-slate-400">22 проверенные локации: тоддлер-зоны, бэби-театры, фермы альпак</div>
+              </div>
+            </div>
+            <button onclick="openInBot('/weekends')" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[10px] font-bold border border-cyan-500/30">Открыть</button>
+          </div>
+
+          <!-- SPEAKEASY BARS -->
+          <div class="glass-card p-3 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">🍸</div>
+              <div>
+                <div class="text-xs font-bold text-white">Секретные Спикизи-Бары СПб</div>
+                <div class="text-[10px] text-slate-400">Тайные двери, авторские коктейли и пароли на входе</div>
+              </div>
+            </div>
+            <button onclick="openInBot('/speakeasy')" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[10px] font-bold border border-cyan-500/30">Открыть</button>
+          </div>
+
           <div class="glass-card p-3 rounded-2xl flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <div class="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-400 flex items-center justify-center font-bold">🎬</div>
@@ -798,16 +878,6 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
               </div>
             </div>
             <button onclick="openInBot('/cinema')" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[10px] font-bold border border-cyan-500/30">Открыть</button>
-          </div>
-          <div class="glass-card p-3 rounded-2xl flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-              <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">🏕</div>
-              <div>
-                <div class="text-xs font-bold text-white">Загородный отдых & Спа</div>
-                <div class="text-[10px] text-slate-400">80 проверенных баз, бассейны с подогревом и бани</div>
-              </div>
-            </div>
-            <button onclick="openInBot('/countryside')" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[10px] font-bold border border-cyan-500/30">Открыть</button>
           </div>
           <div class="glass-card p-3 rounded-2xl flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -828,6 +898,78 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
               </div>
             </div>
             <button onclick="openInBot('/music')" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[10px] font-bold border border-cyan-500/30">Открыть</button>
+          </div>
+        </div>
+
+        <!-- FEATURED FAMILY RESORTS SHOWCASE -->
+        <div class="pt-3">
+          <div class="flex items-center justify-between px-1 mb-2">
+            <div class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+              <span>👨‍👩‍👧 Топ семейных курортов (с детьми)</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Яндекс.Карты & Бот</span>
+          </div>
+          <div class="space-y-2.5" id="country-featured-list">
+            <!-- Initial static cards, updated dynamically via API -->
+            <div class="glass-card p-3.5 rounded-2xl bg-slate-900/90 border border-emerald-500/20 flex flex-col justify-between space-y-2.5">
+              <div>
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="text-xs font-bold text-white">Загородный курорт «Охта Парк»</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold mt-0.5">Круглогодичный семейный курорт • 4 открытых бассейна</div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 whitespace-nowrap">от 9 500 ₽</span>
+                </div>
+                <div class="text-[10px] text-slate-300 mt-2 flex items-start gap-1">
+                  <span>📍</span>
+                  <span>Всеволожский р-н, дер. Сярьги (15 км от СПб, ~20 мин по ЗСД)</span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-1 flex items-start gap-1">
+                  <span>👶</span>
+                  <span>Детский клуб «Индиго», альпаки, динопарк, теплый открытый бэби-бассейн</span>
+                </div>
+              </div>
+              <div class="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+                <a href="https://yandex.ru/maps/?text=Охта+Парк+Сярьги" target="_blank" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold flex items-center gap-1 border border-white/5">
+                  <i data-lucide="map-pin" class="w-3 h-3 text-cyan-400"></i>
+                  <span>Карта</span>
+                </a>
+                <button onclick="openInBot('Расскажи подробнее про Охта Парк')" class="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 active:scale-95 transition-transform">
+                  <i data-lucide="message-square" class="w-3 h-3"></i>
+                  <span>Спросить в боте</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="glass-card p-3.5 rounded-2xl bg-slate-900/90 border border-emerald-500/20 flex flex-col justify-between space-y-2.5">
+              <div>
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="text-xs font-bold text-white">Загородный клуб «Царство-Королевство»</div>
+                    <div class="text-[10px] text-emerald-400 font-semibold mt-0.5">Коттеджный клуб в соснах • Клуб «Крольчатник»</div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 whitespace-nowrap">от 18 000 ₽</span>
+                </div>
+                <div class="text-[10px] text-slate-300 mt-2 flex items-start gap-1">
+                  <span>📍</span>
+                  <span>пос. Рощино (50 мин от СПб по ЗСД)</span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-1 flex items-start gap-1">
+                  <span>👶</span>
+                  <span>Детский клуб с аниматорами, живые кролики, веревочный городок</span>
+                </div>
+              </div>
+              <div class="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+                <a href="https://yandex.ru/maps/?text=Царство-Королевство+Рощино" target="_blank" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold flex items-center gap-1 border border-white/5">
+                  <i data-lucide="map-pin" class="w-3 h-3 text-cyan-400"></i>
+                  <span>Карта</span>
+                </a>
+                <button onclick="openInBot('Расскажи подробнее про Царство-Королевство')" class="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 active:scale-95 transition-transform">
+                  <i data-lucide="message-square" class="w-3 h-3"></i>
+                  <span>Спросить в боте</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -957,15 +1099,24 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
 
     function openInBot(command) {
       haptic('medium');
-      if (tg) {
+      if (window.Telegram?.WebApp) {
+        const twa = window.Telegram.WebApp;
         try {
-          tg.sendData(command);
-        } catch(e) {
-          window.location.href = 'https://t.me/MyAiGem_bot';
-        }
-      } else {
-        alert('Запуск в боте: ' + command);
+          if (twa.sendData) {
+            twa.sendData(command);
+            twa.close();
+            return;
+          }
+        } catch(e) {}
+        try {
+          if (twa.openTelegramLink) {
+            twa.openTelegramLink('https://t.me/MyAiGem_bot');
+            twa.close();
+            return;
+          }
+        } catch(e) {}
       }
+      window.location.href = 'https://t.me/MyAiGem_bot';
     }
 
     function switchTab(tabId) {
@@ -1295,6 +1446,52 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
       }
 
       renderSubscriptionsAndRules(data.subscriptions, data.custom_rules);
+      renderCountryFeatured(data.country_featured);
+      lucide.createIcons();
+    }
+
+    function renderCountryFeatured(featuredList) {
+      const container = document.getElementById('country-featured-list');
+      if (!container) return;
+      if (!featuredList || featuredList.length === 0) return;
+
+      let html = '';
+      featuredList.forEach(r => {
+        const mapsUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(r.geo_query || r.name)}`;
+        const shortPrice = (r.price || 'По запросу').split('/')[0].trim();
+        html += `
+          <div class="glass-card p-3.5 rounded-2xl bg-slate-900/90 border border-emerald-500/20 flex flex-col justify-between space-y-2.5">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="text-xs font-bold text-white">${r.name}</div>
+                  <div class="text-[10px] text-emerald-400 font-semibold mt-0.5">${r.category}</div>
+                </div>
+                <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 whitespace-nowrap">${shortPrice}</span>
+              </div>
+              <div class="text-[10px] text-slate-300 mt-2 flex items-start gap-1">
+                <span>📍</span>
+                <span>${r.location}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 flex items-start gap-1">
+                <span>👶</span>
+                <span>${r.kid_friendly}</span>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+              <a href="${mapsUrl}" target="_blank" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold flex items-center gap-1 border border-white/5">
+                <i data-lucide="map-pin" class="w-3 h-3 text-cyan-400"></i>
+                <span>Карта</span>
+              </a>
+              <button onclick="openInBot('Расскажи подробнее про ${r.name}')" class="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 active:scale-95 transition-transform">
+                <i data-lucide="message-square" class="w-3 h-3"></i>
+                <span>Спросить в боте</span>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
       lucide.createIcons();
     }
 
