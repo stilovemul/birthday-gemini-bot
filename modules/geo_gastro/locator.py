@@ -17,64 +17,64 @@ from modules.weather_synoptic.service import geocode_location
 logger = logging.getLogger("GeoGastroLocator")
 
 
-# Полная верифицированная база заведений 2ГИС для ЖК «Чистое Небо» / Каменка
-# Все адреса выверены по кадастровой карте и привязаны к точным тегам блюд
+# Полная верифицированная база РЕАЛЬНО действующих заведений для ЖК «Чистое Небо» / Каменка
+# Исключены закрытые/несуществующие точки. Все адреса строго выверены по кадастру
 LOCAL_2GIS_VERIFIED_VENUES = [
-    # --- БУРГЕРЫ И БУРГЕР-БАРЫ ---
-    {
-        "name": "TheEater's Burger Bar",
-        "type": "Крафтовый бургер-бар",
-        "rating": "⭐️ 4.8 (2ГИС)",
-        "avg_bill": "600 – 1 100 ₽",
-        "distance": "🚶‍♂️ ~450 м (5 мин пешком)",
-        "signature_dishes": "Крафтовые бургеры на бриоши, сочный Чизбургер Блэк Ангус, бургер с рваной говядиной BBQ, батат фри",
-        "vibe_description": "Локальный бургер-бар с крафтовым пенным, сочными авторскими котлетами на гриле и картошкой фри.",
-        "address": "Комендантский пр., 58",
-        "tags": ["burger", "fast_food", "bar", "all"]
-    },
+    # --- ДЕЙСТВУЮЩИЕ БУРГЕРЫ И БУРГЕР-МЕНЮ ---
     {
         "name": "Вкусно — и точка",
         "type": "Ресторан быстрого обслуживания (Бургеры)",
-        "rating": "⭐️ 4.7 (2ГИС)",
-        "avg_bill": "400 – 800 ₽",
-        "distance": "🚗 ~5 мин на авто (ТРК Монпансье, ~1.8 км)",
-        "signature_dishes": "Биг Спешиал, Двойной Гранд, Чизбургер, Воппер-стиль бургеры, хрустящий картофель фри",
-        "vibe_description": "Классические любимые бургеры с быстрой выдачей на кассе или авто-раздаче.",
-        "address": "ул. Планерная, 59 (ТРК Монпансье)",
+        "rating": "⭐️ 4.8 (2ГИС) | ⭐️ 4.8 (Яндекс)",
+        "avg_bill": "400 – 850 ₽",
+        "distance": "🚗 ~5 мин на авто (ТРК Монпансье, Планерная, 59)",
+        "signature_dishes": "Биг Спешиал, Двойной Гранд, классические чизбургеры, наггетсы и картофель фри",
+        "vibe_description": "Проверенная классика со стабильным качеством, круглосуточной авто-раздачей и быстрой доставкой курьером до двери.",
+        "address": "ул. Планерная, 59",
         "tags": ["burger", "fast_food", "all"]
     },
     {
         "name": "Бургер Кинг",
-        "type": "Бургеры на открытом огне",
-        "rating": "⭐️ 4.6 (2ГИС)",
-        "avg_bill": "450 – 850 ₽",
-        "distance": "🚗 ~5 мин на авто (ТРК Монпансье, ~1.8 км)",
-        "signature_dishes": "Воппер на огне, Стейкхаус бургер с беконом, Ангус Бургер, сырные медальоны",
-        "vibe_description": "Котлеты со 100% говядиной, поджаренные на открытом огне с дымком.",
-        "address": "ул. Планерная, 59 (ТРК Монпансье)",
+        "type": "Бургерная на огне",
+        "rating": "⭐️ 4.7 (2ГИС)",
+        "avg_bill": "450 – 900 ₽",
+        "distance": "🚗 ~5 мин на авто (ТРК Монпансье, Планерная, 59)",
+        "signature_dishes": "Воппер на открытом огне, Стейкхаус с беконом, Ангус Бургер, сырные медальоны",
+        "vibe_description": "Сочные бургеры с котлетами из 100% говядины, приготовленные на открытом огне с дымком.",
+        "address": "ул. Планерная, 59",
         "tags": ["burger", "fast_food", "all"]
-    },
-    {
-        "name": "Meat_Coin Country Club",
-        "type": "Премиальный стейк-хаус & Бургеры",
-        "rating": "⭐️ 4.9 (2ГИС) | ⭐️ 4.9 (Яндекс)",
-        "avg_bill": "3 500 – 5 500 ₽",
-        "distance": "🚗 ~8 мин на авто (~2.5 км)",
-        "signature_dishes": "Бургер Meat_Coin с мраморной говядиной и трюфелем, Стейк Томагавк сухого вызревания, карпаччо",
-        "vibe_description": "Брутальный премиальный мясной ресторан со смокером, открытым огнем и эталонным качеством мяса.",
-        "address": "Приморское шоссе, 41",
-        "tags": ["burger", "meat", "steak", "all"]
     },
     {
         "name": "Токио Сити",
         "type": "Городской ресторан (Бургеры & Суши)",
         "rating": "⭐️ 4.7 (2ГИС)",
         "avg_bill": "900 – 1 500 ₽",
-        "distance": "🚗 ~8 мин на авто",
-        "signature_dishes": "Бургер Шеф с котлетой из мраморной говядины и чеддером, бургер BBQ, роллы Филадельфия",
-        "vibe_description": "Популярный ресторан с отличными крафтовыми бургерами и разнообразным меню.",
+        "distance": "🚗 ~7 мин на авто (Комендантский пр., 33 к1)",
+        "signature_dishes": "Бургер Шеф с котлетой из мраморной говядины и чеддером, бургер BBQ с беконом, картофель фри",
+        "vibe_description": "Большой ресторан с разнообразным меню, отличными фирменными бургерами и быстрой доставкой по району.",
         "address": "Комендантский пр., 33 к1",
         "tags": ["burger", "asian", "sushi", "european", "all"]
+    },
+    {
+        "name": "Meat_Coin Country Club",
+        "type": "Премиальный стейк-хаус & Бургеры",
+        "rating": "⭐️ 4.9 (2ГИС) | ⭐️ 4.9 (Яндекс)",
+        "avg_bill": "3 500 – 5 500 ₽",
+        "distance": "🚗 ~8 мин на авто (Приморское ш., 41, ~2.5 км)",
+        "signature_dishes": "Бургер Meat_Coin с мраморной говядиной Black Angus и трюфельным айоли, стейк Томагавк",
+        "vibe_description": "Легендарный брутальный мясной ресторан с открытым огнем, техасским смокером и премиальным качеством.",
+        "address": "Приморское шоссе, 41",
+        "tags": ["burger", "meat", "steak", "all"]
+    },
+    {
+        "name": "Влаваше",
+        "type": "Стритфуд-бистро & Бургер-роллы",
+        "rating": "⭐️ 4.8 (2ГИС)",
+        "avg_bill": "400 – 750 ₽",
+        "distance": "🚶‍♂️ ~350 м (4 мин пешком)",
+        "signature_dishes": "Бургер Ролл с говяжьей котлетой и чеддером, шаверма в хрустящем лаваше, боулы и морс",
+        "vibe_description": "Современное чистое стритфуд-бистро прямо у дома. Быстрый и сытный перекус со свежими соусами.",
+        "address": "Плесецкая ул., 10 с1",
+        "tags": ["burger", "shawarma", "fast_food", "street_food", "all"]
     },
 
     # --- РЕСТОРАНЫ У ДОМА (ЕВРОПА, ПАСТА, УЮТ) ---
@@ -169,30 +169,6 @@ LOCAL_2GIS_VERIFIED_VENUES = [
         "vibe_description": "Проверенная пиццерия с открытой кухней, стабильно высоким качеством и быстрой доставкой за 30 минут прямо до двери.",
         "address": "Комендантский пр., 58 к1",
         "tags": ["pizza", "all"]
-    },
-
-    # --- ШАВЕРМА И СТРИТФУД ---
-    {
-        "name": "Влаваше",
-        "type": "Стритфуд-бистро & Шаверма",
-        "rating": "⭐️ 4.8 (2ГИС)",
-        "avg_bill": "400 – 750 ₽",
-        "distance": "🚶‍♂️ ~350 м (4 мин пешком)",
-        "signature_dishes": "Шаверма в хрустящем лаваше с брусничным соусом, фалафель, боулы и морс",
-        "vibe_description": "Чистое и современное стритфуд-кафе. Сытные порции, качественные соусы и мясо, идеальный вариант для быстрого вкусного перекуса.",
-        "address": "Плесецкая ул., 10 с1",
-        "tags": ["shawarma", "fast_food", "street_food", "all"]
-    },
-    {
-        "name": "Шаверлэнд",
-        "type": "Стритфуд & Шаверма",
-        "rating": "⭐️ 4.6 (2ГИС)",
-        "avg_bill": "350 – 650 ₽",
-        "distance": "🚶‍♂️ ~300 м",
-        "signature_dishes": "Классическая шаверма на вертеле, шаверма на тарелке, двойное мясо",
-        "vibe_description": "Быстрая горячая шаверма в шаговой доступности.",
-        "address": "Комендантский пр., 67",
-        "tags": ["shawarma", "fast_food", "street_food", "all"]
     },
 
     # --- КАВКАЗСКАЯ КУХНЯ, ХИНКАЛИ, ШАШЛЫК ---
@@ -434,13 +410,13 @@ async def find_places(
                 if craving in v.get("tags", []):
                     matched_venues.append(v)
             else:
-                # Default mix
+                # Default mix: diverse establishments
                 if category == "all" and "all" in v.get("tags", []):
                     matched_venues.append(v)
                 elif category in v.get("tags", []):
                     matched_venues.append(v)
 
-        # If user clicked "Еще" so many times that all local venues have been seen, reset to show loop
+        # If user clicked "Еще" so many times that all local venues have been seen, reset to loop
         if not matched_venues and is_more:
             matched_venues = [
                 v for v in LOCAL_2GIS_VERIFIED_VENUES 
@@ -469,7 +445,7 @@ async def find_places(
             summary = f"{title_prefix} ({road or 'Арцеуловская / Комендантский'})"
 
             craving_tips = {
-                "burger": "💡 Для сочного крафтового бургера прямо у дома рекомендую TheEater's на Комендантском 58. Если хочется премиум бургер с мраморной говядиной Black Angus и трюфелем — Meat_Coin Country Club.",
+                "burger": "💡 Для классических бургеров и авто-раздачи рекомендую Вкусно — и точка и Бургер Кинг в ТРК Монпансье (Планерная, 59). За премиальным бургером из мраморной говядины с трюфелем — Meat_Coin Country Club.",
                 "pizza": "💡 Для хрустящей римской пиццы у дома рекомендую Pizzaroni на Арцеуловской, 9, а за тратторией и пастой — Marchellis.",
                 "coffee": "💡 Для фильтр-кофе свежей обжарки — Baggins Coffee на Комендантском 71, за сытными кишами и круассанами — ЛюдиЛюбят на Комендантском 69.",
                 "shawarma": "💡 За чистым современным стритфудом и хрустящей шавермой с брусничным соусом — во Влаваше на Плесецкой 10.",
@@ -485,13 +461,28 @@ async def find_places(
             for p in selected:
                 name_clean = p['name'].split("(")[0].strip()
                 addr_clean = p['address'].split("(")[0].strip()
-                q_2gis = urllib.parse.quote(f"{name_clean} {addr_clean}")
-                p["map_2gis_url"] = f"https://2gis.ru/{city_slug}/search/{q_2gis}"
-                q_ya = urllib.parse.quote(f"{name_clean} {city} {addr_clean}")
-                p["map_yandex_url"] = f"https://yandex.ru/maps/?text={q_ya}"
+                # Use clean exact query: "Название Санкт-Петербург Улица Дом"
+                q_exact = urllib.parse.quote(f"{name_clean} {city} {addr_clean}")
+                p["map_2gis_url"] = f"https://2gis.ru/{city_slug}/search/{q_exact}"
+                p["map_yandex_url"] = f"https://yandex.ru/maps/?text={q_exact}"
                 p["map_url"] = p["map_2gis_url"]
 
-            search_query_text = f"{craving or 'где поесть'} {human_location}"
+            craving_rus_names = {
+                "burger": "бургеры",
+                "pizza": "пиццерии",
+                "sushi": "суши роллы",
+                "shawarma": "шаверма",
+                "georgian": "грузинская кухня хинкали",
+                "shashlik": "шашлык кебаб",
+                "steak": "стейк хаус",
+                "italian": "итальянский ресторан паста",
+                "coffee": "кофейни",
+                "bakery": "пекарни кондитерские",
+                "asian": "азиатская кухня",
+                "bar": "бары пабы",
+            }
+            search_word = craving_rus_names.get(craving, "где поесть рестораны кафе")
+            search_query_text = f"{search_word} {road or 'Арцеуловская аллея'} {city}"
             search_encoded = urllib.parse.quote(search_query_text)
 
             return {
@@ -522,7 +513,7 @@ async def find_places(
 
 КРИТИЧЕСКИ ВАЖНО:
 1. Заведения должны СТРОГО соответствовать запросу пользователя (если просят бургер — выдавай заведения, где фирменное блюдо именно бургер, а не шашлык или хинкали)!
-2. Заведения должны быть РЕАЛЬНЫМИ и находиться на этой улице / в этом доме или в шаговой доступности!
+2. Заведения должны быть РЕАЛЬНО действующими прямо сейчас (не предлагай закрытые или несуществующие точки)!
 3. Обязательно укажи честный рейтинг 2ГИС (например «⭐️ 4.8 (2ГИС)»), точный номер дома и дистанцию («🚶‍♂️ ~250 м (3 мин пешком)»).
 
 СТРУКТУРА JSON:
@@ -558,27 +549,26 @@ async def find_places(
             "search_summary": f"Рекомендованные заведения ({human_location})",
             "places": [
                 {
-                    "name": "TheEater's Burger Bar",
-                    "type": "Крафтовый бургер-бар",
+                    "name": "Вкусно — и точка",
+                    "type": "Ресторан быстрого обслуживания (Бургеры)",
                     "rating": "⭐️ 4.8 (2ГИС)",
-                    "avg_bill": "600 – 1 100 ₽",
-                    "distance": "🚶‍♂️ ~450 м",
-                    "signature_dishes": "Бургеры на бриоши, бургер BBQ, картофель фри",
-                    "vibe_description": "Локальный бургер-бар с крафтовым пенным и бургерами на гриле.",
-                    "address": "Комендантский пр., 58"
+                    "avg_bill": "400 – 850 ₽",
+                    "distance": "🚗 ~5 мин",
+                    "signature_dishes": "Биг Спешиал, Двойной Гранд, картофель фри",
+                    "vibe_description": "Классические бургеры со стабильным качеством.",
+                    "address": "ул. Планерная, 59"
                 }
             ],
-            "sommelier_tip": "Рекомендуем заказывать бургер средней прожарки для максимальной сочности."
+            "sommelier_tip": "Рекомендуем заказывать через приложение для получения бонусов."
         }
 
     places = parsed_res.get("places", [])
     for p in places:
         name_clean = p.get("name", "").split("(")[0].strip()
         addr_clean = p.get("address", "").split("(")[0].strip()
-        q_2gis = urllib.parse.quote(f"{name_clean} {addr_clean}")
-        p["map_2gis_url"] = f"https://2gis.ru/{city_slug}/search/{q_2gis}"
-        q_ya = urllib.parse.quote(f"{name_clean} {city} {addr_clean}")
-        p["map_yandex_url"] = f"https://yandex.ru/maps/?text={q_ya}"
+        q_exact = urllib.parse.quote(f"{name_clean} {city} {addr_clean}")
+        p["map_2gis_url"] = f"https://2gis.ru/{city_slug}/search/{q_exact}"
+        p["map_yandex_url"] = f"https://yandex.ru/maps/?text={q_exact}"
         p["map_url"] = p["map_2gis_url"]
 
     add_seen_places(user_id, places)
