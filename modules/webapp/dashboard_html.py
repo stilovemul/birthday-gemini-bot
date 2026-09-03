@@ -5,29 +5,14 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AiGem Dashboard</title>
-  <!-- Telegram WebApp SDK — FIRST, synchronous -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Tailwind CSS CDN — inline config before CDN -->
+  <!-- Telegram WebApp SDK — defer so it doesn't block rendering -->
   <script>
-    window.tailwind = window.tailwind || {};
+    // Minimal Telegram WebApp shim in case SDK is slow
+    window.Telegram = window.Telegram || { WebApp: { ready: function(){}, expand: function(){}, HapticFeedback: { impactOccurred: function(){} } } };
   </script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    if (typeof tailwind !== 'undefined') {
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              brand: { 50: '#ecfeff', 500: '#06b6d4', 600: '#0891b2', 700: '#0e7490' }
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <!-- Lucide Icons — via jsdelivr (more stable than unpkg) -->
-  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+  <!-- Lucide Icons — loaded async, not blocking -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" async></script>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
@@ -1825,4 +1810,4 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
   </script>
 </body>
 </html>
-"""
+"""
