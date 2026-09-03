@@ -11,12 +11,11 @@ WEBAPP_URL = "https://birthday-gemini-bot.onrender.com/app"
 MAIN_MENU_BUTTONS = [
     "📱 Открыть Дашборд (App)",
     "🏠 Дом", "🌅 Дайджест", "🤖 Gemini AI", "🎨 Фото",
-    "📬 Входящие", "🌤 Погода", "😴 Сон", "🔐 Сейф",
-    "⏰ Напоминания", "🎂 Дни рожд.", "📝 Заметки", "💳 Подписки",
-    "🧩 Правила", "🍽 Еда", "🎁 Промо & PS", "📵 Антиспам",
-    "🎬 Кино", "✨ Промпты", "✍️ Текст AI", "💬 Знакомства",
-    "🕵️‍♂️ Тайный СПб", "🌲 Выходные", "📍 Рестораны", "🏕 Загород",
-    "🎁 Подарки", "🎧 Музыка", "📸 Фото-Споты", "🛡 Авто-Щит",
+    "📬 Входящие", "🌤 Погода", "😴 Сон", "⏰ Напоминания",
+    "🎂 Дни рожд.", "💳 Подписки", "🧩 Правила", "🍽 Еда",
+    "🎁 Промо & PS", "🎬 Кино", "✨ Промпты", "✍️ Текст AI",
+    "💬 Знакомства", "🕵️‍♂️ Тайный СПб", "🌲 Выходные", "📍 Рестораны",
+    "🏕 Загород", "🎁 Подарки", "🎧 Музыка", "📸 Фото-Споты",
     "👨‍🍳 Шеф-Ужин"
 ]
 
@@ -37,37 +36,31 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="📬 Входящие"),
             KeyboardButton(text="🌤 Погода"),
             KeyboardButton(text="😴 Сон"),
-            KeyboardButton(text="🔐 Сейф")
+            KeyboardButton(text="⏰ Напоминания")
         ],
         [
-            KeyboardButton(text="⏰ Напоминания"),
             KeyboardButton(text="🎂 Дни рожд."),
-            KeyboardButton(text="📝 Заметки"),
-            KeyboardButton(text="💳 Подписки")
-        ],
-        [
+            KeyboardButton(text="💳 Подписки"),
             KeyboardButton(text="🧩 Правила"),
-            KeyboardButton(text="🍽 Еда"),
-            KeyboardButton(text="🎁 Промо & PS"),
-            KeyboardButton(text="📵 Антиспам")
+            KeyboardButton(text="🍽 Еда")
         ],
         [
+            KeyboardButton(text="🎁 Промо & PS"),
             KeyboardButton(text="🎬 Кино"),
             KeyboardButton(text="✨ Промпты"),
-            KeyboardButton(text="✍️ Текст AI"),
-            KeyboardButton(text="💬 Знакомства")
+            KeyboardButton(text="✍️ Текст AI")
         ],
         [
+            KeyboardButton(text="💬 Знакомства"),
             KeyboardButton(text="🕵️‍♂️ Тайный СПб"),
             KeyboardButton(text="🌲 Выходные"),
-            KeyboardButton(text="📍 Рестораны"),
-            KeyboardButton(text="🏕 Загород")
+            KeyboardButton(text="📍 Рестораны")
         ],
         [
+            KeyboardButton(text="🏕 Загород"),
             KeyboardButton(text="🎁 Подарки"),
             KeyboardButton(text="🎧 Музыка"),
-            KeyboardButton(text="📸 Фото-Споты"),
-            KeyboardButton(text="🛡 Авто-Щит")
+            KeyboardButton(text="📸 Фото-Споты")
         ],
         [
             KeyboardButton(text="👨‍🍳 Шеф-Ужин")
