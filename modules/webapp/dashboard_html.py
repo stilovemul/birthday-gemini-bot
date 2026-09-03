@@ -1085,19 +1085,29 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
 
     async function fetchDashboardData(isManual = false) {
       const refIcon = document.getElementById('refresh-icon');
-      if (refIcon) refIcon.classList.add('animate-spin');
+      if (refIcon) { refIcon.style.animation = 'spin 0.8s linear infinite'; }
 
       try {
         const url = isManual ? '/api/dashboard/data?refresh=true' : '/api/dashboard/data';
-        const resp = await fetch(url);
+        // AbortController: cancel request after 12 seconds
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         currentData = await resp.json();
         renderDashboard(currentData);
         if (isManual) haptic('medium');
       } catch (err) {
-        console.error('Fetch error:', err);
+        if (err.name === 'AbortError') {
+          console.warn('Dashboard fetch timed out — showing cached/empty state');
+        } else {
+          console.error('Fetch error:', err);
+        }
       } finally {
-        if (refIcon) refIcon.classList.remove('animate-spin');
+        if (refIcon) { refIcon.style.animation = ''; }
       }
     }
 
@@ -1761,52 +1771,58 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. Init section visibility — show only first tab
+      // 1. Init section visibility — show only first tab IMMEDIATELY
       document.querySelectorAll('.tab-content').forEach((el, i) => {
         el.style.display = (i === 0) ? 'flex' : 'none';
         el.style.flexDirection = 'column';
         el.style.gap = '12px';
       });
 
-      // 2. Activate Telegram WebApp
+      // 2. HIDE LOADING SCREEN after 2 seconds MAX — never block the UI
+      function hideLoadingScreen() {
+        const ls = document.getElementById('loading-screen');
+        if (ls) {
+          ls.style.transition = 'opacity 0.35s ease';
+          ls.style.opacity = '0';
+          setTimeout(() => { if (ls.parentNode) ls.parentNode.removeChild(ls); }, 380);
+        }
+      }
+      // Guaranteed removal after 2 seconds
+      const loadingTimeout = setTimeout(hideLoadingScreen, 2000);
+
+      // 3. Activate Telegram WebApp
       if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-        try {
-          Telegram.WebApp.ready();
-          Telegram.WebApp.expand();
-        } catch(e) {}
+        try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch(e) {}
       }
 
-      // 3. Init Lucide icons (with safety check)
+      // 4. Init Lucide icons (with retry)
       function initIcons() {
         if (typeof lucide !== 'undefined') {
           lucide.createIcons();
         } else {
-          setTimeout(initIcons, 200);
+          setTimeout(initIcons, 300);
         }
       }
       initIcons();
 
-      // 4. Run calculators immediately (client-side, no API needed)
-      runLoanCalc();
-      runSleepCalc();
+      // 5. Run client-side calculators immediately
+      try { runLoanCalc(); } catch(e) {}
+      try { runSleepCalc(); } catch(e) {}
 
-      // 5. Fetch data and hide loading screen
+      // 6. Fetch data in background — UI already visible
       fetchDashboardData().then(() => {
-        const ls = document.getElementById('loading-screen');
-        if (ls) {
-          ls.style.opacity = '0';
-          setTimeout(() => ls.remove(), 400);
-        }
+        clearTimeout(loadingTimeout);
+        hideLoadingScreen();
       }).catch(() => {
-        const ls = document.getElementById('loading-screen');
-        if (ls) ls.remove();
+        clearTimeout(loadingTimeout);
+        hideLoadingScreen();
       });
 
-      // 6. Auto-refresh every 30 seconds
+      // 7. Auto-refresh every 30 seconds
       setInterval(() => fetchDashboardData(false), 30000);
     });
 
   </script>
 </body>
 </html>
-"""
+"""

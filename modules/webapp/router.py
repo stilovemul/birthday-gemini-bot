@@ -132,7 +132,10 @@ async def get_dashboard_aggregated_data(refresh: bool = False):
         "active_count": 0
     }
     try:
-        raw_info = await get_user_info(YANDEX_OAUTH_TOKEN)
+        raw_info = await asyncio.wait_for(
+            get_user_info(YANDEX_OAUTH_TOKEN),
+            timeout=8.0
+        )
         if raw_info:
             sh_data["connected"] = True
             rooms = {r["id"]: r["name"] for r in raw_info.get("rooms", [])}
