@@ -1,59 +1,90 @@
 import re
 import json
-import urllib.parse
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from core.gemini import ask_gemini
+from modules.music_sommelier.yandex_api import (
+    get_best_yandex_playlist,
+    enrich_tracks_with_urls
+)
 
 logger = logging.getLogger("MusicSommelier")
 
-async def generate_music_playlist(user_id: int, query_or_vibe: str) -> Dict[str, Any]:
+async def generate_music_playlist(
+    user_id: int,
+    query_or_vibe: str,
+    preset_key: Optional[str] = None
+) -> Dict[str, Any]:
     prompt = f"""Ты — персональный музыкальный сомелье и диджей.
 Настроение / Ситуация пользователя / Вайб: '{query_or_vibe}'
 
-Сгенерируй атмосферный плейлист из 5-6 треков, идеально создающих этот вайб (ночная езда по КАД/ЗСД, фокус на работе, тренировка, шашлык на даче, вечерний чилл).
+Сгенерируй атмосферный сет из 5-6 реально существующих треков, идеально создающих этот вайб (ночная езда по КАД/ЗСД, фокус на работе, тренировка, шашлык на даче, вечерний чилл).
+Выбирай известные, высоко оцененные треки реальных исполнителей, которые есть в стримингах (Яндекс.Музыка).
 
 СТРУКТУРА JSON:
-1. "playlist_title": Яркое название плейлиста (например: «Midnight Drive: Неоновый ЗСД», «Deep Focus: Чистый код», «Sunset Lounge»)
-2. "vibe_description": Описание настроения и музыкальных жанров (Phonk, Synthwave, Deep House, Indie Rock, Lo-Fi)
-3. "yandex_music_query": Оптимальный поисковый запрос для Яндекс.Музыки (например: "Synthwave night drive", "Deep House chill", "Indie rock acoustic")
+1. "playlist_title": Яркое название плейлиста (например: «Midnight Drive: Неоновый ЗСД», «Deep Focus: Архитектор кода», «Sunset Lounge»)
+2. "vibe_description": Описание настроения и музыкальных жанров (Lo-Fi, Synthwave, Ambient, Phonk, Deep House, Indie Rock)
+3. "yandex_music_query": Оптимальный поисковый запрос жанра/стиля для Яндекс.Музыки (например: "Lo-Fi концентрация", "Synthwave Night Drive", "Hard Rock Workout", "Блюз рок")
 4. "tracks": Список 5-6 треков:
-   - "artist": Исполнитель
-   - "title": Название трека
-   - "why_match": Почему идеально бьет в настроение
+   - "artist": Точное имя исполнителя
+   - "title": Точное название трека
+   - "why_match": Почему трек идеально бьет в настроение
 5. "ideal_volume": Совет по прослушиванию (в наушниках, в авто с сабвуфером, фоном).
 
 Верни ответ СТРОГО в формате JSON:
 {{
-  "playlist_title": "Midnight Run: Ночной прострел по ЗСД",
-  "vibe_description": "Кинематографичный Synthwave, Dark Disco и плотный Deep House для ночной трассы с огнями города.",
-  "yandex_music_query": "Synthwave Night Drive",
+  "playlist_title": "Deep Focus: Архитектор кода",
+  "vibe_description": "Атмосферный Lo-Fi, глубокий Ambient и минималистичный инструментал для продуктивной работы.",
+  "yandex_music_query": "Lo-Fi концентрация",
   "tracks": [
-    {{"artist": "Kavinsky", "title": "Nightcall", "why_match": "Культовая классика ночной езды и неоновой эстетики."}},
-    {{"artist": "The Weeknd", "title": "Blinding Lights", "why_match": "Мощный ретровейв-ритм и динамика."}}
+    {{"artist": "L'Indecis", "title": "Soulful", "why_match": "Мягкий ритм, помогающий войти в состояние потока."}},
+    {{"artist": "Tycho", "title": "Awake", "why_match": "Энергичный, но ненавязчивый инструментал для чистого ума."}}
   ],
-  "ideal_volume": "🔊 В авто на хорошей громкости под огни мостов и ночного залива."
+  "ideal_volume": "🎧 В качественных наушниках фоном для полного погружения."
 }}
 """
-    resp = await ask_gemini(user_id, prompt)
+    data = None
     try:
+        resp = await ask_gemini(user_id, prompt)
         m = re.search(r"\{.*\}", resp, re.DOTALL)
         if m:
             data = json.loads(m.group(0))
-            ym_q = data.get("yandex_music_query", data.get("playlist_title", "Music"))
-            encoded = urllib.parse.quote_plus(ym_q)
-            data["yandex_music_url"] = f"https://music.yandex.ru/search?text={encoded}"
-            return data
     except Exception as e:
-        logger.error(f"Error parsing music json: {e}")
+        logger.error(f"Error calling gemini or parsing json: {e}")
 
-    return {
-        "playlist_title": "Атмосферный музыкальный сет",
-        "vibe_description": "Качественная музыка для отличного настроения.",
-        "yandex_music_query": "Top Chill Vibes",
-        "yandex_music_url": "https://music.yandex.ru",
-        "tracks": [
-            {"artist": "Hans Zimmer", "title": "Time", "why_match": "Эпическая глубина и масштаб."}
-        ],
-        "ideal_volume": "В наушниках для полного погружения."
-    }
+    if not data:
+        data = {
+            "playlist_title": "Атмосферный музыкальный сет",
+            "vibe_description": "Качественная музыка для отличного настроения и продуктивности.",
+            "yandex_music_query": query_or_vibe,
+            "tracks": [
+                {"artist": "Hans Zimmer", "title": "Time", "why_match": "Эпическая глубина и масштаб."},
+                {"artist": "Tycho", "title": "Awake", "why_match": "Глубокая концентрация и ясность."}
+            ],
+            "ideal_volume": "🎧 В наушниках для полного погружения."
+        }
+
+    # 1. Resolve the best continuous non-stop playlist from Yandex Music
+    ym_query = data.get("yandex_music_query") or query_or_vibe
+    try:
+        pl_info = await get_best_yandex_playlist(ym_query, preset_key=preset_key)
+        data["continuous_playlist_url"] = pl_info.get("url", "https://music.yandex.ru/radio")
+        data["continuous_playlist_title"] = pl_info.get("title", "Плейлист")
+        data["continuous_playlist_tracks_count"] = pl_info.get("track_count", 0)
+        data["yandex_music_url"] = data["continuous_playlist_url"]
+    except Exception as e:
+        logger.error(f"Error resolving continuous playlist: {e}")
+        data["continuous_playlist_url"] = "https://music.yandex.ru/radio"
+        data["continuous_playlist_title"] = "Моя Волна (Поток)"
+        data["continuous_playlist_tracks_count"] = 100
+        data["yandex_music_url"] = data["continuous_playlist_url"]
+
+    # 2. Enrich tracks with direct Yandex Music URLs in parallel
+    try:
+        tracks = data.get("tracks", [])
+        if tracks:
+            data["tracks"] = await enrich_tracks_with_urls(tracks)
+    except Exception as e:
+        logger.error(f"Error enriching tracks with urls: {e}")
+
+    return data
