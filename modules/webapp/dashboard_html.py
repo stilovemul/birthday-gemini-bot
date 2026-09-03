@@ -436,6 +436,11 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
     }, 1500);
   </script>
 
+  <!-- TOAST NOTIFICATION -->
+  <div id="ui-toast" style="position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:99999;background:rgba(28,28,30,0.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.18);padding:9px 18px;border-radius:100px;font-size:12px;font-weight:600;color:#FFF;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:none;align-items:center;gap:8px;pointer-events:none;transition:opacity 0.25s ease;">
+    <span id="ui-toast-text"></span>
+  </div>
+
   <div class="app-viewport">
     <!-- HEADER -->
     <header class="app-header">
@@ -845,27 +850,34 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
         <div>
           <div class="group-header"><span>Все модули бота</span></div>
           <div class="module-capsules">
-            <button class="capsule-btn" onclick="openInBot('/digest')">🌅 Дайджест</button>
-            <button class="capsule-btn" onclick="openInBot('/home')">🏠 Умный дом</button>
-            <button class="capsule-btn" onclick="openInBot('/weather')">🌤 Погода</button>
-            <button class="capsule-btn" onclick="openInBot('/drive2')">🚗 Drive2</button>
-            <button class="capsule-btn" onclick="openInBot('/vk')">🔵 ВКонтакте</button>
-            <button class="capsule-btn" onclick="openInBot('/credit')">🔢 Кредиты</button>
-            <button class="capsule-btn" onclick="openInBot('/sleep')">😴 Сон</button>
-            <button class="capsule-btn" onclick="openInBot('/vault')">🔐 Сейф</button>
-            <button class="capsule-btn" onclick="openInBot('/food')">🥗 КБЖУ</button>
-            <button class="capsule-btn" onclick="openInBot('/image')">🎨 Фото AI</button>
-            <button class="capsule-btn" onclick="openInBot('/remind')">⏰ Напоминания</button>
-            <button class="capsule-btn" onclick="openInBot('/list')">🎂 Дни рожд.</button>
-            <button class="capsule-btn" onclick="openInBot('/notes')">📝 Заметки</button>
-            <button class="capsule-btn" onclick="openInBot('/restaurants')">🍽 Рестораны</button>
-            <button class="capsule-btn" onclick="openInBot('/countryside')">🏕 Загород</button>
-            <button class="capsule-btn" onclick="openInBot('/cinema')">🎬 Кино</button>
-            <button class="capsule-btn" onclick="openInBot('/photospots')">📸 Фото-споты</button>
-            <button class="capsule-btn" onclick="openInBot('/speakeasy')">🍸 Спикизи</button>
-            <button class="capsule-btn" onclick="openInBot('/sommelier')">🍷 Сомелье</button>
-            <button class="capsule-btn" onclick="openInBot('/music')">🎧 Музыка</button>
-            <button class="capsule-btn" onclick="openInBot('/help')">❓ Справка</button>
+            <button class="capsule-btn" onclick="openInBot('🥗 КБЖУ')">🥗 КБЖУ</button>
+            <button class="capsule-btn" onclick="openInBot('🔢 Кредиты')">🔢 Кредиты</button>
+            <button class="capsule-btn" onclick="openInBot('🚗 Авто-Юрист')">🚗 Авто-Юрист</button>
+            <button class="capsule-btn" onclick="openInBot('🔬 Ресерч')">🔬 Ресерч</button>
+            <button class="capsule-btn" onclick="openInBot('🎙 Собеседование')">🎙 Собеседование</button>
+            <button class="capsule-btn" onclick="openInBot('📚 Книги')">📚 Книги</button>
+            <button class="capsule-btn" onclick="openInBot('🎬 Кино')">🎬 Кино</button>
+            <button class="capsule-btn" onclick="openInBot('🛡 Манипуляции')">🛡 Манипуляции</button>
+            <button class="capsule-btn" onclick="openInBot('🧠 Мышление')">🧠 Мышление</button>
+            <button class="capsule-btn" onclick="openInBot('❓ Справка')">❓ Справка</button>
+            <button class="capsule-btn" onclick="openInBot('🏠 Умный дом')">🏠 Умный дом</button>
+            <button class="capsule-btn" onclick="openInBot('🌤 Погода')">🌤 Погода</button>
+            <button class="capsule-btn" onclick="openInBot('😴 Сон')">😴 Сон</button>
+            <button class="capsule-btn" onclick="openInBot('🎂 Дни рожд.')">🎂 Дни рожд.</button>
+            <button class="capsule-btn" onclick="openInBot('⏰ Напоминания')">⏰ Напоминания</button>
+            <button class="capsule-btn" onclick="openInBot('💳 Подписки')">💳 Подписки</button>
+            <button class="capsule-btn" onclick="openInBot('🌅 Дайджест')">🌅 Дайджест</button>
+            <button class="capsule-btn" onclick="openInBot('🍽 Рестораны')">🍽 Рестораны</button>
+            <button class="capsule-btn" onclick="openInBot('🏕 Загород')">🏕 Загород</button>
+            <button class="capsule-btn" onclick="openInBot('🍸 Спикизи')">🍸 Спикизи</button>
+            <button class="capsule-btn" onclick="openInBot('🍷 Сомелье')">🍷 Сомелье</button>
+            <button class="capsule-btn" onclick="openInBot('🎨 Фото AI')">🎨 Фото AI</button>
+            <button class="capsule-btn" onclick="openInBot('🔐 Сейф')">🔐 Сейф</button>
+            <button class="capsule-btn" onclick="openInBot('📝 Заметки')">📝 Заметки</button>
+            <button class="capsule-btn" onclick="openInBot('📸 Фото-споты')">📸 Фото-споты</button>
+            <button class="capsule-btn" onclick="openInBot('🎧 Музыка')">🎧 Музыка</button>
+            <button class="capsule-btn" onclick="openInBot('🚗 Drive2')">🚗 Drive2</button>
+            <button class="capsule-btn" onclick="openInBot('🔵 ВКонтакте')">🔵 ВКонтакте</button>
           </div>
         </div>
       </section>
@@ -1033,24 +1045,86 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
       selectTheme(saved);
     }
 
-    function openInBot(command) {
+    function showToast(text, duration = 2500) {
+      const t = document.getElementById('ui-toast');
+      const txt = document.getElementById('ui-toast-text');
+      if (t && txt) {
+        txt.innerText = text;
+        t.style.display = 'flex';
+        t.style.opacity = '1';
+        setTimeout(() => {
+          t.style.opacity = '0';
+          setTimeout(() => { t.style.display = 'none'; }, 250);
+        }, duration);
+      }
+    }
+
+    async function openInBot(command) {
       haptic('medium');
+      const cmd = (command || '').trim();
+      const lower = cmd.toLowerCase();
+
+      // 1. Internal Dashboard Tab Navigation (never close dashboard!)
+      if (lower.includes('кбжу') || lower.includes('/food') || lower === 'еда') {
+        switchTab('health');
+        switchHealthSubTab('food');
+        return;
+      }
+      if (lower.includes('сон') || lower.includes('/sleep')) {
+        switchTab('health');
+        switchHealthSubTab('sleep');
+        return;
+      }
+      if (lower.includes('кредит') || lower.includes('/credit')) {
+        switchTab('finance');
+        switchFinanceSubTab('loan');
+        return;
+      }
+      if (lower.includes('подписк') || lower.includes('/subs')) {
+        switchTab('finance');
+        switchFinanceSubTab('subs');
+        return;
+      }
+      if (lower.includes('дом') || lower.includes('/home')) {
+        switchTab('smart_home');
+        return;
+      }
+      if (lower.includes('погод') || lower.includes('/weather')) {
+        switchTab('digest');
+        return;
+      }
+      if (lower.includes('дни рожд') || lower.includes('рожд') || lower.includes('/list')) {
+        switchTab('tasks');
+        setBdayFilter('all');
+        return;
+      }
+      if (lower.includes('напомина') || lower.includes('/remind') || lower.includes('/reminders')) {
+        switchTab('tasks');
+        return;
+      }
+
+      // 2. Chat Module Dispatch
+      showToast('💬 Перехожу в диалог с ботом...');
+      try {
+        await fetch('/api/bot/dispatch_command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: cmd })
+        });
+      } catch (e) {
+        console.warn('Dispatch API issue:', e);
+      }
+
+      // Close Telegram Mini App smoothly so user returns to active bot chat
       if (window.Telegram?.WebApp) {
         const twa = window.Telegram.WebApp;
         try {
-          if (twa.sendData) {
-            twa.sendData(command);
-            twa.close();
-            return;
-          }
+          if (twa.sendData) twa.sendData(cmd);
         } catch(e) {}
-        try {
-          if (twa.openTelegramLink) {
-            twa.openTelegramLink('https://t.me/MyAiGem_bot');
-            twa.close();
-            return;
-          }
-        } catch(e) {}
+        setTimeout(() => {
+          try { twa.close(); } catch(e) {}
+        }, 450);
+        return;
       }
       window.location.href = 'https://t.me/MyAiGem_bot';
     }

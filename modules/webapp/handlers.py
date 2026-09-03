@@ -19,3 +19,17 @@ async def cmd_open_webapp(message: Message):
         reply_markup=get_webapp_inline_keyboard(),
         parse_mode="HTML"
     )
+
+
+@router.message(F.web_app_data)
+async def handle_web_app_data(message: Message):
+    """
+    Catches data sent via Telegram.WebApp.sendData() from the Mini App.
+    """
+    raw_data = (message.web_app_data.data or "").strip()
+    if not raw_data:
+        return
+    # Import router dispatch handler logic or answer
+    from modules.webapp.router import api_dispatch_command, DispatchCommandRequest
+    await api_dispatch_command(DispatchCommandRequest(command=raw_data, user_id=message.from_user.id))
+

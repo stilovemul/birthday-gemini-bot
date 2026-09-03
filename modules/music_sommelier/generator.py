@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional
 from core.gemini import ask_gemini
 from modules.music_sommelier.yandex_api import (
     get_best_yandex_playlist,
-    enrich_tracks_with_urls
+    get_playlist_tracks
 )
 
 logger = logging.getLogger("MusicSommelier")
@@ -15,76 +15,92 @@ async def generate_music_playlist(
     query_or_vibe: str,
     preset_key: Optional[str] = None
 ) -> Dict[str, Any]:
-    prompt = f"""Ты — персональный музыкальный сомелье и диджей.
-Настроение / Ситуация пользователя / Вайб: '{query_or_vibe}'
+    # 1. First, resolve the best continuous playlist from Yandex.Music
+    pl_info = await get_best_yandex_playlist(query_or_vibe, preset_key=preset_key)
+    owner = pl_info.get("owner", "yamusic")
+    kind = pl_info.get("kind", "1000")
+    pl_title = pl_info.get("title", "Плейлист")
+    track_count = pl_info.get("track_count", 100)
+    pl_url = pl_info.get("url", "https://music.yandex.ru/radio")
 
-Сгенерируй атмосферный сет из 5-6 реально существующих треков, идеально создающих этот вайб (ночная езда по КАД/ЗСД, фокус на работе, тренировка, шашлык на даче, вечерний чилл).
-Выбирай известные, высоко оцененные треки реальных исполнителей, которые есть в стримингах (Яндекс.Музыка).
+    # 2. Fetch the actual first tracks of this real playlist
+    real_tracks = await get_playlist_tracks(owner, kind, limit=6)
 
-СТРУКТУРА JSON:
-1. "playlist_title": Яркое название плейлиста (например: «Midnight Drive: Неоновый ЗСД», «Deep Focus: Архитектор кода», «Sunset Lounge»)
-2. "vibe_description": Описание настроения и музыкальных жанров (Lo-Fi, Synthwave, Ambient, Phonk, Deep House, Indie Rock)
-3. "yandex_music_query": Оптимальный поисковый запрос жанра/стиля для Яндекс.Музыки (например: "Lo-Fi концентрация", "Synthwave Night Drive", "Hard Rock Workout", "Блюз рок")
-4. "tracks": Список 5-6 треков:
-   - "artist": Точное имя исполнителя
-   - "title": Точное название трека
-   - "why_match": Почему трек идеально бьет в настроение
-5. "ideal_volume": Совет по прослушиванию (в наушниках, в авто с сабвуфером, фоном).
+    data = None
+    if real_tracks:
+        tracks_formatted = "\n".join([f"{idx}. {t['artist']} — {t['title']}" for idx, t in enumerate(real_tracks, 1)])
+        prompt = f"""Ты — персональный музыкальный сомелье и диджей.
+Пользователь выбрал вайб: '{query_or_vibe}'.
+Мы подобрали для него официальный плейлист Яндекс.Музыки: «{pl_title}» ({track_count} треков).
+
+Вот РЕАЛЬНЫЙ трек-лист из этого плейлиста:
+{tracks_formatted}
+
+Напиши атмосферную сомелье-презентацию этого плейлиста и краткий яркий комментарий к каждому из этих {len(real_tracks)} треков (почему трек задает идеальный ритм и настроение).
 
 Верни ответ СТРОГО в формате JSON:
 {{
-  "playlist_title": "Deep Focus: Архитектор кода",
-  "vibe_description": "Атмосферный Lo-Fi, глубокий Ambient и минималистичный инструментал для продуктивной работы.",
-  "yandex_music_query": "Lo-Fi концентрация",
+  "playlist_title": "Яркое эстетичное название сета",
+  "vibe_description": "Описание настроения, атмосферы и жанров (2-3 предложения)",
   "tracks": [
-    {{"artist": "L'Indecis", "title": "Soulful", "why_match": "Мягкий ритм, помогающий войти в состояние потока."}},
-    {{"artist": "Tycho", "title": "Awake", "why_match": "Энергичный, но ненавязчивый инструментал для чистого ума."}}
+    {{"artist": "{real_tracks[0]['artist']}", "title": "{real_tracks[0]['title']}", "why_match": "Краткое сомелье-описание трека"}},
+    ...
   ],
-  "ideal_volume": "🎧 В качественных наушниках фоном для полного погружения."
+  "ideal_volume": "Совет по прослушиванию (наушники, авто, фоном)"
 }}
 """
-    data = None
-    try:
-        resp = await ask_gemini(user_id, prompt)
-        m = re.search(r"\{.*\}", resp, re.DOTALL)
-        if m:
-            data = json.loads(m.group(0))
-    except Exception as e:
-        logger.error(f"Error calling gemini or parsing json: {e}")
+        try:
+            resp = await ask_gemini(user_id, prompt)
+            m = re.search(r"\{.*\}", resp, re.DOTALL)
+            if m:
+                parsed = json.loads(m.group(0))
+                # Merge with real_tracks to guarantee track names & URLs
+                parsed_tracks = parsed.get("tracks", [])
+                final_tracks = []
+                for idx, rt in enumerate(real_tracks):
+                    why = "Задает отличное настроение и погружает в атмосферу."
+                    if idx < len(parsed_tracks):
+                        why = parsed_tracks[idx].get("why_match", why)
+                    final_tracks.append({
+                        "artist": rt["artist"],
+                        "title": rt["title"],
+                        "track_url": rt.get("track_url", ""),
+                        "why_match": why
+                    })
+                data = {
+                    "playlist_title": parsed.get("playlist_title", pl_title),
+                    "vibe_description": parsed.get("vibe_description", "Качественная музыка под настроение."),
+                    "tracks": final_tracks,
+                    "ideal_volume": parsed.get("ideal_volume", "🎧 В наушниках для полного погружения.")
+                }
+        except Exception as e:
+            logger.error(f"Error calling gemini for real tracks: {e}")
 
+    # Fallback if no real tracks or Gemini error
     if not data:
+        if real_tracks:
+            final_tracks = [{
+                "artist": rt["artist"],
+                "title": rt["title"],
+                "track_url": rt.get("track_url", ""),
+                "why_match": "Идеально задает настроение сета."
+            } for rt in real_tracks]
+        else:
+            final_tracks = [
+                {"artist": "Tycho", "title": "Awake", "track_url": "", "why_match": "Чистая концентрация и ясность ума."},
+                {"artist": "Bonobo", "title": "Cirrus", "track_url": "", "why_match": "Ритмичный инструментал для фокуса."}
+            ]
+
         data = {
-            "playlist_title": "Атмосферный музыкальный сет",
-            "vibe_description": "Качественная музыка для отличного настроения и продуктивности.",
-            "yandex_music_query": query_or_vibe,
-            "tracks": [
-                {"artist": "Hans Zimmer", "title": "Time", "why_match": "Эпическая глубина и масштаб."},
-                {"artist": "Tycho", "title": "Awake", "why_match": "Глубокая концентрация и ясность."}
-            ],
-            "ideal_volume": "🎧 В наушниках для полного погружения."
+            "playlist_title": pl_title,
+            "vibe_description": "Качественная непрерывная подборка под ваше настроение.",
+            "tracks": final_tracks,
+            "ideal_volume": "🎧 В наушниках фоном для полного погружения."
         }
 
-    # 1. Resolve the best continuous non-stop playlist from Yandex Music
-    ym_query = data.get("yandex_music_query") or query_or_vibe
-    try:
-        pl_info = await get_best_yandex_playlist(ym_query, preset_key=preset_key)
-        data["continuous_playlist_url"] = pl_info.get("url", "https://music.yandex.ru/radio")
-        data["continuous_playlist_title"] = pl_info.get("title", "Плейлист")
-        data["continuous_playlist_tracks_count"] = pl_info.get("track_count", 0)
-        data["yandex_music_url"] = data["continuous_playlist_url"]
-    except Exception as e:
-        logger.error(f"Error resolving continuous playlist: {e}")
-        data["continuous_playlist_url"] = "https://music.yandex.ru/radio"
-        data["continuous_playlist_title"] = "Моя Волна (Поток)"
-        data["continuous_playlist_tracks_count"] = 100
-        data["yandex_music_url"] = data["continuous_playlist_url"]
-
-    # 2. Enrich tracks with direct Yandex Music URLs in parallel
-    try:
-        tracks = data.get("tracks", [])
-        if tracks:
-            data["tracks"] = await enrich_tracks_with_urls(tracks)
-    except Exception as e:
-        logger.error(f"Error enriching tracks with urls: {e}")
+    data["continuous_playlist_url"] = pl_url
+    data["continuous_playlist_title"] = pl_title
+    data["continuous_playlist_tracks_count"] = track_count
+    data["yandex_music_url"] = pl_url
 
     return data

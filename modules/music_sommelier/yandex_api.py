@@ -1,6 +1,6 @@
 """
 Yandex Music API Client for Music Sommelier Module.
-Provides curated continuous non-stop playlists and direct track links.
+Provides curated continuous non-stop playlists and extracts real playlist tracklists.
 """
 
 import asyncio
@@ -22,11 +22,11 @@ PRESET_PLAYLISTS: Dict[str, Dict[str, Any]] = {
         "url": "https://music.yandex.ru/users/music-blog/playlists/2620"
     },
     "drive": {
-        "owner": "yandexmusic",
-        "kind": 1635,
-        "title": "Ночной драйв (Synthwave, Dark Disco & Phonk)",
-        "track_count": 190,
-        "url": "https://music.yandex.ru/users/yandexmusic/playlists/1635"
+        "owner": "fixtmusic",
+        "kind": 1003,
+        "title": "Synthwave & Night Drive (Ночной ЗСД)",
+        "track_count": 100,
+        "url": "https://music.yandex.ru/users/fixtmusic/playlists/1003"
     },
     "gym": {
         "owner": "music-radio-alice",
@@ -98,7 +98,7 @@ async def get_best_yandex_playlist(
         if close_session:
             await session.close()
 
-    # Fallback to My Wave (infinite streaming flow)
+    # Fallback to My Wave
     return {
         "owner": "yandex",
         "kind": "radio",
@@ -108,17 +108,20 @@ async def get_best_yandex_playlist(
     }
 
 
-async def resolve_track_url(
-    artist: str,
-    title: str,
+async def get_playlist_tracks(
+    owner: str,
+    kind: Any,
+    limit: int = 6,
     session: Optional[aiohttp.ClientSession] = None
-) -> str:
+) -> List[Dict[str, Any]]:
     """
-    Finds exact direct URL to track in Yandex.Music (https://music.yandex.ru/album/{album_id}/track/{track_id}).
+    Fetches the actual first tracks of a real Yandex Music playlist.
+    Guarantees that what the bot displays in Telegram matches the playlist order 1-to-1!
     """
-    q = f"{artist} {title}".strip()
-    enc = urllib.parse.quote(q)
-    url = f"https://api.music.yandex.net/search?text={enc}&type=track&page=0"
+    if str(kind) == "radio":
+        return []
+
+    url = f"https://api.music.yandex.net/users/{owner}/playlists/{kind}"
     headers = {"Authorization": f"OAuth {YANDEX_OAUTH_TOKEN}"}
 
     close_session = False
@@ -127,48 +130,30 @@ async def resolve_track_url(
         close_session = True
 
     try:
-        async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=3.5)) as resp:
+        async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=4)) as resp:
             if resp.status == 200:
                 data = await resp.json()
-                tracks = data.get("result", {}).get("tracks", {}).get("results", [])
-                if tracks:
-                    t = tracks[0]
-                    t_id = t.get("id")
-                    albums = t.get("albums", [])
-                    alb_id = albums[0].get("id") if albums else None
-                    if alb_id:
-                        return f"https://music.yandex.ru/album/{alb_id}/track/{t_id}"
-                    return f"https://music.yandex.ru/track/{t_id}"
+                raw_tracks = data.get("result", {}).get("tracks", [])
+                tracks = []
+                for item in raw_tracks[:limit]:
+                    t = item.get("track", {})
+                    artists = ", ".join([a.get("name") for a in t.get("artists", []) if a.get("name")])
+                    title = t.get("title", "")
+                    if artists and title:
+                        t_id = t.get("id")
+                        albums = t.get("albums", [])
+                        alb_id = albums[0].get("id") if albums else None
+                        track_url = f"https://music.yandex.ru/album/{alb_id}/track/{t_id}" if alb_id else f"https://music.yandex.ru/track/{t_id}"
+                        tracks.append({
+                            "artist": artists,
+                            "title": title,
+                            "track_url": track_url
+                        })
+                return tracks
     except Exception as e:
-        logger.debug(f"Track lookup error for '{q}': {e}")
+        logger.warning(f"Failed to fetch tracks for playlist {owner}/{kind}: {e}")
     finally:
         if close_session:
             await session.close()
 
-    return f"https://music.yandex.ru/search?text={enc}"
-
-
-async def enrich_tracks_with_urls(tracks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Enriches a list of tracks with direct Yandex.Music track URLs in parallel.
-    """
-    if not tracks:
-        return tracks
-
-    async with aiohttp.ClientSession() as session:
-        tasks = [
-            resolve_track_url(t.get("artist", ""), t.get("title", ""), session=session)
-            for t in tracks
-        ]
-        urls = await asyncio.gather(*tasks, return_exceptions=True)
-
-        for t, url_res in zip(tracks, urls):
-            if isinstance(url_res, str):
-                t["yandex_url"] = url_res
-            else:
-                artist = t.get("artist", "")
-                title = t.get("title", "")
-                enc = urllib.parse.quote(f"{artist} {title}".strip())
-                t["yandex_url"] = f"https://music.yandex.ru/search?text={enc}"
-
-    return tracks
+    return []

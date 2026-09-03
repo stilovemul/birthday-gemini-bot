@@ -4,7 +4,7 @@ from aiogram import Router, types, F
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, LinkPreviewOptions
 
 from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
 from core.states import ActiveModeStates
@@ -45,11 +45,12 @@ def get_music_keyboard(playlist_url: str = "https://music.yandex.ru", track_coun
 async def cmd_music_sommelier(message: types.Message, state: FSMContext):
     await state.set_state(ActiveModeStates.music_sommelier_mode)
     text = (
-        "🎧 <b>Музыкальный Сомелье & Генератор плейлистов под вайб:</b>\n\n"
-        "Я составляю персональные сеты треков под конкретные ситуации жизни с <b>готовыми плейлистами Яндекс.Музыки для непрерывного воспроизведения</b>!\n\n"
+        "🎧 <b>Музыкальный Сомелье & Непрерывные плейлисты под вайб:</b>\n\n"
+        "Я подбираю официальные плейлисты Яндекс.Музыки с <b>автоматическим переключением треков (Non-stop)</b> — вы включаете музыку один раз, и она играет без остановок весь рабочий день или поездку!\n\n"
         "✨ <b>Как это работает:</b>\n"
-        "• Песни переключаются сами собой без остановок (Non-stop поток на весь рабочий день).\n"
-        "• Каждый трек в подборке снабжен прямой ссылкой — можно включить любую песню точечно.\n\n"
+        "• Трек-лист в сообщении точно соответствует первым трекам плейлиста.\n"
+        "• Нажатие на главную кнопку запускает воспроизведение всех 50–230+ треков подряд.\n"
+        "• Треки переключаются автоматически один за другим.\n\n"
         "💡 <b>Примеры запросов:</b>\n"
         "• <i>«Музыка для ночной поездки на машине по Питеру»</i>\n"
         "• <i>«Глубокий фокус для кодинга без слов»</i>\n"
@@ -57,11 +58,17 @@ async def cmd_music_sommelier(message: types.Message, state: FSMContext):
         "• <i>«Бодрый фанк и блюз для шашлыков на природе»</i>\n\n"
         "💬 <i>Напишите ваше настроение или выберите готовый сет:</i>"
     )
-    await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_mode_keyboard("Музыка"))
+    await message.answer(
+        text,
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_mode_keyboard("Музыка"),
+        link_preview_options=LinkPreviewOptions(is_disabled=True)
+    )
     await message.answer(
         "👇 <b>Готовые подборки под настроение (Non-stop воспроизведение):</b>",
         parse_mode=ParseMode.HTML,
-        reply_markup=get_music_keyboard("https://music.yandex.ru/users/music-blog/playlists/2620", 234)
+        reply_markup=get_music_keyboard("https://music.yandex.ru/users/music-blog/playlists/2620", 234),
+        link_preview_options=LinkPreviewOptions(is_disabled=True)
     )
 
 
@@ -72,7 +79,7 @@ async def cb_music_preset(callback: types.CallbackQuery, state: FSMContext):
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
 
     presets = {
-        "drive": "Ночной прострел по ЗСД и КАД: плотный Synthwave, Phonk и Dark Disco",
+        "drive": "Ночной прострел по ЗСД и КАД: плотный Synthwave, Retrowave и Dark Disco",
         "focus": "Глубокая концентрация и рабочий фокус: Lo-Fi beats, Ambient и чистый инструментал",
         "gym": "Взрывная энергия для силовой тренировки: бодрый Hip-Hop, Rock и Phonk",
         "bbq": "Атмосферный день на даче у мангала: винтажный блюз-рок, фанк, инди и соул"
@@ -127,9 +134,9 @@ async def render_music_results(message: types.Message, res: dict):
         artist = html.escape(str(t.get("artist", "")))
         t_title = html.escape(str(t.get("title", "")))
         why = html.escape(str(t.get("why_match", "")))
-        yandex_url = t.get("yandex_url")
-        if yandex_url:
-            lines.append(f"<b>{idx}. 🎶 <a href=\"{html.escape(yandex_url)}\">{artist} — {t_title}</a></b>\n   └ <i>{why}</i>")
+        track_url = t.get("track_url")
+        if track_url:
+            lines.append(f"<b>{idx}. 🎶 <a href=\"{html.escape(track_url)}\">{artist} — {t_title}</a></b>\n   └ <i>{why}</i>")
         else:
             lines.append(f"<b>{idx}. 🎶 {artist} — {t_title}</b>\n   └ <i>{why}</i>")
 
@@ -137,6 +144,11 @@ async def render_music_results(message: types.Message, res: dict):
     if volume:
         lines.append(f"🔊 <b>Рекомендация по звуку:</b> {volume}\n")
 
-    lines.append("<i>👇 Нажмите кнопку ниже, чтобы запустить непрерывный плейлист (треки будут переключаться автоматически один за другим):</i>")
+    lines.append("<i>👇 Нажмите большую кнопку ниже, чтобы запустить непрерывный плейлист (треки переключаются автоматически один за другим):</i>")
 
-    await message.answer("\n".join(lines), parse_mode=ParseMode.HTML, reply_markup=get_music_keyboard(pl_url, pl_count))
+    await message.answer(
+        "\n".join(lines),
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_music_keyboard(pl_url, pl_count),
+        link_preview_options=LinkPreviewOptions(is_disabled=True)
+    )

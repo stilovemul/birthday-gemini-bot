@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 import json
 import logging
 import time
@@ -8,7 +9,7 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
-from core.config import YANDEX_OAUTH_TOKEN, TELEGRAM_USER_ID, MSK_TZ
+from core.config import YANDEX_OAUTH_TOKEN, TELEGRAM_USER_ID, MSK_TZ, TELEGRAM_BOT_TOKEN
 from modules.smart_home.client import (
     get_user_info,
     set_device_on_off,
@@ -549,3 +550,124 @@ async def api_rule_del(req: RuleDelRequest):
         return {"success": ok}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+class DispatchCommandRequest(BaseModel):
+    command: str
+    user_id: Optional[int] = None
+
+
+@router.post("/api/bot/dispatch_command")
+async def api_dispatch_command(req: DispatchCommandRequest):
+    """
+    Executes a module or sends message directly to the Telegram user chat when triggered from the Mini App.
+    """
+    uid = req.user_id or TELEGRAM_USER_ID
+    cmd = req.command.strip()
+    lower = cmd.lower()
+
+    text = ""
+    reply_markup = None
+
+    try:
+        if "авто-юрист" in lower or "дтп" in lower or "/dtp" in lower or "/rights" in lower:
+            from modules.auto_legal_aid.accident_guide import get_dtp_step_guide
+            from modules.auto_legal_aid.handlers import format_dtp_step
+            step_1 = get_dtp_step_guide(1)
+            text, kb = format_dtp_step(step_1, 1)
+            reply_markup = kb.model_dump(exclude_none=True)
+        elif "ресерч" in lower or "research" in lower or "/research" in lower:
+            text = (
+                "🔬 <b>Режим Deep Research & Фактчек</b>\n\n"
+                "Я могу провести глубокое исследование любой темы со сравнением вариантов или проверить новость на фейки и манипуляции.\n\n"
+                "Выберите действие ниже или сразу напишите свой вопрос/тезис:"
+            )
+            reply_markup = {
+                "inline_keyboard": [
+                    [{"text": "🔬 Начать глубокое исследование", "callback_data": "mode_start_research"}],
+                    [{"text": "🛡 Проверить новость на фейк", "callback_data": "mode_start_factcheck"}]
+                ]
+            }
+        elif "собеседован" in lower or "/interview" in lower:
+            text = (
+                "🎙 <b>Тренажер собеседований (HR & Tech)</b>\n\n"
+                "Я проведу для вас реалистичное тренировочное интервью, задавая вопросы и разбирая ваши ответы!\n\n"
+                "Нажмите кнопку для старта:"
+            )
+            reply_markup = {
+                "inline_keyboard": [
+                    [{"text": "🚀 Начать собеседование", "callback_data": "mode_start_interview"}]
+                ]
+            }
+        elif "книг" in lower or "/books" in lower or "book" in lower:
+            text = (
+                "📚 <b>Книжный сомелье (15-мин выжимки)</b>\n\n"
+                "Напишите название книги или тему (например: <i>«Атомные привычки»</i> или <i>«книги по инвестициям»</i>) — и я подготовлю ключевые инсайты и практические выводы!"
+            )
+        elif "кино" in lower or "/cinema" in lower:
+            text = (
+                "🎬 <b>Киносомелье с памятью вкусов</b>\n\n"
+                "Я помню, какие фильмы вам нравятся, и подберу идеальное кино на вечер.\n\n"
+                "Нажмите кнопку ниже или напишите пожелания по жанру:"
+            )
+            reply_markup = {
+                "inline_keyboard": [
+                    [{"text": "🍿 Подобрать фильм на вечер", "callback_data": "mode_start_cinema"}]
+                ]
+            }
+        elif "манипуляц" in lower:
+            text = (
+                "🛡 <b>Щит от манипуляций & Психологическая защита</b>\n\n"
+                "Пришлите мне сообщение, письмо или фразу собеседника — я разберу скрытые уловки, манипуляции и предложу уверенный ответ."
+            )
+        elif "мышлен" in lower or "biases" in lower:
+            text = (
+                "🧠 <b>Ясное мышление & Когнитивные ловушки</b>\n\n"
+                "Я помогу разобрать сложную ситуацию, выявить когнитивные искажения и принять взвешенное решение."
+            )
+        elif "справка" in lower or "/help" in lower:
+            text = (
+                "❓ <b>Справка по возможностям супер-бота AiGem:</b>\n\n"
+                "• 📱 <b>Дашборд (Mini App)</b>: Умный дом, Погода, КБЖУ, Кредиты, Сон, ДР\n"
+                "• 🤖 <b>Gemini AI</b>: умные ответы на любые вопросы, анализ текстов и фото\n"
+                "• 🚗 <b>Авто-Юрист</b>: алгоритмы при ДТП и оспаривание штрафов\n"
+                "• 🔬 <b>Deep Research</b>: глубокие исследования и фактчекинг\n"
+                "• 🎙 <b>Собеседование</b>: тренажер интервью\n"
+                "• 📚 <b>Книги & Кино</b>: умный сомелье с памятью"
+            )
+        elif "расскажи подробнее про" in lower or "охта" in lower or "игора" in lower or "царство" in lower:
+            # Query Gemini AI
+            prompt = f"Пользователь интересуется курортом: {cmd}. Расскажи подробно: формат отдыха, фишки для детей/семьи, спа и бассейны, диапазон цен и как лучше добраться."
+            try:
+                from core.gemini import ask_gemini
+                ai_resp = await asyncio.wait_for(ask_gemini(uid, prompt), timeout=25.0)
+                text = ai_resp or f"🌲 <b>{cmd}</b>\n\nОтличная загородная локация для отдыха! Задайте любой вопрос, и я подробно отвечу."
+            except Exception as ex:
+                logger.warning(f"Gemini fallback: {ex}")
+                text = f"🌲 <b>{cmd}</b>\n\nОтличная загородная локация для отдыха! Задайте любой вопрос, и я подробно отвечу."
+        else:
+            prompt = f"Пользователь нажал кнопку: «{cmd}». Дай краткий, полезный и дружелюбный ответ в Telegram, активируя этот модуль."
+            try:
+                from core.gemini import ask_gemini
+                ai_resp = await asyncio.wait_for(ask_gemini(uid, prompt), timeout=20.0)
+                text = ai_resp or f"Режим <b>{cmd}</b> активирован!"
+            except Exception as ex:
+                text = f"Режим <b>{cmd}</b> активирован! Чем могу помочь?"
+
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": uid,
+            "text": text,
+            "parse_mode": "HTML"
+        }
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                ok = resp.status == 200
+                return {"success": ok}
+    except Exception as e:
+        logger.error(f"Dispatch command exception: {e}")
+        return {"success": False, "error": str(e)}
+

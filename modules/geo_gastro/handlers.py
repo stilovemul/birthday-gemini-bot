@@ -1,5 +1,6 @@
 import html
 import logging
+import urllib.parse
 from aiogram import Router, types, F
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import Command
@@ -18,52 +19,49 @@ logger = logging.getLogger("GeoGastroHandlers")
 router = Router(name="geo_gastro")
 
 
-def get_gastro_qa_keyboard() -> InlineKeyboardMarkup:
+def get_gastro_qa_keyboard(url_2gis: str = None) -> InlineKeyboardMarkup:
     """Inline keyboard shown under gastro concierge answers for continuous dialogue or quick actions."""
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🔄 Другие заведения рядом (Ещё)", callback_data="gg_more")
-            ],
-            [
-                InlineKeyboardButton(text="🥩 Стейки", callback_data="gg_preset_meat"),
-                InlineKeyboardButton(text="🍸 Спикизи-Бары", callback_data="gg_preset_speakeasy")
-            ],
-            [
-                InlineKeyboardButton(text="🍕 Итальянские", callback_data="gg_preset_italian"),
-                InlineKeyboardButton(text="🍜 Азиатские", callback_data="gg_preset_asian")
-            ],
-            [
-                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-            ]
-        ]
-    )
+    buttons = []
+    if url_2gis:
+        buttons.append([InlineKeyboardButton(text="🗺 Смотреть все заведения в 2ГИС (Карта) ↗", url=url_2gis)])
+    
+    buttons.extend([
+        [InlineKeyboardButton(text="🔄 Другие заведения рядом (Ещё)", callback_data="gg_more")],
+        [
+            InlineKeyboardButton(text="🍕 Пиццерии у дома", callback_data="gg_preset_pizza"),
+            InlineKeyboardButton(text="🥩 Стейки & Мясо", callback_data="gg_preset_meat")
+        ],
+        [
+            InlineKeyboardButton(text="☕️ Кофе & Выпечка", callback_data="gg_preset_coffee"),
+            InlineKeyboardButton(text="🍸 Спикизи-Бары", callback_data="gg_preset_speakeasy")
+        ],
+        [InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")]
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-
-def get_gastro_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🔄 Другие заведения рядом (Ещё)", callback_data="gg_more")
-            ],
-            [
-                InlineKeyboardButton(text="🥩 Стейки & Мясо", callback_data="gg_preset_meat"),
-                InlineKeyboardButton(text="🍸 Секретные Спикизи", callback_data="gg_preset_speakeasy")
-            ],
-            [
-                InlineKeyboardButton(text="🍕 Итальянские & Пицца", callback_data="gg_preset_italian"),
-                InlineKeyboardButton(text="🍜 Азиатские & Рамен", callback_data="gg_preset_asian")
-            ],
-            [
-                InlineKeyboardButton(text="☕️ Кофе & Завтраки", callback_data="gg_preset_coffee"),
-                InlineKeyboardButton(text="🏙 Новосибирск", callback_data="gg_preset_nsk")
-            ],
-            [
-                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-            ]
-        ]
-    )
+def get_gastro_keyboard(url_2gis: str = None) -> InlineKeyboardMarkup:
+    buttons = []
+    if url_2gis:
+        buttons.append([InlineKeyboardButton(text="🗺 Открыть всю подборку в 2ГИС (Живая карта) ↗", url=url_2gis)])
+    
+    buttons.extend([
+        [InlineKeyboardButton(text="🔄 Другие заведения рядом (Ещё)", callback_data="gg_more")],
+        [
+            InlineKeyboardButton(text="🍕 Пиццерии у дома", callback_data="gg_preset_pizza"),
+            InlineKeyboardButton(text="🥩 Стейки & Мясо", callback_data="gg_preset_meat")
+        ],
+        [
+            InlineKeyboardButton(text="☕️ Кофе & Завтраки", callback_data="gg_preset_coffee"),
+            InlineKeyboardButton(text="🍸 Секретные Спикизи", callback_data="gg_preset_speakeasy")
+        ],
+        [
+            InlineKeyboardButton(text="🍝 Итальянские & Паста", callback_data="gg_preset_italian"),
+            InlineKeyboardButton(text="🍜 Азиатские & Рамен", callback_data="gg_preset_asian")
+        ],
+        [InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")]
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 def get_gastro_gps_keyboard() -> ReplyKeyboardMarkup:
@@ -87,15 +85,15 @@ def get_gastro_gps_keyboard() -> ReplyKeyboardMarkup:
 async def cmd_geo_gastro(message: types.Message, state: FSMContext):
     await state.set_state(ActiveModeStates.geo_gastro_mode)
     text = (
-        "📍 <b>Гастро-Локатор & Ресторанный Сомелье:</b>\n\n"
-        "Я нахожу заведения, куда <b>реально стоит сходить</b> — с честным средним чеком, коронными блюдами и секретными фишками!\n\n"
+        "📍 <b>Гастро-Локатор & Поиск 2ГИС:</b>\n\n"
+        "Я нахожу реальные заведения и пиццерии по справочнику <b>2ГИС</b> и Яндекс.Картам прямо у вашего дома или по любому адресу!\n\n"
         "💡 <b>Варианты поиска:</b>\n"
-        "1. 📍 <b>Отправьте геопозицию</b> (кнопка ниже или скрепка 📎) — найду топ-заведения в радиусе 1–2 км от вас прямо сейчас!\n"
-        "2. ✍️ <b>Напишите город / район / кухню:</b> <i>«Я в Новосибирске на Ленина»</i>, <i>«Где поесть стейки в Петроградке»</i>, <i>«Вкусная пицца в центре СПб»</i>.\n"
-        "3. 🍸 <b>Нажмите кнопку «Секретные Спикизи»</b> для подбора баров с тайными входами и авторскими коктейлями!"
+        "1. 📍 <b>Отправьте геопозицию</b> — мгновенно найду проверенные заведения в радиусе 100–500 м от вас!\n"
+        "2. ✍️ <b>Напишите точный адрес или кухню:</b> <i>«Арцеуловская аллея 9 пицца»</i>, <i>«Пиццерия возле дома»</i>, <i>«Комендантский 64»</i>, <i>«Стейки на Петроградке»</i>.\n"
+        "3. 🍕 <b>Нажмите кнопки категорий ниже</b> для моментального подбора лучших мест с живой ссылкой на карту 2ГИС!"
     )
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_gastro_gps_keyboard())
-    await message.answer("👇 <b>Категории и быстрый поиск:</b>", parse_mode=ParseMode.HTML, reply_markup=get_gastro_keyboard())
+    await message.answer("👇 <b>Быстрый выбор категорий:</b>", parse_mode=ParseMode.HTML, reply_markup=get_gastro_keyboard())
 
 
 @router.callback_query(F.data.startswith("gg_preset_"))
@@ -105,6 +103,7 @@ async def cb_gastro_preset(callback: types.CallbackQuery, state: FSMContext):
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     presets = {
+        "pizza": ("Пиццерии у дома, римская и крафтовая пицца 2ГИС", False, "pizza"),
         "meat": ("Топ мясных ресторанов со смокером и стейками", False, "meat"),
         "speakeasy": ("Секретные спикизи бары с тайным входом и авторскими коктейлями", True, "speakeasy"),
         "italian": ("Лучшая неаполитанская пицца и паста ручной работы", False, "italian"),
@@ -112,8 +111,8 @@ async def cb_gastro_preset(callback: types.CallbackQuery, state: FSMContext):
         "coffee": ("Спешелти кофейни с фильтр-кофе и сытными завтраками весь день", False, "coffee"),
         "nsk": ("Легендарные рестораны и бары Новосибирска (ул. Ленина, Красный проспект)", False, "nsk")
     }
-    query, is_speak, cat = presets.get(preset, ("Лучшие рестораны", False, "all"))
-    await callback.answer("Подбираю заведения...")
+    query, is_speak, cat = presets.get(preset, ("Лучшие заведения", False, "all"))
+    await callback.answer("Подбираю заведения в 2ГИС...")
     res = await find_places(callback.from_user.id, query, is_speakeasy=is_speak, category=cat)
     await render_gastro_results(callback.message, res)
 
@@ -154,7 +153,7 @@ async def handle_gastro_gps(message: types.Message, state: FSMContext):
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     status_msg = await message.answer(
         "📍 <b>Геопозиция определена!</b> 🛰️✨\n"
-        "🔍 <i>Сканирую гастрономическую карту и подбираю топ-заведения в радиусе 1–2 км от вас...</i>",
+        "🔍 <i>Сканирую справочник 2ГИС и подбираю топ-заведения в шаговой доступности от вас...</i>",
         parse_mode=ParseMode.HTML
     )
     
@@ -196,15 +195,26 @@ async def handle_gastro_text(message: types.Message, state: FSMContext):
 
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
 
-    # 1. Проверяем, задает ли пользователь вопрос по текущей подборке заведений (интерактивный диалог)
-    is_followup, ans_or_query = await process_gastro_conversation(message.from_user.id, raw_text)
-    if is_followup and ans_or_query:
-        await message.answer(ans_or_query, parse_mode=ParseMode.HTML, reply_markup=get_gastro_qa_keyboard())
-        return
+    # Проверяем, является ли запрос прямым поиском адреса или кухни
+    search_keywords = [
+        "пицц", "суши", "бургер", "стейк", "кофе", "бар", "ресторан", "кафе", "пекарн",
+        "аллея", "улиц", "ул.", "ул ", "пр.", "пр ", "проспект", "дом", "д.", "чистое небо",
+        "арцеулов", "комендантск", "каменк", "возле дома", "у дома", "рядом"
+    ]
+    is_direct_search = any(w in t_lower for w in search_keywords)
 
-    # 2. Иначе это новый поисковый запрос (другая кухня или район)
-    search_query = ans_or_query or raw_text
-    is_speak = "спикизи" in search_query.lower() or "бар" in search_query.lower() or "коктейл" in search_query.lower()
+    if not is_direct_search:
+        # Проверяем интерактивный консьерж-диалог (вопросы по текущей подборке)
+        is_followup, ans_or_query = await process_gastro_conversation(message.from_user.id, raw_text)
+        if is_followup and ans_or_query:
+            ctx = get_user_gastro_context(message.from_user.id)
+            await message.answer(ans_or_query, parse_mode=ParseMode.HTML, reply_markup=get_gastro_qa_keyboard(ctx.get("last_2gis_url")))
+            return
+        search_query = ans_or_query or raw_text
+    else:
+        search_query = raw_text
+
+    is_speak = "спикизи" in search_query.lower() or "коктейл" in search_query.lower()
     cat = "speakeasy" if is_speak else "all"
     res = await find_places(message.from_user.id, search_query, is_speakeasy=is_speak, category=cat)
     await render_gastro_results(message, res)
@@ -231,26 +241,35 @@ async def handle_gastro_voice(message: types.Message, state: FSMContext):
 
     await message.answer(f"🎙 <b>Вы спросили:</b> <i>«{html.escape(transcribed)}»</i>", parse_mode=ParseMode.HTML)
     
-    # Передаем транскрибированный текст в консьерж-диалог
-    is_followup, ans_or_query = await process_gastro_conversation(message.from_user.id, transcribed)
-    if is_followup and ans_or_query:
-        await message.answer(ans_or_query, parse_mode=ParseMode.HTML, reply_markup=get_gastro_qa_keyboard())
-        return
+    t_lower = transcribed.lower()
+    search_keywords = [
+        "пицц", "суши", "бургер", "стейк", "кофе", "бар", "ресторан", "кафе",
+        "аллея", "улиц", "ул.", "пр.", "проспект", "дом", "чистое небо",
+        "арцеулов", "комендантск", "каменк", "возле дома", "у дома", "рядом"
+    ]
+    if not any(w in t_lower for w in search_keywords):
+        is_followup, ans_or_query = await process_gastro_conversation(message.from_user.id, transcribed)
+        if is_followup and ans_or_query:
+            ctx = get_user_gastro_context(message.from_user.id)
+            await message.answer(ans_or_query, parse_mode=ParseMode.HTML, reply_markup=get_gastro_qa_keyboard(ctx.get("last_2gis_url")))
+            return
+        search_query = ans_or_query or transcribed
+    else:
+        search_query = transcribed
 
-    search_query = ans_or_query or transcribed
-    is_speak = "спикизи" in search_query.lower() or "бар" in search_query.lower() or "коктейл" in search_query.lower()
+    is_speak = "спикизи" in search_query.lower() or "коктейл" in search_query.lower()
     cat = "speakeasy" if is_speak else "all"
     res = await find_places(message.from_user.id, search_query, is_speakeasy=is_speak, category=cat)
     await render_gastro_results(message, res)
 
 
 async def render_gastro_results(message: types.Message, res: dict):
-    summary = html.escape(str(res.get("search_summary", "Подборка заведений")))
+    summary = html.escape(str(res.get("search_summary", "Подборка заведений 2ГИС")))
     places = res.get("places", [])
     tip = html.escape(str(res.get("sommelier_tip", "")))
     human_loc = html.escape(str(res.get("human_location", "")))
+    url_2gis = res.get("2gis_search_url", "")
 
-    # Сохраняем подборку в память для интерактивного диалога и вопросов
     user_id = message.chat.id
     save_last_gastro_recommendations(user_id, places, summary=summary, tip=tip)
 
@@ -264,37 +283,40 @@ async def render_gastro_results(message: types.Message, res: dict):
     for idx, p in enumerate(places, 1):
         name = html.escape(str(p.get("name", "Заведение")))
         p_type = html.escape(str(p.get("type", "")))
-        rating = html.escape(str(p.get("rating", "⭐️ 4.8")))
+        rating = html.escape(str(p.get("rating", "⭐️ 4.8 (2ГИС)")))
         bill = html.escape(str(p.get("avg_bill", "")))
         distance = html.escape(str(p.get("distance", "")))
         dishes = html.escape(str(p.get("signature_dishes", "")))
         vibe = html.escape(str(p.get("vibe_description", "")))
         addr = html.escape(str(p.get("address", "")))
-        map_url = p.get("map_url", "")
+        map_2gis = p.get("map_2gis_url", "")
+        map_yandex = p.get("map_yandex_url", "")
 
         dist_str = f" | 🚶‍♂️ <i>{distance}</i>" if distance else ""
-        if map_url:
-            addr_line = f"📍 <b>Адрес:</b> <a href=\"{map_url}\"><code>{addr}</code> ↗</a>"
-        else:
-            addr_line = f"📍 <b>Адрес:</b> <code>{addr}</code>"
+        links = []
+        if map_2gis:
+            links.append(f'<a href="{map_2gis}">🗺 2ГИС ↗</a>')
+        if map_yandex:
+            links.append(f'<a href="{map_yandex}">📍 Яндекс ↗</a>')
+        links_str = f"  ({ ' | '.join(links) })" if links else ""
+        addr_line = f"   📍 <b>Адрес:</b> <code>{addr}</code>{links_str}"
 
         lines.append(
             f"<b>{idx}. 🍷 {name}</b> <i>({p_type})</i>\n"
             f"   ⭐️ <b>Рейтинг:</b> {rating} | 💰 <b>Чек:</b> {bill}{dist_str}\n"
             f"   🥩 <b>Коронные блюда:</b> <i>{dishes}</i>\n"
-            f"   ✨ <b>Вайб & Секреты:</b> {vibe}\n"
-            f"   {addr_line}\n"
+            f"   ✨ <b>Вайб & Особенности:</b> {vibe}\n"
+            f"{addr_line}\n"
         )
 
     if tip:
-        lines.append(f"💡 <b>Совет сомелье:</b>\n<i>{tip}</i>\n")
+        lines.append(f"💡 <b>Совет эксперта:</b>\n<i>{tip}</i>\n")
 
-    lines.append("💬 <i>Вы можете задать любой вопрос о заведениях (меню, бронь, вино, дети, парковка) или назвать новую локацию!</i>")
+    lines.append("💬 <i>Назовите блюдо, точный адрес (дом, улицу) или нажмите кнопку ниже, чтобы открыть живую карту 2ГИС со всеми заведениями!</i>")
 
     await message.answer(
         "\n".join(lines),
         parse_mode=ParseMode.HTML,
-        reply_markup=get_gastro_keyboard(),
+        reply_markup=get_gastro_keyboard(url_2gis=url_2gis),
         disable_web_page_preview=True
     )
-

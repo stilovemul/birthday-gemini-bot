@@ -11,20 +11,18 @@ WEBAPP_URL = "https://birthday-gemini-bot.onrender.com/app"
 MAIN_MENU_BUTTONS = [
     "📱 Открыть Дашборд (App)",
     "🏠 Дом", "🌅 Дайджест", "🤖 Gemini AI", "🎨 Фото",
-    "📬 Входящие", "🥗 КБЖУ", "🌤 Погода", "😴 Сон",
-    "🔢 Кредиты", "🔐 Сейф", "⏰ Напоминания", "🎂 Дни рожд.",
-    "📝 Заметки", "💳 Подписки", "🧩 Правила", "🍽 Еда",
-    "🎁 Промо & PS", "🚗 Авто-Юрист", "🔬 Ресерч", "📵 Антиспам",
-    "🎬 Кино", "✨ Промпты", "✍️ Текст AI", "🛡 Манипуляции",
-    "💬 Знакомства", "🧠 Мышление", "🕵️‍♂️ Тайный СПб", "🌲 Выходные",
-    "📍 Рестораны", "🏕 Загород", "🎁 Подарки", "📚 Книги",
-    "🎧 Музыка", "📸 Фото-Споты", "🎙 Собеседование", "🛡 Авто-Щит",
-    "👨‍🍳 Шеф-Ужин", "❓ Справка"
+    "📬 Входящие", "🌤 Погода", "😴 Сон", "🔐 Сейф",
+    "⏰ Напоминания", "🎂 Дни рожд.", "📝 Заметки", "💳 Подписки",
+    "🧩 Правила", "🍽 Еда", "🎁 Промо & PS", "📵 Антиспам",
+    "🎬 Кино", "✨ Промпты", "✍️ Текст AI", "💬 Знакомства",
+    "🕵️‍♂️ Тайный СПб", "🌲 Выходные", "📍 Рестораны", "🏕 Загород",
+    "🎁 Подарки", "🎧 Музыка", "📸 Фото-Споты", "🛡 Авто-Щит",
+    "👨‍🍳 Шеф-Ужин"
 ]
 
 
 def get_main_menu() -> ReplyKeyboardMarkup:
-    """Returns ultra-compact 4-column multi-functional keyboard."""
+    """Returns ultra-compact 4-column multi-functional keyboard without items moved exclusively to Dashboard."""
     kb = [
         [
             KeyboardButton(text="📱 Открыть Дашборд (App)", web_app=WebAppInfo(url=WEBAPP_URL))
@@ -37,55 +35,42 @@ def get_main_menu() -> ReplyKeyboardMarkup:
         ],
         [
             KeyboardButton(text="📬 Входящие"),
-            KeyboardButton(text="🥗 КБЖУ"),
             KeyboardButton(text="🌤 Погода"),
-            KeyboardButton(text="😴 Сон")
+            KeyboardButton(text="😴 Сон"),
+            KeyboardButton(text="🔐 Сейф")
         ],
         [
-            KeyboardButton(text="🔢 Кредиты"),
-            KeyboardButton(text="🔐 Сейф"),
             KeyboardButton(text="⏰ Напоминания"),
-            KeyboardButton(text="🎂 Дни рожд.")
-        ],
-        [
+            KeyboardButton(text="🎂 Дни рожд."),
             KeyboardButton(text="📝 Заметки"),
-            KeyboardButton(text="💳 Подписки"),
-            KeyboardButton(text="🧩 Правила"),
-            KeyboardButton(text="🍽 Еда")
+            KeyboardButton(text="💳 Подписки")
         ],
         [
+            KeyboardButton(text="🧩 Правила"),
+            KeyboardButton(text="🍽 Еда"),
             KeyboardButton(text="🎁 Промо & PS"),
-            KeyboardButton(text="🚗 Авто-Юрист"),
-            KeyboardButton(text="🔬 Ресерч"),
             KeyboardButton(text="📵 Антиспам")
         ],
         [
             KeyboardButton(text="🎬 Кино"),
             KeyboardButton(text="✨ Промпты"),
             KeyboardButton(text="✍️ Текст AI"),
-            KeyboardButton(text="🛡 Манипуляции")
+            KeyboardButton(text="💬 Знакомства")
         ],
         [
-            KeyboardButton(text="💬 Знакомства"),
-            KeyboardButton(text="🧠 Мышление"),
             KeyboardButton(text="🕵️‍♂️ Тайный СПб"),
-            KeyboardButton(text="🌲 Выходные")
-        ],
-        [
+            KeyboardButton(text="🌲 Выходные"),
             KeyboardButton(text="📍 Рестораны"),
-            KeyboardButton(text="🏕 Загород"),
-            KeyboardButton(text="🎁 Подарки"),
-            KeyboardButton(text="📚 Книги")
+            KeyboardButton(text="🏕 Загород")
         ],
         [
+            KeyboardButton(text="🎁 Подарки"),
             KeyboardButton(text="🎧 Музыка"),
             KeyboardButton(text="📸 Фото-Споты"),
-            KeyboardButton(text="🎙 Собеседование"),
             KeyboardButton(text="🛡 Авто-Щит")
         ],
         [
-            KeyboardButton(text="👨‍🍳 Шеф-Ужин"),
-            KeyboardButton(text="❓ Справка")
+            KeyboardButton(text="👨‍🍳 Шеф-Ужин")
         ]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, is_persistent=False)
