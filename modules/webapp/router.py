@@ -430,7 +430,15 @@ async def api_calc_loan(req: LoanCalcRequest):
 @router.get("/app", response_class=HTMLResponse)
 async def serve_mini_app():
     from modules.webapp.dashboard_html import TMA_DASHBOARD_HTML
-    return HTMLResponse(content=TMA_DASHBOARD_HTML)
+    return HTMLResponse(
+        content=TMA_DASHBOARD_HTML,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    )
+
 
 
 class SubAddRequest(BaseModel):
