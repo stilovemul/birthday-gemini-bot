@@ -195,6 +195,16 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
       <div style="font-size:11px;color:#64748b;margin-top:4px;">Загружаем данные...</div>
     </div>
   </div>
+  <script>
+    setTimeout(function() {
+      var ls = document.getElementById('loading-screen');
+      if (ls) {
+        ls.style.transition = 'opacity 0.35s ease';
+        ls.style.opacity = '0';
+        setTimeout(function() { if (ls && ls.parentNode) ls.parentNode.removeChild(ls); }, 380);
+      }
+    }, 1500);
+  </script>
 
   <!-- TOP HEADER -->
   <header style="position:sticky;top:0;z-index:40;width:100%;max-width:512px;margin:0 auto;padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;" class="glass" id="main-header">
@@ -1119,6 +1129,14 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
       window.location.href = 'https://t.me/MyAiGem_bot';
     }
 
+    function safeCreateIcons() {
+      try {
+        if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        }
+      } catch (e) {}
+    }
+
     function switchTab(tabId) {
       haptic('light');
       // Hide all sections
@@ -1135,8 +1153,8 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
       if (targetTab) targetTab.style.display = 'flex';
       if (targetBtn) targetBtn.classList.add('active');
 
-      // Re-init lucide icons only if library loaded
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+      // Re-init lucide icons safely
+      safeCreateIcons();
     }
 
 
@@ -1158,7 +1176,7 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
         bLoan.className = 'flex-1 py-1.5 rounded-lg font-bold transition-all text-slate-400';
         bSubs.className = 'flex-1 py-1.5 rounded-lg font-bold transition-all bg-indigo-500 text-white';
       }
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     function switchHealthSubTab(sub) {
@@ -1180,7 +1198,7 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
         bSleep.className = 'flex-1 py-1.5 rounded-lg font-bold transition-all bg-indigo-500 text-white';
         runSleepCalc();
       }
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     function toggleAccordion(id) {
@@ -1200,7 +1218,7 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
         m.classList.remove('hidden');
         m.classList.add('flex');
       }
-      lucide.createIcons();
+      safeCreateIcons();
     }
     function closeModal(id) {
       haptic('light');
@@ -1213,7 +1231,7 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
 
     function renderCleanTelegramHtml(raw) {
       if (!raw) return 'Сводка погоды формируется...';
-      return raw.trim().replace(/\n/g, '<br>');
+      return raw.trim().split(String.fromCharCode(10)).join('<br>');
     }
 
     let currentData = null;
@@ -1447,7 +1465,7 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
 
       renderSubscriptionsAndRules(data.subscriptions, data.custom_rules);
       renderCountryFeatured(data.country_featured);
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     function renderCountryFeatured(featuredList) {
@@ -1492,7 +1510,7 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
         `;
       });
       container.innerHTML = html;
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     function setBdayFilter(filter) {
@@ -1556,7 +1574,7 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
       } else {
         bListEl.innerHTML = '<div class="text-xs text-slate-400 text-center py-4">Дней рождения по запросу не найдено</div>';
       }
-      lucide.createIcons();
+      safeCreateIcons();
     }
 
     function renderSubscriptionsAndRules(subsData, rulesData) {
@@ -1952,7 +1970,7 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    function initApp() {
       // 1. Init section visibility — show only first tab IMMEDIATELY
       document.querySelectorAll('.tab-content').forEach((el, i) => {
         el.style.display = (i === 0) ? 'flex' : 'none';
@@ -1960,17 +1978,16 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
         el.style.gap = '12px';
       });
 
-      // 2. HIDE LOADING SCREEN after 2 seconds MAX — never block the UI
+      // 2. HIDE LOADING SCREEN after 1.5 seconds MAX — never block the UI
       function hideLoadingScreen() {
         const ls = document.getElementById('loading-screen');
         if (ls) {
           ls.style.transition = 'opacity 0.35s ease';
           ls.style.opacity = '0';
-          setTimeout(() => { if (ls.parentNode) ls.parentNode.removeChild(ls); }, 380);
+          setTimeout(() => { if (ls && ls.parentNode) ls.parentNode.removeChild(ls); }, 380);
         }
       }
-      // Guaranteed removal after 2 seconds
-      const loadingTimeout = setTimeout(hideLoadingScreen, 2000);
+      const loadingTimeout = setTimeout(hideLoadingScreen, 1500);
 
       // 3. Activate Telegram WebApp
       if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
@@ -1979,9 +1996,8 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
 
       // 4. Init Lucide icons (with retry)
       function initIcons() {
-        if (typeof lucide !== 'undefined') {
-          lucide.createIcons();
-        } else {
+        safeCreateIcons();
+        if (typeof lucide === 'undefined') {
           setTimeout(initIcons, 300);
         }
       }
@@ -2002,7 +2018,13 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
 
       // 7. Auto-refresh every 30 seconds
       setInterval(() => fetchDashboardData(false), 30000);
-    });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
 
   </script>
 </body>
