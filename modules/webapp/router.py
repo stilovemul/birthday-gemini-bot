@@ -599,6 +599,27 @@ async def api_dispatch_command(req: DispatchCommandRequest):
                     [{"text": "🚀 Начать собеседование", "callback_data": "mode_start_interview"}]
                 ]
             }
+        elif "музык" in lower or "music" in lower:
+            try:
+                from app import bot as ai_bot, dp as ai_dp
+                from core.states import ActiveModeStates
+                ctx = ai_dp.fsm.get_context(bot=ai_bot, chat_id=uid, user_id=uid)
+                await ctx.set_state(ActiveModeStates.music_sommelier_mode)
+            except Exception as fsm_err:
+                logger.warning(f"Error setting music FSM: {fsm_err}")
+
+            from modules.music_sommelier.handlers import get_music_keyboard
+            text = (
+                "🎧 <b>Музыкальный Сомелье & Непрерывные плейлисты под вайб:</b>\n\n"
+                "Я подбираю официальные плейлисты Яндекс.Музыки с <b>автоматическим переключением треков (Non-stop)</b> — вы включаете музыку один раз, и она играет без остановок весь рабочий день или поездку!\n\n"
+                "✨ <b>Как это работает:</b>\n"
+                "• Выберите готовый сет кнопками ниже или отправьте цифру (1, 2, 3, 4).\n"
+                "• Или просто напишите любое занятие: <i>«уборка дома»</i>, <i>«пробежка»</i>, <i>«в дорогу»</i>.\n"
+                "• Нажатие на большую кнопку запускает непрерывное воспроизведение десятков треков подряд.\n\n"
+                "👇 <b>Выберите готовый сет или напишите пожелания:</b>"
+            )
+            kb = get_music_keyboard("https://music.yandex.ru/users/music-blog/playlists/2620", 234)
+            reply_markup = kb.model_dump(exclude_none=True)
         elif "книг" in lower or "/books" in lower or "book" in lower:
             text = (
                 "📚 <b>Книжный сомелье (15-мин выжимки)</b>\n\n"

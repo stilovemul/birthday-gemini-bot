@@ -103,8 +103,22 @@ async def handle_music_text(message: types.Message, state: FSMContext):
             )
         return
 
+    # Check for numeric shortcuts (1, 2, 3, 4)
+    numeric_map = {
+        "1": ("drive", "Ночной прострел по ЗСД и КАД: плотный Synthwave, саундтреки Гая Ричи и Dark Disco"),
+        "2": ("focus", "Глубокая концентрация и рабочий фокус: Lo-Fi beats, Ambient и чистый инструментал"),
+        "3": ("gym", "Взрывная энергия для силовой тренировки: бодрый Hip-Hop, Rock и Phonk"),
+        "4": ("bbq", "Атмосферный день на даче у мангала: винтажный блюз-рок, фанк, инди и соул")
+    }
+    cleaned = raw_text.rstrip(".)").strip()
+    preset_key = None
+    if cleaned in numeric_map:
+        preset_key, query = numeric_map[cleaned]
+    else:
+        query = raw_text
+
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    res = await generate_music_playlist(message.from_user.id, raw_text)
+    res = await generate_music_playlist(message.from_user.id, query, preset_key=preset_key)
     await render_music_results(message, res)
 
 
