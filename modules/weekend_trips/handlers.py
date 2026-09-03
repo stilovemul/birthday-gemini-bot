@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import html
 import logging
 from aiogram import Router, types, F
@@ -21,7 +22,7 @@ def get_weekend_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="👶 Куда с ребенком (по возрасту)", callback_data="wt_kids_menu"),
+                InlineKeyboardButton(text="👶 С малышом (1–3 года)", callback_data="wt_kids_menu"),
                 InlineKeyboardButton(text="🚗 Авто-Роадтрип на 1-2 дня", callback_data="wt_roadtrip")
             ],
             [
@@ -36,27 +37,23 @@ def get_weekend_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_kids_menu_keyboard() -> InlineKeyboardMarkup:
-    """Интерактивное меню выбора детских развлечений по возрасту и категориям."""
+    """Интерактивное меню развлечений строго для ребенка возрастом 1–3 года (малыша / тоддлера)."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="👶 1–3 года (Малыши)", callback_data="wt_kid_age_1-3"),
-                InlineKeyboardButton(text="🧒 4–6 лет (Дошкольники)", callback_data="wt_kid_age_4-6")
+                InlineKeyboardButton(text="🧸 Мягкие тоддлер-зоны (0–3)", callback_data="wt_kid_cat_play"),
+                InlineKeyboardButton(text="🎭 Бэби-театры (1–3 года)", callback_data="wt_kid_cat_theater")
             ],
             [
-                InlineKeyboardButton(text="👦 7–10 лет (Школьники)", callback_data="wt_kid_age_7-10"),
-                InlineKeyboardButton(text="🧑 11–14+ лет (Подростки)", callback_data="wt_kid_age_11-14")
+                InlineKeyboardButton(text="🐑 Альпаки & Животные", callback_data="wt_kid_cat_zoo"),
+                InlineKeyboardButton(text="🐠 Океанариум & Рыбки", callback_data="wt_kid_cat_ocean")
             ],
             [
-                InlineKeyboardButton(text="🐠 Океанариум & Зоопарки", callback_data="wt_kid_cat_zoo"),
-                InlineKeyboardButton(text="🌊 Аквапарки & Бассейны", callback_data="wt_kid_cat_aqua")
+                InlineKeyboardButton(text="💦 Тёплый бэби-бассейн", callback_data="wt_kid_cat_aqua"),
+                InlineKeyboardButton(text="🌳 Парки под коляску", callback_data="wt_kid_cat_park")
             ],
             [
-                InlineKeyboardButton(text="🏰 Игровые парки (Joki, КидБург)", callback_data="wt_kid_cat_play"),
-                InlineKeyboardButton(text="🔬 Наука & Музеи (Гранд Макет)", callback_data="wt_kid_cat_science")
-            ],
-            [
-                InlineKeyboardButton(text="🎲 Топ детское место сейчас", callback_data="wt_kid_random")
+                InlineKeyboardButton(text="🎲 Топ-место для малыша 1–3 г", callback_data="wt_kid_random")
             ],
             [
                 InlineKeyboardButton(text="🌲 К загородным маршрутам", callback_data="wt_to_routes"),
@@ -74,7 +71,7 @@ def get_plan_result_keyboard(mode_type: str = "general") -> InlineKeyboardMarkup
                 InlineKeyboardButton(text="🔄 Другой маршрут (Ещё)", callback_data=f"wt_another_{mode_type}")
             ],
             [
-                InlineKeyboardButton(text="👶 Развлечения с детьми", callback_data="wt_kids_menu"),
+                InlineKeyboardButton(text="👶 С малышом 1–3 года", callback_data="wt_kids_menu"),
                 InlineKeyboardButton(text="🚗 Роадтрип", callback_data="wt_roadtrip")
             ],
             [
@@ -88,24 +85,24 @@ def get_plan_result_keyboard(mode_type: str = "general") -> InlineKeyboardMarkup
     )
 
 
-def get_kid_result_keyboard(age_group: str = "all", category: str = "all") -> InlineKeyboardMarkup:
-    """Клавиатура под карточкой детского развлечения."""
+def get_kid_result_keyboard(category: str = "all") -> InlineKeyboardMarkup:
+    """Клавиатура под карточкой детского развлечения (строго для малыша 1–3 года)."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="🔄 Другое развлечение (Ещё)", callback_data=f"wt_kid_more_{age_group}_{category}")
+                InlineKeyboardButton(text="🔄 Другой вариант для малыша (Ещё)", callback_data=f"wt_kid_more_1-3_{category}")
             ],
             [
-                InlineKeyboardButton(text="👶 1–3 г", callback_data="wt_kid_age_1-3"),
-                InlineKeyboardButton(text="🧒 4–6 лет", callback_data="wt_kid_age_4-6"),
-                InlineKeyboardButton(text="👦 7–10 л", callback_data="wt_kid_age_7-10"),
-                InlineKeyboardButton(text="🧑 11–14+", callback_data="wt_kid_age_11-14")
+                InlineKeyboardButton(text="🧸 Тоддлер-зоны", callback_data="wt_kid_cat_play"),
+                InlineKeyboardButton(text="🎭 Бэби-театры", callback_data="wt_kid_cat_theater")
             ],
             [
-                InlineKeyboardButton(text="🐠 Зоопарки", callback_data="wt_kid_cat_zoo"),
-                InlineKeyboardButton(text="🌊 Аквапарки", callback_data="wt_kid_cat_aqua"),
-                InlineKeyboardButton(text="🏰 Игровые", callback_data="wt_kid_cat_play"),
-                InlineKeyboardButton(text="🔬 Музеи", callback_data="wt_kid_cat_science")
+                InlineKeyboardButton(text="🐑 Альпаки & Фермы", callback_data="wt_kid_cat_zoo"),
+                InlineKeyboardButton(text="🐠 Океанариум", callback_data="wt_kid_cat_ocean")
+            ],
+            [
+                InlineKeyboardButton(text="💦 Тёплый бассейн", callback_data="wt_kid_cat_aqua"),
+                InlineKeyboardButton(text="🌳 С коляской в парк", callback_data="wt_kid_cat_park")
             ],
             [
                 InlineKeyboardButton(text="🌲 Загородные маршруты", callback_data="wt_to_routes"),
@@ -121,11 +118,12 @@ def get_kid_result_keyboard(age_group: str = "all", category: str = "all") -> In
 async def cmd_weekend_trips(message: types.Message, state: FSMContext):
     await state.set_state(ActiveModeStates.weekend_planner_mode)
     text = (
-        "🌲 <b>Сценарист выходных, Отдых с детьми & Авто-Роадтрипы:</b>\n\n"
+        "🌲 <b>Сценарист выходных, Отдых с малышом 1–3 года & Авто-Роадтрипы:</b>\n\n"
         "Я составляю готовые сценарии отдыха под ключ с маршрутами, ценами, АЗС и детской инфраструктурой!\n\n"
         "💡 <b>Примеры запросов:</b>\n"
-        "• <i>«Куда поехать с сыном 5 лет на полдня?»</i>\n"
-        "• <i>«Аквапарк или зоопарк в СПб для ребенка 4 года»</i>\n"
+        "• <i>«Куда поехать с малышом 1.5–2 года на пару часов?»</i>\n"
+        "• <i>«Тёплый бассейн или бэби-театр на подушках для ребенка 2 года»</i>\n"
+        "• <i>«Парк с идеальной экотропой под детскую коляску в Курортном районе»</i>\n"
         "• <i>«Маршрут на машине в Карелию на 2 дня с красивыми видами»</i>\n"
         "• <i>«Что интересного проходит в эти выходные в СПб?»</i>\n\n"
         "💬 <i>Напишите ваш запрос или выберите кнопку:</i>"
@@ -145,60 +143,72 @@ async def cb_weekend_category(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.answer("🌲 <b>Загородные маршруты и роадтрипы:</b>", parse_mode=ParseMode.HTML, reply_markup=get_weekend_keyboard())
         return
 
-    # 2. Детское меню выбора возраста и категорий
+    # 2. Детское меню для малыша 1–3 года
     if cat in ["kids", "kids_menu"]:
         await callback.answer()
         text = (
-            "👶 <b>Развлечения с детьми в Санкт-Петербурге и Ленобласти:</b>\n\n"
-            "Зоопарки, океанариум, аквапарки, игровые парки (Joki Joya, КидБург, MazaPark), "
-            "интерактивные научные музеи (Гранд Макет, ЛабиринтУм) и цирк под ключ!\n\n"
-            "👇 <b>Выберите возраст ребенка или категорию:</b>"
+            "👶 <b>Развлечения с малышом 1–3 года в Санкт-Петербурге и ЛО:</b>\n\n"
+            "Мягкие тоддлер-зоны 0–3, камерные бэби-театры на подушках, тёплые лягушатники (+32...+34°C), "
+            "пушистые ручные альпаки, океанариум и живописные экотропы под детскую коляску!\n\n"
+            "Все варианты подобраны <b>строго для возраста 1–3 года</b> — с комнатами матери и ребенка, "
+            "пеленальными столиками, детскими стульчиками и удобным заездом с коляской.\n\n"
+            "👇 <b>Выберите категорию для малыша:</b>"
         )
         await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_kids_menu_keyboard())
         return
 
-    # 3. Подбор детского развлечения по возрасту
+    # 3. Подбор детского развлечения по возрасту (всегда 1–3 года)
     if cat.startswith("kid_age_"):
-        age_grp = cat.replace("kid_age_", "")
-        await callback.answer(f"👶 Подбираю развлечения для {age_grp} лет...")
+        await callback.answer("👶 Подбираю варианты для малыша 1–3 года...")
         await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-        set_user_last_trip(callback.from_user.id, f"Детские развлечения для возраста {age_grp}", "kids")
-        res = await plan_kid_entertainment(callback.from_user.id, age_group=age_grp, category="all")
-        await render_kid_entertainment(callback.message, res, age_group=age_grp, category="all")
+        set_user_last_trip(callback.from_user.id, "Развлечения для малыша 1–3 года", "kids")
+        res = await plan_kid_entertainment(callback.from_user.id, age_group="1-3", category="all")
+        await render_kid_entertainment(callback.message, res, category="all")
         return
 
-    # 4. Подбор детского развлечения по категории (zoo, aqua, play, science)
+    # 4. Подбор развлечения для малыша по категории
     if cat.startswith("kid_cat_"):
         c_tag = cat.replace("kid_cat_", "")
-        cat_names = {"zoo": "зоопарк / океанариум", "aqua": "аквапарк", "play": "игровой парк", "science": "интерактивный музей"}
-        await callback.answer(f"🔎 Ищу {cat_names.get(c_tag, 'развлечение')}...")
+        cat_names = {
+            "play": "тоддлер-зону 0–3",
+            "theater": "бэби-театр на подушках",
+            "zoo": "ручных животных и альпак",
+            "ocean": "океанариум и рыбок",
+            "aqua": "тёплый бэби-бассейн",
+            "park": "парк под коляску",
+            "science": "бэби-театр"
+        }
+        if c_tag == "science":
+            c_tag = "theater"
+        await callback.answer(f"🔎 Ищу {cat_names.get(c_tag, 'развлечение для малыша')}...")
         await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-        set_user_last_trip(callback.from_user.id, f"Детские развлечения категории {c_tag}", "kids")
-        res = await plan_kid_entertainment(callback.from_user.id, age_group="all", category=c_tag)
-        await render_kid_entertainment(callback.message, res, age_group="all", category=c_tag)
+        set_user_last_trip(callback.from_user.id, f"Развлечения для малыша 1–3 года: {c_tag}", "kids")
+        res = await plan_kid_entertainment(callback.from_user.id, age_group="1-3", category=c_tag)
+        await render_kid_entertainment(callback.message, res, category=c_tag)
         return
 
-    # 5. Случайное детское место
+    # 5. Случайное топ-место для малыша 1–3 года
     if cat == "kid_random":
-        await callback.answer("🎲 Подбираю топ детское место...")
+        await callback.answer("🎲 Подбираю топ-место для малыша 1–3 года...")
         await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-        set_user_last_trip(callback.from_user.id, "Лучшее детское место в СПб", "kids")
-        res = await plan_kid_entertainment(callback.from_user.id, age_group="all", category="all", is_another=True)
-        await render_kid_entertainment(callback.message, res, age_group="all", category="all")
+        set_user_last_trip(callback.from_user.id, "Лучшее место для малыша 1–3 года в СПб", "kids")
+        res = await plan_kid_entertainment(callback.from_user.id, age_group="1-3", category="all", is_another=True)
+        await render_kid_entertainment(callback.message, res, category="all")
         return
 
-    # 6. Кнопка «Другое детское развлечение (Ещё)»
+    # 6. Кнопка «Другой вариант для малыша (Ещё)»
     if cat.startswith("kid_more_"):
         parts = cat.replace("kid_more_", "").split("_")
-        age_grp = parts[0] if len(parts) > 0 else "all"
-        c_tag = parts[1] if len(parts) > 1 else "all"
-        await callback.answer("🔄 Подбираю другое детское место...")
+        c_tag = parts[-1] if len(parts) > 1 else "all"
+        if c_tag in ["1-3", "4-6", "7-10", "11-14", "all"]:
+            c_tag = "all"
+        await callback.answer("🔄 Подбираю другое место для малыша...")
         await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-        res = await plan_kid_entertainment(callback.from_user.id, age_group=age_grp, category=c_tag, is_another=True)
-        await render_kid_entertainment(callback.message, res, age_group=age_grp, category=c_tag)
+        res = await plan_kid_entertainment(callback.from_user.id, age_group="1-3", category=c_tag, is_another=True)
+        await render_kid_entertainment(callback.message, res, category=c_tag)
         return
 
-    # 7. Другой загородный маршрут (для взрослых / роадтрипов)
+    # 7. Другой загородный маршрут
     if cat.startswith("another"):
         await callback.answer("🔄 Подбираю новый маршрут...")
         await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
@@ -268,7 +278,7 @@ async def handle_weekend_text(message: types.Message, state: FSMContext):
     if lower_text in another_triggers:
         await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
         if last_mode == "kids":
-            res = await plan_kid_entertainment(message.from_user.id, query="Другое детское развлечение", is_another=True)
+            res = await plan_kid_entertainment(message.from_user.id, query="Другое развлечение для малыша 1-3 года", age_group="1-3", is_another=True)
             await render_kid_entertainment(message, res)
         else:
             query = last_info.get("query") or "Другой интересный сценарий проведения выходного дня"
@@ -276,12 +286,13 @@ async def handle_weekend_text(message: types.Message, state: FSMContext):
             await render_weekend_plan(message, res, mode_type=last_mode)
         return
 
-    # Проверяем, относится ли запрос к детям / аквапаркам / зоопаркам
+    # Проверяем, относится ли запрос к детям / малышам
     kid_keywords = [
-        "ребенок", "дети", "дочь", "сын", "детск", "детям", "малыш",
+        "ребенок", "дети", "дочь", "сын", "детск", "детям", "малыш", "тоддлер",
         "зоопарк", "аквапарк", "океанариум", "игровая комната", "joki",
         "джоки", "кидбург", "мазапарк", "батут", "скалодром", "цирк",
-        "аттракцион", "альпак", "зубр", "тесла", "лабиринтум"
+        "аттракцион", "альпак", "зубр", "тесла", "лабиринтум", "коляск",
+        "бэби", "беби", "театр", "сказк", "бабочк", "песочниц"
     ]
 
     is_kid_query = any(k in lower_text for k in kid_keywords)
@@ -289,31 +300,27 @@ async def handle_weekend_text(message: types.Message, state: FSMContext):
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
 
     if is_kid_query:
-        # Определяем возраст
-        age_grp = "all"
-        if any(w in lower_text for w in ["1 год", "2 года", "3 года", "малыш", "1-3"]):
-            age_grp = "1-3"
-        elif any(w in lower_text for w in ["4 года", "5 лет", "6 лет", "дошкольн", "4-6"]):
-            age_grp = "4-6"
-        elif any(w in lower_text for w in ["7 лет", "8 лет", "9 лет", "10 лет", "школьн", "7-10"]):
-            age_grp = "7-10"
-        elif any(w in lower_text for w in ["11 лет", "12 лет", "13 лет", "14 лет", "подрост", "11-14"]):
-            age_grp = "11-14"
+        # Для детей в модуле жестко зафиксирован возраст 1–3 года
+        age_grp = "1-3"
 
         # Определяем категорию
         c_tag = "all"
-        if any(w in lower_text for w in ["зоопарк", "океанариум", "животн", "альпак", "зубр", "рыб"]):
+        if any(w in lower_text for w in ["театр", "сказк", "спектакл", "кукол", "вильям", "karlsson", "подушк"]):
+            c_tag = "theater"
+        elif any(w in lower_text for w in ["океанариум", "рыб", "скат", "акул"]):
+            c_tag = "ocean"
+        elif any(w in lower_text for w in ["зоопарк", "животн", "альпак", "зубр", "кролик", "бабочк", "коз"]):
             c_tag = "zoo"
-        elif any(w in lower_text for w in ["аквапарк", "бассейн", "водн"]):
+        elif any(w in lower_text for w in ["аквапарк", "бассейн", "водн", "лягушатник", "купаться"]):
             c_tag = "aqua"
-        elif any(w in lower_text for w in ["игров", "комнат", "лабиринт", "батут", "joki", "джоки", "кидбург", "мазапарк"]):
+        elif any(w in lower_text for w in ["парк", "коляск", "экотроп", "прогулк", "лес", "озеро", "пляж"]):
+            c_tag = "park"
+        elif any(w in lower_text for w in ["игров", "комнат", "лабиринт", "малышарик", "teika", "джоки", "joki", "батут"]):
             c_tag = "play"
-        elif any(w in lower_text for w in ["музей", "наук", "макет", "тесла", "маги", "планетари"]):
-            c_tag = "science"
 
         set_user_last_trip(message.from_user.id, raw_text, "kids")
-        res = await plan_kid_entertainment(message.from_user.id, query=raw_text, age_group=age_grp, category=c_tag)
-        await render_kid_entertainment(message, res, age_group=age_grp, category=c_tag)
+        res = await plan_kid_entertainment(message.from_user.id, query=raw_text, age_group="1-3", category=c_tag)
+        await render_kid_entertainment(message, res, category=c_tag)
         return
 
     # Обычный запрос загородного маршрута / уикенда
@@ -322,14 +329,15 @@ async def handle_weekend_text(message: types.Message, state: FSMContext):
     await render_weekend_plan(message, res, mode_type="general")
 
 
-async def render_kid_entertainment(message: types.Message, res: dict, age_group: str = "all", category: str = "all"):
+async def render_kid_entertainment(message: types.Message, res: dict, category: str = "all"):
     title = html.escape(str(res.get("title", "Детское развлечение")))
-    cat_name = html.escape(str(res.get("category_name", "Развлечение для всей семьи")))
-    age_range = html.escape(str(res.get("age_range", "Для детей")))
+    cat_name = html.escape(str(res.get("category_name", "Развлечение для малыша 1–3 года")))
+    age_range = html.escape(str(res.get("age_range", "🎯 Строго 1–3 года (малыши и тоддлеры)")))
     addr = html.escape(str(res.get("address", "")))
     tickets = html.escape(str(res.get("tickets", "")))
     sched = html.escape(str(res.get("schedule", "")))
     high = html.escape(str(res.get("highlights", "")))
+    comfort = html.escape(str(res.get("toddler_comfort", "")))
     food = html.escape(str(res.get("food_nearby", "")))
     logistics = html.escape(str(res.get("logistics", "")))
     tip = html.escape(str(res.get("tip_for_parents", "")))
@@ -341,22 +349,24 @@ async def render_kid_entertainment(message: types.Message, res: dict, age_group:
         f"📍 <b>Адрес и метро:</b>\n<code>{addr}</code>\n",
         f"💵 <b>Цены на билеты:</b>\n{tickets}\n",
         f"⏰ <b>График работы:</b>\n{sched}\n",
-        f"✨ <b>Что больше всего понравится ребенку:</b>\n{high}\n"
+        f"✨ <b>Что понравится малышу (1–3 года):</b>\n{high}\n"
     ]
 
+    if comfort:
+        lines.append(f"🍼 <b>Комфорт для малыша и мамы:</b>\n{comfort}\n")
     if food:
-        lines.append(f"🍕 <b>Где поесть рядом (детское меню):</b>\n{food}\n")
+        lines.append(f"🥣 <b>Где покормить малыша (детское меню):</b>\n{food}\n")
     if logistics:
-        lines.append(f"🚗 <b>Как добраться и парковка:</b>\n{logistics}\n")
+        lines.append(f"🚗 <b>Как добраться и с коляской:</b>\n{logistics}\n")
     if tip:
-        lines.append(f"💡 <b>Совет родителям:</b>\n<i>{tip}</i>\n")
+        lines.append(f"💡 <b>Совет родителям тоддлера:</b>\n<i>{tip}</i>\n")
 
-    lines.append("<i>👇 Нажмите «🔄 Другое развлечение (Ещё)», чтобы увидеть следующую локацию!</i>")
+    lines.append("<i>👇 Нажмите «🔄 Другой вариант для малыша (Ещё)», чтобы увидеть следующую локацию!</i>")
 
     await message.answer(
         "\n".join(lines),
         parse_mode=ParseMode.HTML,
-        reply_markup=get_kid_result_keyboard(age_group, category)
+        reply_markup=get_kid_result_keyboard(category)
     )
 
 

@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from core.config import DATA_DIR
 
 logger = logging.getLogger("CountryRelaxStorage")
@@ -85,3 +85,32 @@ def get_user_last_country(user_id: int) -> Dict[str, str]:
         "query": user_data.get("last_query", "Лучший загородный отдых в Ленобласти"),
         "category": user_data.get("last_category", "general")
     }
+
+
+def save_last_country_resort(user_id: int, resort: Dict[str, Any]):
+    """Сохраняет полные данные последней показанной загородной базы для интерактивного диалога и ответов на вопросы."""
+    _load_history()
+    if user_id not in _memory_cache:
+        _memory_cache[user_id] = {"seen_resorts": [], "last_query": "", "last_category": "general"}
+    _memory_cache[user_id]["last_resort"] = resort
+    _memory_cache[user_id]["chat_history"] = []
+    _save_history()
+
+
+def get_last_country_resort(user_id: int) -> Optional[Dict[str, Any]]:
+    """Возвращает полные данные последней показанной базы отдыха."""
+    _load_history()
+    user_data = _memory_cache.get(user_id, {})
+    return user_data.get("last_resort")
+
+
+def add_country_chat_turn(user_id: int, role: str, text: str):
+    """Сохраняет сообщение пользователя или консьержа в историю диалога по загородному отдыху."""
+    _load_history()
+    if user_id in _memory_cache:
+        history = _memory_cache[user_id].setdefault("chat_history", [])
+        history.append({"role": role, "text": text})
+        if len(history) > 10:
+            _memory_cache[user_id]["chat_history"] = history[-10:]
+        _save_history()
+

@@ -71,6 +71,10 @@ from aiogram.enums import ParseMode
 bot = Bot(token=TELEGRAM_BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
 
+# Register global MenuNavigationMiddleware to seamlessly clear previous FSM states when switching modules
+from core.middlewares import MenuNavigationMiddleware
+dp.message.outer_middleware(MenuNavigationMiddleware())
+
 # Register modular routers in logical order:
 dp.include_router(digest_router)
 dp.include_router(smart_home_router)

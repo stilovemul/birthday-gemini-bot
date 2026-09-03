@@ -113,3 +113,46 @@ def add_seen_places(user_id: int, places: List[Dict[str, Any]]):
         _memory_cache[user_id]["seen_places"] = seen[-50:]
         
     _save_history()
+
+
+def save_last_gastro_recommendations(user_id: int, places: List[Dict[str, Any]], summary: str = "", tip: str = ""):
+    """Saves full details of the latest recommended places for interactive Q&A follow-up conversation."""
+    _load_history()
+    if user_id not in _memory_cache:
+        _memory_cache[user_id] = {
+            "seen_places": [],
+            "last_lat": None,
+            "last_lon": None,
+            "last_address": "",
+            "last_query": "",
+            "last_category": "all"
+        }
+    _memory_cache[user_id]["last_places"] = places
+    _memory_cache[user_id]["last_summary"] = summary
+    _memory_cache[user_id]["last_tip"] = tip
+    _memory_cache[user_id]["chat_history"] = []
+    _save_history()
+
+
+def get_last_gastro_recommendations(user_id: int) -> Dict[str, Any]:
+    """Retrieves full details of the latest recommended places and chat history."""
+    _load_history()
+    ctx = _memory_cache.get(user_id, {})
+    return {
+        "places": ctx.get("last_places", []),
+        "summary": ctx.get("last_summary", ""),
+        "tip": ctx.get("last_tip", ""),
+        "chat_history": ctx.get("chat_history", [])
+    }
+
+
+def add_gastro_chat_turn(user_id: int, role: str, text: str):
+    """Appends a user or assistant message to the interactive gastro dialogue history."""
+    _load_history()
+    if user_id in _memory_cache:
+        history = _memory_cache[user_id].setdefault("chat_history", [])
+        history.append({"role": role, "text": text})
+        if len(history) > 10:
+            _memory_cache[user_id]["chat_history"] = history[-10:]
+        _save_history()
+

@@ -8,6 +8,20 @@ from aiogram.types import (
 
 WEBAPP_URL = "https://birthday-gemini-bot.onrender.com/app"
 
+MAIN_MENU_BUTTONS = [
+    "📱 Открыть Дашборд (App)",
+    "🏠 Дом", "🌅 Дайджест", "🤖 Gemini AI", "🎨 Фото",
+    "📬 Входящие", "🥗 КБЖУ", "🌤 Погода", "😴 Сон",
+    "🔢 Кредиты", "🔐 Сейф", "⏰ Напоминания", "🎂 Дни рожд.",
+    "📝 Заметки", "💳 Подписки", "🧩 Правила", "🍽 Еда",
+    "🎁 Промо & PS", "🚗 Авто-Юрист", "🔬 Ресерч", "📵 Антиспам",
+    "🎬 Кино", "✨ Промпты", "✍️ Текст AI", "🛡 Манипуляции",
+    "💬 Знакомства", "🧠 Мышление", "🕵️‍♂️ Тайный СПб", "🌲 Выходные",
+    "📍 Рестораны", "🏕 Загород", "🎁 Подарки", "📚 Книги",
+    "🎧 Музыка", "📸 Фото-Споты", "🎙 Собеседование", "🛡 Авто-Щит",
+    "👨‍🍳 Шеф-Ужин", "❓ Справка"
+]
+
 
 def get_main_menu() -> ReplyKeyboardMarkup:
     """Returns ultra-compact 4-column multi-functional keyboard."""
@@ -91,11 +105,11 @@ def get_mode_keyboard(mode_title: str = "Режим диалога") -> ReplyKey
 
 
 def is_exit_command(text: str) -> bool:
-    """Checks if the user sent an exit / back to menu command or button."""
+    """Checks if the user sent an explicit exit / back to menu command or button."""
     if not text:
         return False
     t = text.strip().lower()
-    exit_phrases = [
+    exit_phrases = {
         "🏁 закончить режим (главное меню)",
         "🏁 закончить режим",
         "закончить режим",
@@ -109,10 +123,9 @@ def is_exit_command(text: str) -> bool:
         "/stop",
         "/exit",
         "/cancel",
-        "/menu",
-        "/start"
-    ]
-    return t in exit_phrases or text.strip().startswith("/")
+        "/menu"
+    }
+    return t in exit_phrases
 
 
 def get_birthday_submenu() -> ReplyKeyboardMarkup:

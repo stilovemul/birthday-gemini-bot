@@ -6,13 +6,39 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
 
-from core.keyboards import get_main_menu, is_exit_command
+from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
+from core.middlewares import is_menu_navigation
 from core.states import ActiveModeStates
 from modules.geo_gastro.locator import find_places
-from modules.geo_gastro.storage import get_user_gastro_context
+from modules.geo_gastro.storage import get_user_gastro_context, save_last_gastro_recommendations
+from modules.geo_gastro.advisor import process_gastro_conversation
+from modules.voice_assistant.transcriber import transcribe_audio_gemini
 
 logger = logging.getLogger("GeoGastroHandlers")
 router = Router(name="geo_gastro")
+
+
+def get_gastro_qa_keyboard() -> InlineKeyboardMarkup:
+    """Inline keyboard shown under gastro concierge answers for continuous dialogue or quick actions."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🔄 Другие заведения рядом (Ещё)", callback_data="gg_more")
+            ],
+            [
+                InlineKeyboardButton(text="🥩 Стейки", callback_data="gg_preset_meat"),
+                InlineKeyboardButton(text="🍸 Спикизи-Бары", callback_data="gg_preset_speakeasy")
+            ],
+            [
+                InlineKeyboardButton(text="🍕 Итальянские", callback_data="gg_preset_italian"),
+                InlineKeyboardButton(text="🍜 Азиатские", callback_data="gg_preset_asian")
+            ],
+            [
+                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
+            ]
+        ]
+    )
+
 
 
 def get_gastro_keyboard() -> InlineKeyboardMarkup:
@@ -144,9 +170,9 @@ async def handle_gastro_gps(message: types.Message, state: FSMContext):
 @router.message(ActiveModeStates.geo_gastro_mode, F.text)
 async def handle_gastro_text(message: types.Message, state: FSMContext):
     raw_text = message.text.strip()
-    if is_exit_command(raw_text):
+    if is_exit_command(raw_text) or is_menu_navigation(raw_text):
         await state.clear()
-        if not raw_text.startswith("/"):
+        if is_exit_command(raw_text) and not raw_text.startswith("/"):
             await message.answer(
                 "🏁 <b>Режим «Гастро-Локатор» завершен.</b> Вы вернулись в главное меню.",
                 parse_mode=ParseMode.HTML,
@@ -169,9 +195,52 @@ async def handle_gastro_text(message: types.Message, state: FSMContext):
         return
 
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    is_speak = "спикизи" in t_lower or "бар" in t_lower or "коктейл" in t_lower
+
+    # 1. Проверяем, задает ли пользователь вопрос по текущей подборке заведений (интерактивный диалог)
+    is_followup, ans_or_query = await process_gastro_conversation(message.from_user.id, raw_text)
+    if is_followup and ans_or_query:
+        await message.answer(ans_or_query, parse_mode=ParseMode.HTML, reply_markup=get_gastro_qa_keyboard())
+        return
+
+    # 2. Иначе это новый поисковый запрос (другая кухня или район)
+    search_query = ans_or_query or raw_text
+    is_speak = "спикизи" in search_query.lower() or "бар" in search_query.lower() or "коктейл" in search_query.lower()
     cat = "speakeasy" if is_speak else "all"
-    res = await find_places(message.from_user.id, raw_text, is_speakeasy=is_speak, category=cat)
+    res = await find_places(message.from_user.id, search_query, is_speakeasy=is_speak, category=cat)
+    await render_gastro_results(message, res)
+
+
+@router.message(ActiveModeStates.geo_gastro_mode, F.voice | F.video_note | F.audio)
+async def handle_gastro_voice(message: types.Message, state: FSMContext):
+    """Обработка голосовых вопросов и запросов в режиме Гастро-Локатора."""
+    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+    audio_obj = message.voice or message.video_note or message.audio
+    try:
+        file = await message.bot.get_file(audio_obj.file_id)
+        file_bytes_io = await message.bot.download_file(file.file_path)
+        audio_bytes = file_bytes_io.read()
+    except Exception as e:
+        logger.warning(f"Error downloading voice message: {e}")
+        await message.answer("⚠️ Не удалось загрузить аудиосообщение. Напишите, пожалуйста, текстом.")
+        return
+
+    transcribed = await transcribe_audio_gemini(audio_bytes)
+    if not transcribed:
+        await message.answer("🎙 Не удалось расслышать голосовое сообщение. Попробуйте повторить или написать текстом.")
+        return
+
+    await message.answer(f"🎙 <b>Вы спросили:</b> <i>«{html.escape(transcribed)}»</i>", parse_mode=ParseMode.HTML)
+    
+    # Передаем транскрибированный текст в консьерж-диалог
+    is_followup, ans_or_query = await process_gastro_conversation(message.from_user.id, transcribed)
+    if is_followup and ans_or_query:
+        await message.answer(ans_or_query, parse_mode=ParseMode.HTML, reply_markup=get_gastro_qa_keyboard())
+        return
+
+    search_query = ans_or_query or transcribed
+    is_speak = "спикизи" in search_query.lower() or "бар" in search_query.lower() or "коктейл" in search_query.lower()
+    cat = "speakeasy" if is_speak else "all"
+    res = await find_places(message.from_user.id, search_query, is_speakeasy=is_speak, category=cat)
     await render_gastro_results(message, res)
 
 
@@ -180,6 +249,10 @@ async def render_gastro_results(message: types.Message, res: dict):
     places = res.get("places", [])
     tip = html.escape(str(res.get("sommelier_tip", "")))
     human_loc = html.escape(str(res.get("human_location", "")))
+
+    # Сохраняем подборку в память для интерактивного диалога и вопросов
+    user_id = message.chat.id
+    save_last_gastro_recommendations(user_id, places, summary=summary, tip=tip)
 
     lines = [
         f"🍽 <b>{summary.upper()}</b>",
@@ -214,7 +287,9 @@ async def render_gastro_results(message: types.Message, res: dict):
         )
 
     if tip:
-        lines.append(f"💡 <b>Совет сомелье:</b>\n<i>{tip}</i>")
+        lines.append(f"💡 <b>Совет сомелье:</b>\n<i>{tip}</i>\n")
+
+    lines.append("💬 <i>Вы можете задать любой вопрос о заведениях (меню, бронь, вино, дети, парковка) или назвать новую локацию!</i>")
 
     await message.answer(
         "\n".join(lines),
@@ -222,3 +297,4 @@ async def render_gastro_results(message: types.Message, res: dict):
         reply_markup=get_gastro_keyboard(),
         disable_web_page_preview=True
     )
+

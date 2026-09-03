@@ -5,128 +5,267 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AiGem Dashboard</title>
-  <!-- Telegram WebApp SDK -->
+  <!-- Telegram WebApp SDK — FIRST, synchronous -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Tailwind CSS CDN — inline config before CDN -->
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: { 50: '#ecfeff', 500: '#06b6d4', 600: '#0891b2', 700: '#0e7490' },
-            slate: { 850: '#111827', 900: '#0b0f19', 950: '#05070c' }
+    window.tailwind = window.tailwind || {};
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    if (typeof tailwind !== 'undefined') {
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: { 50: '#ecfeff', 500: '#06b6d4', 600: '#0891b2', 700: '#0e7490' }
+            }
           }
         }
       }
     }
   </script>
+  <!-- Lucide Icons — via jsdelivr (more stable than unpkg) -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
     body {
-      background-color: var(--tg-theme-bg-color, #090d16);
-      color: var(--tg-theme-text-color, #f8fafc);
+      background-color: #090d16;
+      color: #f8fafc;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    /* Tailwind var overrides for TG theme */
+    body[data-tg-theme] {
+      background-color: var(--tg-theme-bg-color, #090d16);
+      color: var(--tg-theme-text-color, #f8fafc);
     }
     .glass {
-      background: rgba(17, 24, 39, 0.75);
+      background: rgba(17, 24, 39, 0.85);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .glass-card {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(15, 23, 42, 0.90);
+      border: 1px solid rgba(255, 255, 255, 0.07);
       box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+      border-radius: 1rem;
     }
-    .glass-card:active {
-      transform: scale(0.985);
-    }
-    .glow-cyan {
-      box-shadow: 0 0 15px -3px rgba(6, 182, 212, 0.4);
-    }
+    .glass-card:active { transform: scale(0.985); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
+    .tab-btn { transition: all 0.2s ease; }
+    .tab-btn.active { background: #06b6d4; color: #fff; box-shadow: 0 4px 12px rgba(6,182,212,0.3); }
+    .tab-btn:not(.active) { background: transparent; color: #94a3b8; }
+    .tab-btn:not(.active):hover { color: #e2e8f0; }
+
+    /* NAV — compact enough for 6 tabs */
+    .nav-tab-bar {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      padding: 4px;
+      background: rgba(5,7,12,0.7);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .nav-tab-bar::-webkit-scrollbar { display: none; }
+    .nav-tab-btn {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #94a3b8;
+      background: transparent;
+    }
+    .nav-tab-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .nav-tab-btn.active {
+      background: #06b6d4;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(6,182,212,0.35);
+    }
+
     input[type=range] {
       -webkit-appearance: none;
+      width: 100%;
       height: 6px;
       border-radius: 3px;
       background: #1e293b;
+      outline: none;
     }
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      height: 18px;
-      width: 18px;
+      height: 18px; width: 18px;
       border-radius: 50%;
       background: #06b6d4;
       cursor: pointer;
-      box-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+      box-shadow: 0 0 6px rgba(6,182,212,0.6);
     }
+
+    /* Loading overlay */
+    #loading-screen {
+      position: fixed; inset: 0;
+      background: #090d16;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.4s ease;
+    }
+    #loading-screen.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(6,182,212,0.2);
+      border-top-color: #06b6d4;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* Tab sections — hidden by default, shown via JS */
+    .tab-content { display: none; flex-direction: column; gap: 12px; }
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: rgba(15,23,42,0.97);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%; max-width: 360px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .modal-input {
+      width: 100%; padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(15,23,42,1);
+      border: 1px solid rgba(255,255,255,0.1);
+      font-size: 12px; color: #f1f5f9;
+      outline: none;
+    }
+    .modal-input:focus { border-color: #06b6d4; }
+    .modal-btn-primary {
+      width: 100%; padding: 11px;
+      border-radius: 12px;
+      font-size: 13px; font-weight: 700;
+      border: none; cursor: pointer;
+      color: #fff;
+    }
+    .modal-btn-primary.cyan { background: #06b6d4; box-shadow: 0 4px 16px rgba(6,182,212,0.3); }
+    .modal-btn-primary.emerald { background: #10b981; box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
+    .modal-btn-primary.indigo { background: #6366f1; box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
+
+    /* Quick card grid helper */
+    .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .quick-card {
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex; flex-direction: column;
+      justify-content: space-between; gap: 10px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .quick-card:active { transform: scale(0.97); }
+    .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #334155; transition: background 0.2s; }
+    .status-dot.on { background: #34d399; box-shadow: 0 0 6px #34d399; }
   </style>
 </head>
-<body class="min-h-screen pb-24 text-slate-100 flex flex-col items-center">
+<body>
+
+  <!-- LOADING SCREEN -->
+  <div id="loading-screen">
+    <div style="text-align:center">
+      <div class="spinner" style="margin:0 auto 16px"></div>
+      <div style="font-size:13px;font-weight:600;color:#06b6d4;">AiGem Dashboard</div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px;">Загружаем данные...</div>
+    </div>
+  </div>
 
   <!-- TOP HEADER -->
-  <header class="w-full max-w-lg px-4 pt-3 pb-2 sticky top-0 z-40 glass border-b border-white/5 flex items-center justify-between">
-    <div class="flex items-center space-x-2.5">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-        <i data-lucide="cpu" class="w-5 h-5 text-white"></i>
+  <header style="position:sticky;top:0;z-index:40;width:100%;max-width:512px;margin:0 auto;padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;" class="glass" id="main-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#3b82f6);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(6,182,212,0.3);">
+        <i data-lucide="cpu" style="width:18px;height:18px;color:#fff;"></i>
       </div>
       <div>
-        <h1 class="text-sm font-bold tracking-wide flex items-center gap-1.5">
-          <span>AiGem Super-Bot</span>
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        </h1>
-        <p class="text-[11px] text-slate-400" id="header-time">24/7 Cloud • MSK</p>
+        <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;">
+          AiGem Super-Bot
+          <span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;animation:spin-pulse 2s ease-in-out infinite;"></span>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;" id="header-time">24/7 Cloud • MSK</div>
       </div>
     </div>
-
-    <!-- REFRESH BUTTON -->
-    <button onclick="fetchDashboardData(true)" title="Обновить данные" class="p-2 rounded-xl bg-slate-800/80 border border-white/10 active:rotate-180 transition-transform duration-300">
-      <i data-lucide="refresh-cw" class="w-4 h-4 text-cyan-400" id="refresh-icon"></i>
+    <button onclick="fetchDashboardData(true)" style="padding:8px;border-radius:10px;background:rgba(30,41,59,0.8);border:1px solid rgba(255,255,255,0.1);cursor:pointer;" title="Обновить">
+      <i data-lucide="refresh-cw" style="width:16px;height:16px;color:#06b6d4;" id="refresh-icon"></i>
     </button>
   </header>
 
-  <!-- NAVIGATION TABS -->
-  <nav class="w-full max-w-lg px-3 py-2 sticky top-14 z-30 bg-slate-900/90 backdrop-blur-md">
-    <div class="flex space-x-1.5 overflow-x-auto no-scrollbar p-1 bg-slate-950/60 rounded-2xl border border-white/5">
-      <button onclick="switchTab('smart_home')" id="tab-btn-smart_home" class="tab-btn flex-none py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-cyan-500 text-white shadow-lg shadow-cyan-500/25 whitespace-nowrap">
-        <i data-lucide="home" class="w-3.5 h-3.5"></i>
+  <!-- NAVIGATION TABS — 6 tabs with native CSS -->
+  <nav style="position:sticky;top:57px;z-index:30;width:100%;max-width:512px;margin:0 auto;padding:6px 12px;background:rgba(9,13,22,0.95);backdrop-filter:blur(12px);">
+    <div class="nav-tab-bar" id="nav-bar">
+      <button class="nav-tab-btn active" id="tab-btn-smart_home" onclick="switchTab('smart_home')">
+        <i data-lucide="home"></i>
         <span>Дом</span>
       </button>
-      <button onclick="switchTab('digest')" id="tab-btn-digest" class="tab-btn flex-none py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-slate-400 hover:text-slate-200 whitespace-nowrap">
-        <i data-lucide="cloud-sun" class="w-3.5 h-3.5"></i>
+      <button class="nav-tab-btn" id="tab-btn-digest" onclick="switchTab('digest')">
+        <i data-lucide="cloud-sun"></i>
         <span>Погода</span>
       </button>
-      <button onclick="switchTab('tasks')" id="tab-btn-tasks" class="tab-btn flex-none py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-slate-400 hover:text-slate-200 whitespace-nowrap">
-        <i data-lucide="calendar-heart" class="w-3.5 h-3.5"></i>
+      <button class="nav-tab-btn" id="tab-btn-tasks" onclick="switchTab('tasks')">
+        <i data-lucide="cake"></i>
         <span>ДР & Дела</span>
       </button>
-      <button onclick="switchTab('finance')" id="tab-btn-finance" class="tab-btn flex-none py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-slate-400 hover:text-slate-200 whitespace-nowrap">
-        <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+      <button class="nav-tab-btn" id="tab-btn-finance" onclick="switchTab('finance')">
+        <i data-lucide="credit-card"></i>
         <span>Финансы</span>
       </button>
-      <button onclick="switchTab('health')" id="tab-btn-health" class="tab-btn flex-none py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-slate-400 hover:text-slate-200 whitespace-nowrap">
-        <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+      <button class="nav-tab-btn" id="tab-btn-health" onclick="switchTab('health')">
+        <i data-lucide="activity"></i>
         <span>Здоровье</span>
       </button>
-      <button onclick="switchTab('hub')" id="tab-btn-hub" class="tab-btn flex-none py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-slate-400 hover:text-slate-200 whitespace-nowrap">
-        <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
-        <span>Все Модули</span>
+      <button class="nav-tab-btn" id="tab-btn-hub" onclick="switchTab('hub')">
+        <i data-lucide="layout-grid"></i>
+        <span>Модули</span>
       </button>
     </div>
   </nav>
 
   <!-- MAIN CONTENT CONTAINER -->
-  <main class="w-full max-w-lg px-4 mt-2 space-y-4">
+  <main style="width:100%;max-width:512px;margin:0 auto;padding:8px 16px;display:flex;flex-direction:column;gap:12px;">
 
     <!-- TAB 1: SMART HOME -->
-    <section id="tab-smart_home" class="tab-content space-y-3.5">
+    <section id="tab-smart_home" class="tab-content" style="display:flex;flex-direction:column;gap:12px;">
+
       <div class="grid grid-cols-2 gap-2.5">
         <div class="glass-card p-3.5 rounded-2xl flex items-center space-x-3">
           <div class="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
@@ -846,21 +985,24 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
 
     function switchTab(tabId) {
       haptic('light');
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(el => {
-        el.classList.remove('bg-cyan-500', 'text-white', 'shadow-lg', 'shadow-cyan-500/25');
-        el.classList.add('text-slate-400');
+      // Hide all sections
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.style.display = 'none';
+      });
+      // Deactivate all nav buttons
+      document.querySelectorAll('.nav-tab-btn').forEach(el => {
+        el.classList.remove('active');
       });
 
       const targetTab = document.getElementById('tab-' + tabId);
       const targetBtn = document.getElementById('tab-btn-' + tabId);
-      if (targetTab) targetTab.classList.remove('hidden');
-      if (targetBtn) {
-        targetBtn.classList.remove('text-slate-400');
-        targetBtn.classList.add('bg-cyan-500', 'text-white', 'shadow-lg', 'shadow-cyan-500/25');
-      }
-      lucide.createIcons();
+      if (targetTab) targetTab.style.display = 'flex';
+      if (targetBtn) targetBtn.classList.add('active');
+
+      // Re-init lucide icons only if library loaded
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
+
 
     function switchFinanceSubTab(sub) {
       haptic('light');
@@ -1619,12 +1761,51 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      fetchDashboardData();
+      // 1. Init section visibility — show only first tab
+      document.querySelectorAll('.tab-content').forEach((el, i) => {
+        el.style.display = (i === 0) ? 'flex' : 'none';
+        el.style.flexDirection = 'column';
+        el.style.gap = '12px';
+      });
+
+      // 2. Activate Telegram WebApp
+      if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        try {
+          Telegram.WebApp.ready();
+          Telegram.WebApp.expand();
+        } catch(e) {}
+      }
+
+      // 3. Init Lucide icons (with safety check)
+      function initIcons() {
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        } else {
+          setTimeout(initIcons, 200);
+        }
+      }
+      initIcons();
+
+      // 4. Run calculators immediately (client-side, no API needed)
       runLoanCalc();
       runSleepCalc();
-      setInterval(fetchDashboardData, 30000);
+
+      // 5. Fetch data and hide loading screen
+      fetchDashboardData().then(() => {
+        const ls = document.getElementById('loading-screen');
+        if (ls) {
+          ls.style.opacity = '0';
+          setTimeout(() => ls.remove(), 400);
+        }
+      }).catch(() => {
+        const ls = document.getElementById('loading-screen');
+        if (ls) ls.remove();
+      });
+
+      // 6. Auto-refresh every 30 seconds
+      setInterval(() => fetchDashboardData(false), 30000);
     });
+
   </script>
 </body>
 </html>
