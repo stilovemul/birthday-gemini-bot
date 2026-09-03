@@ -83,6 +83,18 @@ async def cb_mystic_preset(callback: types.CallbackQuery, state: FSMContext):
     await render_mystic_story(callback.message, res)
 
 
+@router.callback_query(F.data == "mode_exit_to_main")
+async def cb_exit_mystic(callback: types.CallbackQuery, state: FSMContext):
+    """Выход из режима «Тайный Петербург» в главное меню."""
+    await state.clear()
+    await callback.answer("Вы вышли в главное меню")
+    await callback.message.answer(
+        "🏁 <b>Режим «Тайный Петербург» завершен.</b> Вы вернулись в главное меню.",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_menu()
+    )
+
+
 @router.message(ActiveModeStates.mystic_spb_mode, F.location)
 async def handle_spb_location(message: types.Message, state: FSMContext):
     lat = message.location.latitude

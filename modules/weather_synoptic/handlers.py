@@ -1,7 +1,8 @@
 import logging
 from aiogram import Router, types, F, Bot
 from aiogram.enums import ParseMode, ChatAction
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
@@ -9,6 +10,7 @@ from aiogram.types import (
     KeyboardButton
 )
 from core.keyboards import get_main_menu
+from core.states import ActiveModeStates
 from modules.weather_synoptic.storage import (
     get_user_weather_config,
     set_user_weather_config
@@ -113,9 +115,9 @@ async def cmd_set_city(message: types.Message):
     )
 
 
-@router.message(F.location)
+@router.message(StateFilter(None), F.location)
 async def handle_user_location(message: types.Message):
-    """Handles native Telegram location sharing for pinpoint neighborhood precision."""
+    """Handles native Telegram location sharing when user is in main menu (no active sub-mode)."""
     user_id = message.from_user.id
     loc = message.location
     lat = float(loc.latitude)
@@ -126,13 +128,43 @@ async def handle_user_location(message: types.Message):
 
     loc_str = f"<b>{city}</b>" + (f" ({district})" if district else "")
 
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🍽 Найти рестораны рядом (1 км)", callback_data="geo_gastro_from_loc"),
+                InlineKeyboardButton(text="🌤 Прогноз погоды", callback_data="w_refresh")
+            ]
+        ]
+    )
+
     await message.answer(
         f"📍 <b>Геопозиция определена: {loc_str}!</b> 🛰️✨\n\n"
         f"🌐 Координаты: <code>{round(lat, 4)}, {round(lon, 4)}</code>\n"
-        "Радар осадков теперь настроен на ваш микрорайон с точностью до 100 метров!",
+        "Радар осадков настроен на ваш микрорайон с точностью до 100 метров!",
         parse_mode=ParseMode.HTML,
-        reply_markup=get_main_menu()
+        reply_markup=kb
     )
+
+
+@router.callback_query(F.data == "geo_gastro_from_loc")
+async def callback_geo_gastro_from_loc(callback: types.CallbackQuery, state: FSMContext):
+    """Быстрый переход к ресторанам рядом по сохраненным координатам."""
+    from modules.geo_gastro.locator import find_places
+    from modules.geo_gastro.handlers import render_gastro_results, get_gastro_gps_keyboard
+    
+    await state.set_state(ActiveModeStates.geo_gastro_mode)
+    user_id = callback.from_user.id
+    config = get_user_weather_config(user_id)
+    lat = config.get("lat")
+    lon = config.get("lon")
+    
+    await callback.answer("🔍 Сканирую рестораны рядом...")
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    
+    # Send GPS keyboard so user can easily search again
+    await callback.message.answer("🍽 <b>Переключаюсь в режим «Гастро-Локатор»:</b>", parse_mode=ParseMode.HTML, reply_markup=get_gastro_gps_keyboard())
+    res = await find_places(user_id, "рядом со мной", lat=lat, lon=lon, category="all")
+    await render_gastro_results(callback.message, res)
 
 
 @router.callback_query(F.data == "w_refresh")

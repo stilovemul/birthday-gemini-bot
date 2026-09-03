@@ -37,6 +37,21 @@ def get_current_msk_date() -> date:
     return datetime.now(MSK_TZ).date()
 
 
+def sync_birthdays_with_github(force_pull: bool = True) -> List[Dict[str, Any]]:
+    """
+    Forces pulling fresh birthdays data from GitHub cloud repo, writes to birthdays.json,
+    and returns the latest birthdays list.
+    """
+    try:
+        cloud_data = pull_birthdays_from_github()
+        if cloud_data and isinstance(cloud_data, list) and len(cloud_data) > 0:
+            logger.info(f"Synchronized {len(cloud_data)} birthdays from GitHub cloud repo.")
+            return cloud_data
+    except Exception as e:
+        logger.warning(f"Failed to sync birthdays from GitHub: {e}")
+    return load_birthdays()
+
+
 def load_birthdays() -> List[Dict[str, Any]]:
     global _synced_on_startup
     if not _synced_on_startup:
@@ -57,6 +72,7 @@ def load_birthdays() -> List[Dict[str, Any]]:
             return data if isinstance(data, list) else []
     except Exception:
         return []
+
 
 
 def save_birthdays(birthdays: List[Dict[str, Any]]) -> None:

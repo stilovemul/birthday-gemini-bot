@@ -22,7 +22,8 @@ from modules.birthdays.storage import (
     add_birthday,
     delete_birthday,
     format_date_entry,
-    format_age_word
+    format_age_word,
+    sync_birthdays_with_github
 )
 from modules.smart_reminders.storage import (
     get_active_reminders,
@@ -39,6 +40,7 @@ from modules.food_tracker.storage import (
 )
 from modules.weather_synoptic.service import (
     get_weather_report,
+    get_weather_structured,
     fetch_weather_wttr
 )
 from modules.weather_synoptic.storage import get_user_weather_config
@@ -113,8 +115,8 @@ class LoanCalcRequest(BaseModel):
 
 
 @router.get("/api/dashboard/data")
-async def get_dashboard_aggregated_data():
-    """Aggregates real-time data for Smart Home, Weather, Birthdays, Tasks, and KBZhU in 1 call."""
+async def get_dashboard_aggregated_data(refresh: bool = False):
+    """Aggregates real-time data for Smart Home, Weather, Birthdays, Tasks, Subscriptions, and Rules in 1 call."""
     now_msk = datetime.now(MSK_TZ)
     user_id = TELEGRAM_USER_ID
 
@@ -210,29 +212,38 @@ async def get_dashboard_aggregated_data():
     except Exception as e:
         logger.warning(f"Dashboard smart home fetch error: {e}")
 
-    # 2. Weather Data
-    weather_info = {
-        "city": "Санкт-Петербург",
-        "district": "Приморский р-н",
-        "temp": "СПб",
-        "text": ""
-    }
+    # 2. Weather Data (Live & Structured)
+    weather_info = {}
     try:
         w_cfg = get_user_weather_config(user_id)
         city = w_cfg.get("city", "Санкт-Петербург")
         district = w_cfg.get("district", "Приморский р-н")
         lat = w_cfg.get("lat", 59.9950)
         lon = w_cfg.get("lon", 30.2200)
-        ok, w_text = await get_weather_report(city, district, lat, lon)
-        weather_info["text"] = w_text if ok else "Погода загружается..."
-        weather_info["city"] = city
-        weather_info["district"] = district
+        weather_info = await get_weather_structured(city, district, lat, lon, force=refresh)
     except Exception as e:
         logger.warning(f"Dashboard weather fetch error: {e}")
+        weather_info = {
+            "success": False,
+            "city": "Санкт-Петербург",
+            "district": "Приморский р-н",
+            "location_display": "Санкт-Петербург (Приморский р-н)",
+            "temp": "+17.0°C",
+            "temp_val": 17.0,
+            "feels": "+15.0°C",
+            "condition": "⛅ Переменная облачность",
+            "humidity": "68%",
+            "wind": "4.0 м/с",
+            "hourly": [],
+            "text": "Погода загружается...",
+            "report": "Погода загружается..."
+        }
 
-    # 3. Birthdays
+    # 3. Birthdays (Full synchronized 23 list)
     birthdays_data = []
     try:
+        if refresh:
+            sync_birthdays_with_github(force_pull=True)
         b_list = get_sorted_birthdays()
         for b in b_list:
             birthdays_data.append({
@@ -277,11 +288,38 @@ async def get_dashboard_aggregated_data():
         "smart_home": sh_data,
         "weather": weather_info,
         "birthdays": birthdays_data,
+        "birthdays_count": len(birthdays_data),
         "reminders": reminders_data,
         "food": food_data,
         "subscriptions": get_subscription_stats(user_id),
         "custom_rules": get_user_rules(user_id)
     }
+
+
+@router.post("/api/birthdays/sync")
+async def api_sync_birthdays():
+    """Forces synchronization of birthdays with GitHub cloud repository."""
+    try:
+        items = sync_birthdays_with_github(force_pull=True)
+        return {"success": True, "count": len(items)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/api/weather/refresh")
+async def api_refresh_weather():
+    """Forces instant refresh of weather from satellites."""
+    try:
+        w_cfg = get_user_weather_config(TELEGRAM_USER_ID)
+        city = w_cfg.get("city", "Санкт-Петербург")
+        district = w_cfg.get("district", "Приморский р-н")
+        lat = w_cfg.get("lat", 59.9950)
+        lon = w_cfg.get("lon", 30.2200)
+        w_data = await get_weather_structured(city, district, lat, lon, force=True)
+        return {"success": True, "weather": w_data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 
 
 @router.post("/api/smart_home/toggle")
