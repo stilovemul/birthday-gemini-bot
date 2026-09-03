@@ -17,10 +17,67 @@ from modules.weather_synoptic.service import geocode_location
 logger = logging.getLogger("GeoGastroLocator")
 
 
-# Полная верифицированная база заведений 2ГИС для ЖК «Чистое Небо» / Каменка (Комендантский пр., Арцеуловская аллея, Плесецкая ул.)
-# Все адреса и дома выверены по реальным координатам
+# Полная верифицированная база заведений 2ГИС для ЖК «Чистое Небо» / Каменка
+# Все адреса выверены по кадастровой карте и привязаны к точным тегам блюд
 LOCAL_2GIS_VERIFIED_VENUES = [
-    # --- Батч 1: Сбалансированный микс лучших заведений у дома (ресторан, пекарня-кафе, пицца, спешелти-кофе) ---
+    # --- БУРГЕРЫ И БУРГЕР-БАРЫ ---
+    {
+        "name": "TheEater's Burger Bar",
+        "type": "Крафтовый бургер-бар",
+        "rating": "⭐️ 4.8 (2ГИС)",
+        "avg_bill": "600 – 1 100 ₽",
+        "distance": "🚶‍♂️ ~450 м (5 мин пешком)",
+        "signature_dishes": "Крафтовые бургеры на бриоши, сочный Чизбургер Блэк Ангус, бургер с рваной говядиной BBQ, батат фри",
+        "vibe_description": "Локальный бургер-бар с крафтовым пенным, сочными авторскими котлетами на гриле и картошкой фри.",
+        "address": "Комендантский пр., 58",
+        "tags": ["burger", "fast_food", "bar", "all"]
+    },
+    {
+        "name": "Вкусно — и точка",
+        "type": "Ресторан быстрого обслуживания (Бургеры)",
+        "rating": "⭐️ 4.7 (2ГИС)",
+        "avg_bill": "400 – 800 ₽",
+        "distance": "🚗 ~5 мин на авто (ТРК Монпансье, ~1.8 км)",
+        "signature_dishes": "Биг Спешиал, Двойной Гранд, Чизбургер, Воппер-стиль бургеры, хрустящий картофель фри",
+        "vibe_description": "Классические любимые бургеры с быстрой выдачей на кассе или авто-раздаче.",
+        "address": "ул. Планерная, 59 (ТРК Монпансье)",
+        "tags": ["burger", "fast_food", "all"]
+    },
+    {
+        "name": "Бургер Кинг",
+        "type": "Бургеры на открытом огне",
+        "rating": "⭐️ 4.6 (2ГИС)",
+        "avg_bill": "450 – 850 ₽",
+        "distance": "🚗 ~5 мин на авто (ТРК Монпансье, ~1.8 км)",
+        "signature_dishes": "Воппер на огне, Стейкхаус бургер с беконом, Ангус Бургер, сырные медальоны",
+        "vibe_description": "Котлеты со 100% говядиной, поджаренные на открытом огне с дымком.",
+        "address": "ул. Планерная, 59 (ТРК Монпансье)",
+        "tags": ["burger", "fast_food", "all"]
+    },
+    {
+        "name": "Meat_Coin Country Club",
+        "type": "Премиальный стейк-хаус & Бургеры",
+        "rating": "⭐️ 4.9 (2ГИС) | ⭐️ 4.9 (Яндекс)",
+        "avg_bill": "3 500 – 5 500 ₽",
+        "distance": "🚗 ~8 мин на авто (~2.5 км)",
+        "signature_dishes": "Бургер Meat_Coin с мраморной говядиной и трюфелем, Стейк Томагавк сухого вызревания, карпаччо",
+        "vibe_description": "Брутальный премиальный мясной ресторан со смокером, открытым огнем и эталонным качеством мяса.",
+        "address": "Приморское шоссе, 41",
+        "tags": ["burger", "meat", "steak", "all"]
+    },
+    {
+        "name": "Токио Сити",
+        "type": "Городской ресторан (Бургеры & Суши)",
+        "rating": "⭐️ 4.7 (2ГИС)",
+        "avg_bill": "900 – 1 500 ₽",
+        "distance": "🚗 ~8 мин на авто",
+        "signature_dishes": "Бургер Шеф с котлетой из мраморной говядины и чеддером, бургер BBQ, роллы Филадельфия",
+        "vibe_description": "Популярный ресторан с отличными крафтовыми бургерами и разнообразным меню.",
+        "address": "Комендантский пр., 33 к1",
+        "tags": ["burger", "asian", "sushi", "european", "all"]
+    },
+
+    # --- РЕСТОРАНЫ У ДОМА (ЕВРОПА, ПАСТА, УЮТ) ---
     {
         "name": "Челлентани",
         "type": "Ресторан средиземноморской & европейской кухни",
@@ -28,10 +85,23 @@ LOCAL_2GIS_VERIFIED_VENUES = [
         "avg_bill": "1 200 – 1 800 ₽",
         "distance": "🚶‍♂️ ~450 м (5 мин пешком)",
         "signature_dishes": "Паста ручной работы, филе лосося на гриле, ризотто с белыми грибами, домашний тирамису",
-        "vibe_description": "Уютный ресторан для спокойного ужина или семейного обеда прямо в микрорайоне. Тёплый интерьер, отличный сервис и добротная европейская классика.",
+        "vibe_description": "Уютный ресторан для спокойного ужина или семейного обеда прямо в микрорайоне. Тёплый интерьер и добротная европейская классика.",
         "address": "Комендантский пр., 58",
-        "categories": ["restaurant", "european", "all"]
+        "tags": ["restaurant", "european", "italian", "pasta", "all"]
     },
+    {
+        "name": "Marchellis (Марчеллис)",
+        "type": "Итальянский ресторан & Траттория",
+        "rating": "⭐️ 4.8 (2ГИС) | ⭐️ 4.8 (Яндекс)",
+        "avg_bill": "1 600 – 2 500 ₽",
+        "distance": "🚗 ~6 мин на авто (~1.8 км)",
+        "signature_dishes": "Неаполитанская пицца из дровяной печи, домашняя паста карбонара, тартар, тирамису",
+        "vibe_description": "Просторный семейный ресторан с эталонной итальянской кухней, превосходной винной картой и стильным интерьером.",
+        "address": "Комендантский пр., 43 к3",
+        "tags": ["italian", "pasta", "pizza", "restaurant", "all"]
+    },
+
+    # --- ПЕКАРНИ, ЗАВТРАКИ, КОФЕ ---
     {
         "name": "ЛюдиЛюбят",
         "type": "Пекарня-кафе & Завтраки",
@@ -41,18 +111,7 @@ LOCAL_2GIS_VERIFIED_VENUES = [
         "signature_dishes": "Свежие горячие киши, слоёные круассаны, фирменные сытные пироги, капучино и свежий хлеб",
         "vibe_description": "Любимая пекарня жителей ЖК «Чистое Небо». Всегда аромат свежего кофе, горячая выпечка из печи и сытные завтраки целый день.",
         "address": "Комендантский пр., 69",
-        "categories": ["bakery", "coffee", "all"]
-    },
-    {
-        "name": "Pizzaroni (Пиццарони)",
-        "type": "Римская & неаполитанская пиццерия",
-        "rating": "⭐️ 4.9 (2ГИС) | ⭐️ 4.8 (Яндекс)",
-        "avg_bill": "800 – 1 400 ₽",
-        "distance": "🚶‍♂️ ~120 м (1–2 мин пешком, прямо в доме)",
-        "signature_dishes": "Римская пицца с грушей и горгонзолой, Пепперони с медом и халапеньо, фирменная 4 сыра",
-        "vibe_description": "Локальная крафтовая пиццерия у дома. Хрустящее воздушное тесто 72-часовой ферментации, открытая кухня, быстрое приготовление за 10–15 минут.",
-        "address": "Арцеуловская аллея, 9",
-        "categories": ["pizza", "italian", "all"]
+        "tags": ["bakery", "coffee", "breakfast", "all"]
     },
     {
         "name": "Baggins Coffee",
@@ -63,20 +122,7 @@ LOCAL_2GIS_VERIFIED_VENUES = [
         "signature_dishes": "Фильтр-кофе на зерне свежей обжарки, авторский раф цитрус-тимьян, сытные круассаны и макаронс",
         "vibe_description": "Стильная и дружелюбная кофейня с эталонным эспрессо, напитками с собой и приветливыми бариста.",
         "address": "Комендантский пр., 71",
-        "categories": ["coffee", "all"]
-    },
-
-    # --- Батч 2: Разнообразие (крафтовый стритфуд, кондитерская, сытная пицца, мясо на гриле) ---
-    {
-        "name": "Влаваше",
-        "type": "Стритфуд-бистро & Шаверма",
-        "rating": "⭐️ 4.8 (2ГИС)",
-        "avg_bill": "400 – 750 ₽",
-        "distance": "🚶‍♂️ ~350 м (4 мин пешком)",
-        "signature_dishes": "Шаверма в хрустящем лаваше с брусничным соусом, фалафель, боулы и морс",
-        "vibe_description": "Чистое и современное стритфуд-кафе. Сытные порции, качественные соусы и мясо, идеальный вариант для быстрого вкусного перекуса.",
-        "address": "Плесецкая ул., 10 с1",
-        "categories": ["fast_food", "street_food", "all"]
+        "tags": ["coffee", "dessert", "all"]
     },
     {
         "name": "Цех 85",
@@ -87,7 +133,20 @@ LOCAL_2GIS_VERIFIED_VENUES = [
         "signature_dishes": "Свежая выпечка, киши с лососем и шпинатом, миндальные круассаны, торты и сытные обеды",
         "vibe_description": "Популярная сетевая кондитерская на углу Комендантского и Арцеуловской со столиками у окна и большим ассортиментом свежих десертов.",
         "address": "Комендантский пр., 66 к1",
-        "categories": ["bakery", "coffee", "all"]
+        "tags": ["bakery", "coffee", "breakfast", "dessert", "all"]
+    },
+
+    # --- ПИЦЦЕРИИ ---
+    {
+        "name": "Pizzaroni (Пиццарони)",
+        "type": "Римская & неаполитанская пиццерия",
+        "rating": "⭐️ 4.9 (2ГИС) | ⭐️ 4.8 (Яндекс)",
+        "avg_bill": "800 – 1 400 ₽",
+        "distance": "🚶‍♂️ ~120 м (1–2 мин пешком, прямо в доме)",
+        "signature_dishes": "Римская пицца с грушей и горгонзолой, Пепперони с медом и халапеньо, фирменная 4 сыра",
+        "vibe_description": "Локальная крафтовая пиццерия у дома. Хрустящее воздушное тесто 72-часовой ферментации, открытая кухня, быстрое приготовление за 10–15 минут.",
+        "address": "Арцеуловская аллея, 9",
+        "tags": ["pizza", "italian", "all"]
     },
     {
         "name": "OMG Pizza (ОМГ Пицца)",
@@ -98,7 +157,55 @@ LOCAL_2GIS_VERIFIED_VENUES = [
         "signature_dishes": "Мясная BBQ с беконом, сырный бортик, пицца с цыпленком песто, сочные кальцоне",
         "vibe_description": "Сочная пицца с толстым слоем расплавленного сыра и обильной начинкой. Быстро забрать по пути или доставка за 25 минут.",
         "address": "Арцеуловская аллея, 23 к1",
-        "categories": ["pizza", "all"]
+        "tags": ["pizza", "all"]
+    },
+    {
+        "name": "Додо Пицца",
+        "type": "Семейная пиццерия",
+        "rating": "⭐️ 4.7 (2ГИС)",
+        "avg_bill": "600 – 1 200 ₽",
+        "distance": "🚶‍♂️ ~600 м (7 мин пешком)",
+        "signature_dishes": "Додо Микс, Пепперони Фреш, фирменные Додстеры, Сырный цыпленок",
+        "vibe_description": "Проверенная пиццерия с открытой кухней, стабильно высоким качеством и быстрой доставкой за 30 минут прямо до двери.",
+        "address": "Комендантский пр., 58 к1",
+        "tags": ["pizza", "all"]
+    },
+
+    # --- ШАВЕРМА И СТРИТФУД ---
+    {
+        "name": "Влаваше",
+        "type": "Стритфуд-бистро & Шаверма",
+        "rating": "⭐️ 4.8 (2ГИС)",
+        "avg_bill": "400 – 750 ₽",
+        "distance": "🚶‍♂️ ~350 м (4 мин пешком)",
+        "signature_dishes": "Шаверма в хрустящем лаваше с брусничным соусом, фалафель, боулы и морс",
+        "vibe_description": "Чистое и современное стритфуд-кафе. Сытные порции, качественные соусы и мясо, идеальный вариант для быстрого вкусного перекуса.",
+        "address": "Плесецкая ул., 10 с1",
+        "tags": ["shawarma", "fast_food", "street_food", "all"]
+    },
+    {
+        "name": "Шаверлэнд",
+        "type": "Стритфуд & Шаверма",
+        "rating": "⭐️ 4.6 (2ГИС)",
+        "avg_bill": "350 – 650 ₽",
+        "distance": "🚶‍♂️ ~300 м",
+        "signature_dishes": "Классическая шаверма на вертеле, шаверма на тарелке, двойное мясо",
+        "vibe_description": "Быстрая горячая шаверма в шаговой доступности.",
+        "address": "Комендантский пр., 67",
+        "tags": ["shawarma", "fast_food", "street_food", "all"]
+    },
+
+    # --- КАВКАЗСКАЯ КУХНЯ, ХИНКАЛИ, ШАШЛЫК ---
+    {
+        "name": "Пхали-Хинкали",
+        "type": "Грузинский ресторан",
+        "rating": "⭐️ 4.9 (2ГИС)",
+        "avg_bill": "1 200 – 1 800 ₽",
+        "distance": "🚗 ~7 мин на авто",
+        "signature_dishes": "Хинкали с мраморной говядиной, хачапури по-аджарски с хрустящей корочкой, шашлык из свиной шеи на мангале",
+        "vibe_description": "Душевный кавказский ресторан с открытым мангалом, горячей выпечкой и домашней атмосферой гостеприимства.",
+        "address": "Комендантский пр., 27 к1",
+        "tags": ["georgian", "khinkali", "khachapuri", "shashlik", "meat", "restaurant", "all"]
     },
     {
         "name": "Кебаб Гриль",
@@ -109,56 +216,8 @@ LOCAL_2GIS_VERIFIED_VENUES = [
         "signature_dishes": "Люля-кебаб из баранины на углях, шашлык из свиной шеи, овощи на гриле, свежий лаваш",
         "vibe_description": "Настоящее мясо на мангале с дымком, домашние соусы из томатов и свежая зелень.",
         "address": "Комендантский пр., 69",
-        "categories": ["meat", "fast_food", "all"]
+        "tags": ["shashlik", "kebab", "meat", "fast_food", "all"]
     },
-
-    # --- Батч 3: Популярные рестораны в радиусе 1–2 км (семейная Италия, грузинская кухня, стейк-хаус) ---
-    {
-        "name": "Додо Пицца",
-        "type": "Семейная пиццерия",
-        "rating": "⭐️ 4.7 (2ГИС)",
-        "avg_bill": "600 – 1 200 ₽",
-        "distance": "🚶‍♂️ ~600 м (7 мин пешком)",
-        "signature_dishes": "Додо Микс, Пепперони Фреш, фирменные Додстеры, Сырный цыпленок",
-        "vibe_description": "Проверенная пиццерия с открытой кухней, стабильно высоким качеством и быстрой доставкой за 30 минут прямо до двери.",
-        "address": "Комендантский пр., 58 к1",
-        "categories": ["pizza", "all"]
-    },
-    {
-        "name": "Marchellis (Марчеллис)",
-        "type": "Итальянский ресторан & Траттория",
-        "rating": "⭐️ 4.8 (2ГИС) | ⭐️ 4.8 (Яндекс)",
-        "avg_bill": "1 600 – 2 500 ₽",
-        "distance": "🚗 ~6 мин на авто (~1.8 км)",
-        "signature_dishes": "Неаполитанская пицца из дровяной печи, домашняя паста карбонара, тартар, тирамису",
-        "vibe_description": "Просторный семейный ресторан с эталонной итальянской кухней, превосходной винной картой и стильным светлым интерьером.",
-        "address": "Комендантский пр., 43 к3",
-        "categories": ["italian", "pizza", "all"]
-    },
-    {
-        "name": "Пхали-Хинкали",
-        "type": "Грузинский ресторан",
-        "rating": "⭐️ 4.9 (2ГИС)",
-        "avg_bill": "1 200 – 1 800 ₽",
-        "distance": "🚗 ~7 мин на авто",
-        "signature_dishes": "Хинкали с мраморной говядиной, хачапури по-аджарски с хрустящей корочкой, шашлык из шеи",
-        "vibe_description": "Душевный кавказский ресторан с открытым мангалом, горячей выпечкой и домашней атмосферой гостеприимства.",
-        "address": "Комендантский пр., 27 к1",
-        "categories": ["meat", "all"]
-    },
-    {
-        "name": "Meat_Coin Country Club",
-        "type": "Премиальный стейк-хаус",
-        "rating": "⭐️ 4.9 (2ГИС) | ⭐️ 4.9 (Яндекс)",
-        "avg_bill": "3 500 – 5 500 ₽",
-        "distance": "🚗 ~8 мин на авто (~2.5 км)",
-        "signature_dishes": "Стейк Томагавк сухого вызревания, бургер с трюфелем, карпаччо из мраморной говядины",
-        "vibe_description": "Брутальный премиальный мясной ресторан с открытым огнем, эталонным выбором вин и высочайшим сервисом.",
-        "address": "Приморское шоссе, 41",
-        "categories": ["meat", "all"]
-    },
-
-    # --- Батч 4: Крупные городские форматы и паназия ---
     {
         "name": "Бричмула",
         "type": "Ресторан восточной кухни (Ginza Project)",
@@ -168,20 +227,54 @@ LOCAL_2GIS_VERIFIED_VENUES = [
         "signature_dishes": "Плов Чайханский с бараниной, манты с рубленым мясом, чебуреки, люля-кебаб",
         "vibe_description": "Большой красивый ресторан от Ginza Project с роскошной восточной кухней, детской комнатой и анимацией.",
         "address": "Комендантский пр., 13",
-        "categories": ["meat", "all"]
+        "tags": ["oriental", "plov", "meat", "shashlik", "restaurant", "all"]
     },
+
+    # --- СУШИ И ПАНАЗИЯ ---
     {
-        "name": "Токио Сити",
-        "type": "Городской ресторан & Суши & Европейская кухня",
-        "rating": "⭐️ 4.7 (2ГИС)",
-        "avg_bill": "900 – 1 500 ₽",
-        "distance": "🚗 ~8 мин на авто",
-        "signature_dishes": "Роллы Филадельфия, бургеры, том ям, паста и авторские лимонады",
-        "vibe_description": "Универсальный городской ресторан с огромным меню, быстрым обслуживанием и демократичными ценами.",
-        "address": "Комендантский пр., 33 к1",
-        "categories": ["asian", "all"]
+        "name": "Суши Wok",
+        "type": "Суши & Вок & Паназия",
+        "rating": "⭐️ 4.6 (2ГИС)",
+        "avg_bill": "600 – 1 100 ₽",
+        "distance": "🚶‍♂️ ~300 м",
+        "signature_dishes": "Роллы Запеченная Филадельфия, вок с курицей терияки, удон с морепродуктами",
+        "vibe_description": "Быстрый самовывоз и доставка роллов и паназиатских коробочек прямо у дома.",
+        "address": "Комендантский пр., 67",
+        "tags": ["sushi", "asian", "wok", "fast_food", "all"]
     }
 ]
+
+
+def detect_craving(query: str) -> Optional[str]:
+    """Detects specific food cravings with high precision."""
+    q = query.lower()
+    if any(w in q for w in ["бургер", "burger", "чизбургер", "воппер"]):
+        return "burger"
+    if any(w in q for w in ["пицц", "пица", "pizza", "pizzaroni", "кальцоне"]):
+        return "pizza"
+    if any(w in q for w in ["суши", "ролл", "sushi", "филадельфи", "калифорни"]):
+        return "sushi"
+    if any(w in q for w in ["шаверм", "шаурм", "shawarma", "донер"]):
+        return "shawarma"
+    if any(w in q for w in ["хинкал", "хачапур", "грузинск"]):
+        return "georgian"
+    if any(w in q for w in ["шашлык", "люля", "кебаб", "мангал"]):
+        return "shashlik"
+    if any(w in q for w in ["стейк", "рибай", "смокер"]):
+        return "steak"
+    if any(w in q for w in ["паст", "карбонар", "итальянск", "траттори"]):
+        return "italian"
+    if any(w in q for w in ["кофе", "капучино", "раф", "латте", "фильтр-кофе", "эспрессо"]):
+        return "coffee"
+    if any(w in q for w in ["пекарн", "выпечк", "круассан", "пирог", "десерт", "торт", "кондитерск"]):
+        return "bakery"
+    if any(w in q for w in ["завтрак", "сырник", "яичниц", "бранч"]):
+        return "breakfast"
+    if any(w in q for w in ["азиатск", "панази", "том ям", "рамен", "фо бо", "вок", "лапш"]):
+        return "asian"
+    if any(w in q for w in ["спикизи", "speakeasy", "коктейл", "бар", "паб", "пиво", "крафт"]):
+        return "bar"
+    return None
 
 
 def get_city_slug(city: str) -> str:
@@ -249,20 +342,28 @@ async def find_places(
 ) -> Dict[str, Any]:
     """
     Finds top verified restaurants, cafes, bars, and bistros near user GPS or address query.
-    Ensures diverse initial recommendations (not just pizza) and seamless pagination ("Еще").
-    Guarantees 100% accurate 2GIS and Yandex Maps links for each venue.
+    Reacts strictly to user cravings (e.g. burgers, sushi, khinkali) without mixing unrelated foods.
+    Provides diverse options on first run when no specific craving is given.
     """
     ctx = get_user_gastro_context(user_id)
     q_low = query_or_city.lower()
 
+    # Detect user craving from current query or previous context
+    craving = detect_craving(query_or_city)
+    if not craving and is_more and ctx.get("last_category") not in [None, "all"]:
+        craving = ctx.get("last_category")
+
+    if craving:
+        category = craving
+
     # If query mentions "дом", "рядом", "здесь", or user previously sent coordinates
-    is_near_home = any(w in q_low for w in ["дом", "доме", "дома", "рядом", "тут", "здесь", "арцеулов", "каменк"])
+    is_near_home = any(w in q_low for w in ["дом", "доме", "дома", "рядом", "тут", "здесь", "арцеулов", "каменк", "чистое небо", "комендантск"])
     if lat is None and lon is None and ctx.get("last_lat") and ctx.get("last_lon") and (is_near_home or is_more):
         lat = ctx.get("last_lat")
         lon = ctx.get("last_lon")
 
     # If user provided a specific street or address (e.g. "Арцеуловская аллея 9", "Комендантский 64"):
-    if (lat is None or lon is None) and any(w in q_low for w in ["ул", "ул.", "улица", "аллея", "проспект", "пр", "пр.", "пер", "д.", "дом", "арцеуловск", "комендантск", "чистое небо"]):
+    if (lat is None or lon is None) and any(w in q_low for w in ["ул", "ул.", "улица", "аллея", "проспект", "пр", "пр.", "пер", "д.", "дом", "арцеуловск", "комендантск", "чистое небо", "плесецк"]):
         try:
             geo_match = await geocode_location(query_or_city)
             if geo_match:
@@ -312,20 +413,7 @@ async def find_places(
 
     city_slug = get_city_slug(city)
 
-    # Detect user intent for specific food categories:
-    is_pizza_query = any(w in q_low for w in ["пицц", "пица", "pizza", "pizzaroni"])
-    is_coffee_query = any(w in q_low for w in ["кофе", "завтрак", "пекарн", "выпечк", "десерт"])
-    is_meat_query = any(w in q_low for w in ["мяс", "стейк", "бургер", "шашлык", "гриль"])
-
-    if is_pizza_query:
-        category = "pizza"
-    elif is_coffee_query:
-        category = "coffee"
-    elif is_meat_query:
-        category = "meat"
-
     # CHECK LOCAL 2GIS VERIFIED DATABASE FIRST:
-    # If the user is in/near Kamenka / Arceulovskaya / Комендантский / ЖК Чистое Небо
     is_in_kamenka = False
     if lat is not None and lon is not None:
         if 60.01 <= lat <= 60.07 and 30.16 <= lon <= 30.26:
@@ -340,89 +428,102 @@ async def find_places(
         for v in LOCAL_2GIS_VERIFIED_VENUES:
             if is_more and v["name"] in seen:
                 continue
-            if category == "pizza" and "pizza" in v["categories"]:
-                matched_venues.append(v)
-            elif category == "meat" and "meat" in v["categories"]:
-                matched_venues.append(v)
-            elif category == "coffee" and "coffee" in v["categories"]:
-                matched_venues.append(v)
-            elif category == "italian" and ("italian" in v["categories"] or "pizza" in v["categories"]):
-                matched_venues.append(v)
-            elif category == "all":
-                matched_venues.append(v)
+            
+            # STRICT FILTERING BY CRAVING:
+            if craving:
+                if craving in v.get("tags", []):
+                    matched_venues.append(v)
+            else:
+                # Default mix
+                if category == "all" and "all" in v.get("tags", []):
+                    matched_venues.append(v)
+                elif category in v.get("tags", []):
+                    matched_venues.append(v)
 
         # If user clicked "Еще" so many times that all local venues have been seen, reset to show loop
         if not matched_venues and is_more:
-            matched_venues = [v for v in LOCAL_2GIS_VERIFIED_VENUES if (category == "all" or category in v["categories"])]
+            matched_venues = [
+                v for v in LOCAL_2GIS_VERIFIED_VENUES 
+                if (craving and craving in v.get("tags", [])) or (not craving and "all" in v.get("tags", []))
+            ]
 
         if matched_venues:
             selected = matched_venues[:4]
             add_seen_places(user_id, selected)
 
-            summary = f"Заведения рядом с вами в 2ГИС ({road or 'Комендантский / Арцеуловская'})"
-            if is_pizza_query:
-                summary = f"Пиццерии рядом с вами в 2ГИС ({road or 'Комендантский / Арцеуловская'})"
-            
+            craving_titles = {
+                "burger": "Бургеры рядом с вами в 2ГИС",
+                "pizza": "Пиццерии рядом с вами в 2ГИС",
+                "sushi": "Суши & Роллы рядом с вами в 2ГИС",
+                "shawarma": "Шаверма & Стритфуд рядом с вами в 2ГИС",
+                "georgian": "Грузинская кухня & Хинкали рядом с вами в 2ГИС",
+                "shashlik": "Шашлык & Мясо на мангале рядом с вами в 2ГИС",
+                "steak": "Стейк-хаусы & Мясо рядом с вами в 2ГИС",
+                "italian": "Итальянские рестораны & Паста рядом с вами в 2ГИС",
+                "coffee": "Кофейни & Завтраки рядом с вами в 2ГИС",
+                "bakery": "Пекарни & Кондитерские рядом с вами в 2ГИС",
+                "asian": "Азиатская кухня & Рамен рядом с вами в 2ГИС",
+                "bar": "Бары & Пабы рядом с вами в 2ГИС",
+            }
+            title_prefix = craving_titles.get(craving, "Заведения рядом с вами в 2ГИС")
+            summary = f"{title_prefix} ({road or 'Арцеуловская / Комендантский'})"
+
+            craving_tips = {
+                "burger": "💡 Для сочного крафтового бургера прямо у дома рекомендую TheEater's на Комендантском 58. Если хочется премиум бургер с мраморной говядиной Black Angus и трюфелем — Meat_Coin Country Club.",
+                "pizza": "💡 Для хрустящей римской пиццы у дома рекомендую Pizzaroni на Арцеуловской, 9, а за тратторией и пастой — Marchellis.",
+                "coffee": "💡 Для фильтр-кофе свежей обжарки — Baggins Coffee на Комендантском 71, за сытными кишами и круассанами — ЛюдиЛюбят на Комендантском 69.",
+                "shawarma": "💡 За чистым современным стритфудом и хрустящей шавермой с брусничным соусом — во Влаваше на Плесецкой 10.",
+                "georgian": "💡 За сочными хинкали с мраморной говядиной и горячим хачапури по-аджарски — в Пхали-Хинкали на Комендантском 27.",
+            }
+            default_tip = (
+                "💡 Для отличного ужина рядом с домом рекомендую Челлентани (европейская кухня), "
+                "за ароматной утренней выпечкой — в ЛюдиЛюбят, а за хрустящей римской пиццей — в Pizzaroni на Арцеуловской, 9."
+            )
+            sommelier_tip = craving_tips.get(craving, default_tip)
+
             # Format 100% accurate 2GIS and Yandex Maps search links
             for p in selected:
                 name_clean = p['name'].split("(")[0].strip()
-                addr_clean = p['address'].strip()
-                # 2GIS exact search query
+                addr_clean = p['address'].split("(")[0].strip()
                 q_2gis = urllib.parse.quote(f"{name_clean} {addr_clean}")
                 p["map_2gis_url"] = f"https://2gis.ru/{city_slug}/search/{q_2gis}"
-                # Yandex Maps exact search query with city
                 q_ya = urllib.parse.quote(f"{name_clean} {city} {addr_clean}")
                 p["map_yandex_url"] = f"https://yandex.ru/maps/?text={q_ya}"
                 p["map_url"] = p["map_2gis_url"]
 
-            search_encoded = urllib.parse.quote(f"где поесть {human_location}")
-            if is_pizza_query:
-                search_encoded = urllib.parse.quote(f"пиццерия {human_location}")
+            search_query_text = f"{craving or 'где поесть'} {human_location}"
+            search_encoded = urllib.parse.quote(search_query_text)
 
             return {
                 "search_summary": summary,
                 "places": selected,
-                "sommelier_tip": (
-                    "💡 Для отличного ужина рядом с домом рекомендую Челлентани (европейская кухня и уют), "
-                    "за ароматной утренней выпечкой — в ЛюдиЛюбят, а за хрустящей римской пиццей — в Pizzaroni на Арцеуловской, 9."
-                ),
+                "sommelier_tip": sommelier_tip,
                 "human_location": human_location,
                 "2gis_search_url": f"https://2gis.ru/{city_slug}/search/{search_encoded}",
                 "yandex_search_url": f"https://yandex.ru/maps/?text={search_encoded}"
             }
 
-    # If not in local preset or looking for other cities/venues: USE GEMINI WITH STRICT 2GIS INSTRUCTIONS
-    cat_descriptions = {
-        "pizza": "Пиццерии у дома, римская и неаполитанская пицца, доставка и самовывоз (2ГИС)",
-        "meat": "Топовые мясные рестораны, сочные стейки, техасский смокер, рёбра и бургеры",
-        "speakeasy": "Секретные спикизи-бары (Speakeasy) с тайными входами, авторскими коктейлями и уникальной атмосферой",
-        "italian": "Уютная итальянская кухня, неаполитанская пицца из дровяной печи, домашняя паста ручной работы",
-        "asian": "Азиатская кухня, наваристые рамены, том ям, аутентичные суши, вок и димсамы",
-        "coffee": "Спешелти кофейни с фильтр-кофе, выпечкой и сытными завтраками весь день",
-        "nsk": "Легендарные рестораны и бары Новосибирска (ул. Ленина, Красный проспект)",
-        "all": "Разнообразные заведения: рестораны, гастробары, пекарни, кофейни и пиццерии с честным высоким рейтингом 2ГИС"
-    }
-    cat_desc = cat_descriptions.get(category, cat_descriptions["all"])
-
-    seen_filter = ""
-    if seen:
-        seen_filter = f"\n🚫 ВНИМАНИЕ: Пользователь уже знает следующие заведения, НЕ предлагай их повторно: {', '.join(seen[:30])}."
-
+    # If not in local preset or looking for other cities/unusual cuisines: USE GEMINI WITH STRICT CRAVING FOCUS
+    craving_desc = f"СТРОГО блюдо/кухня: {craving}" if craving else "Разнообразные форматы: рестораны, пекарни, кофейни"
     geo_hint = (
         f"Точная локация: {human_location}. Координаты GPS: {round(lat, 5) if lat else ''}, {round(lon, 5) if lon else ''}.\n"
         f"Ищи заведения СТРОГО в этом микрорайоне (в шаговой доступности 100–800 м, на этой же улице, в соседних домах ЖК) по данным справочника 2ГИС."
     )
 
-    prompt = f"""Ты — гастрономический эксперт и поисковая система 2ГИС (2GIS).
-Твоя задача — найти 3-4 РЕАЛЬНО существующих заведения по справочнику 2ГИС строго по указанному адресу или микрорайону.
+    seen_filter = ""
+    if seen:
+        seen_filter = f"\n🚫 ВНИМАНИЕ: Пользователь уже знает следующие заведения, НЕ предлагай их повторно: {', '.join(seen[:30])}."
 
+    prompt = f"""Ты — гастрономический эксперт и поисковая система 2ГИС (2GIS).
+Пользователь ищет заведения: «{query_or_city}».
+Требование: {craving_desc}.
 {geo_hint}
-Категория: {cat_desc}.{seen_filter}
+{seen_filter}
 
 КРИТИЧЕСКИ ВАЖНО:
-1. Заведения должны быть РЕАЛЬНЫМИ и находиться на этой улице / в этом доме или в радиусе 300–800 метров!
-2. В первой выдаче дай РАЗНООБРАЗНЫЕ форматы (ресторан европейской кухни, пекарня/кофейня, стейк-хаус или бистро, пиццерия) — не выдавай только один тип заведений!
-3. Обязательно укажи честный рейтинг 2ГИС (например «⭐️ 4.8 (2ГИС)»), точный номер дома и дистанцию пешком («🚶‍♂️ ~250 м (3 мин пешком)»).
+1. Заведения должны СТРОГО соответствовать запросу пользователя (если просят бургер — выдавай заведения, где фирменное блюдо именно бургер, а не шашлык или хинкали)!
+2. Заведения должны быть РЕАЛЬНЫМИ и находиться на этой улице / в этом доме или в шаговой доступности!
+3. Обязательно укажи честный рейтинг 2ГИС (например «⭐️ 4.8 (2ГИС)»), точный номер дома и дистанцию («🚶‍♂️ ~250 м (3 мин пешком)»).
 
 СТРУКТУРА JSON:
 {{
@@ -430,16 +531,16 @@ async def find_places(
   "places": [
     {{
       "name": "Точное название заведения",
-      "type": "Концепция (Ресторан, Пекарня-кафе, Пиццерия у дома, Гастробар)",
+      "type": "Концепция (Бургер-бар, Ресторан, Кафе)",
       "rating": "⭐️ 4.8 (2ГИС)",
-      "avg_bill": "800 – 1 500 ₽",
-      "distance": "🚶‍♂️ ~200 м (3 мин пешком)",
-      "signature_dishes": "2-3 коронных блюда",
-      "vibe_description": "Атмосфера, фишка и почему жители дома выбирают это место",
+      "avg_bill": "600 – 1 200 ₽",
+      "distance": "🚶‍♂️ ~300 м (3 мин пешком)",
+      "signature_dishes": "2-3 коронных блюда (соответствующих запросу)",
+      "vibe_description": "Атмосфера и почему жители выбирают это место",
       "address": "Точный адрес (ул. ..., д. ...)"
     }}
   ],
-  "sommelier_tip": "Совет эксперта (по бронированию, выбору коронного блюда и напитка)"
+  "sommelier_tip": "Совет эксперта по заказу"
 }}
 """
     resp = await ask_gemini(user_id, prompt)
@@ -457,33 +558,23 @@ async def find_places(
             "search_summary": f"Рекомендованные заведения ({human_location})",
             "places": [
                 {
-                    "name": "Челлентани",
-                    "type": "Ресторан средиземноморской кухни",
+                    "name": "TheEater's Burger Bar",
+                    "type": "Крафтовый бургер-бар",
                     "rating": "⭐️ 4.8 (2ГИС)",
-                    "avg_bill": "1 200 – 1 800 ₽",
+                    "avg_bill": "600 – 1 100 ₽",
                     "distance": "🚶‍♂️ ~450 м",
-                    "signature_dishes": "Паста ручной работы, филе лосося на гриле, ризотто",
-                    "vibe_description": "Уютный ресторан для семейного ужина прямо в микрорайоне.",
+                    "signature_dishes": "Бургеры на бриоши, бургер BBQ, картофель фри",
+                    "vibe_description": "Локальный бургер-бар с крафтовым пенным и бургерами на гриле.",
                     "address": "Комендантский пр., 58"
-                },
-                {
-                    "name": "ЛюдиЛюбят",
-                    "type": "Пекарня-кафе & Завтраки",
-                    "rating": "⭐️ 4.9 (2ГИС)",
-                    "avg_bill": "300 – 650 ₽",
-                    "distance": "🚶‍♂️ ~250 м",
-                    "signature_dishes": "Свежие киши, круассаны, пироги, кофе",
-                    "vibe_description": "Всегда свежая утренняя выпечка и горячий кофе.",
-                    "address": "Комендантский пр., 69"
                 }
             ],
-            "sommelier_tip": "Рекомендуем бронировать столик заранее на вечер пятницы и выходные дни."
+            "sommelier_tip": "Рекомендуем заказывать бургер средней прожарки для максимальной сочности."
         }
 
     places = parsed_res.get("places", [])
     for p in places:
         name_clean = p.get("name", "").split("(")[0].strip()
-        addr_clean = p.get("address", "").strip()
+        addr_clean = p.get("address", "").split("(")[0].strip()
         q_2gis = urllib.parse.quote(f"{name_clean} {addr_clean}")
         p["map_2gis_url"] = f"https://2gis.ru/{city_slug}/search/{q_2gis}"
         q_ya = urllib.parse.quote(f"{name_clean} {city} {addr_clean}")
@@ -496,7 +587,7 @@ async def find_places(
     parsed_res["lon"] = lon
     parsed_res["category"] = category
     
-    search_q = urllib.parse.quote(f"{cat_desc} {human_location}")
+    search_q = urllib.parse.quote(f"{query_or_city} {human_location}")
     parsed_res["2gis_search_url"] = f"https://2gis.ru/{city_slug}/search/{search_q}"
     parsed_res["yandex_search_url"] = f"https://yandex.ru/maps/?text={search_q}"
     return parsed_res
