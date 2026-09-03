@@ -8,59 +8,47 @@ from core.gemini import ask_gemini
 logger = logging.getLogger("AlcoholShelfAdvisor")
 
 
-async def analyze_alcohol_shelf(
+async def analyze_alcohol_image(
     user_id: int,
     image_bytes: bytes,
     user_preference: str = "",
-    alcohol_category: str = "beer_or_wine"
+    alcohol_category: str = "beer"
 ) -> Dict[str, Any]:
     """
-    AI Sommelier Shelf and Drink Advisor:
-    Comprehensive scan of ALL visible bottles/cans/drinks across every shelf.
-    Provides:
-    - Complete catalog grouped by shelf (Upper, Middle, Lower) with exact positions (1st on left, center, etc.)
-    - #1 Best Pick on the shelf (with exact shelf position, taste, rating, pairing)
-    - #2 Safe/Classic Pick (with exact shelf position)
-    - #3 Adventurous/Wildcard Pick (with exact shelf position)
-    - Avoid list (with exact shelf position)
-    - Hangover risk assessment
-    - Full inventory for interactive follow-up questions
+    AI Sommelier Vision Engine:
+    Intelligently detects whether the photo is:
+    1. 'shelf': A store shelf, supermarket fridge, bar tap menu with MULTIPLE drinks/bottles/cans.
+       -> Performs complete scan of all shelves (Upper, Middle, Lower), coordinates, Top-3, avoid picks, hangover forecast.
+    2. 'single_bottle': A SINGLE bottle, can, beer glass, or close-up label.
+       -> Performs in-depth Master Sommelier / Cicerone review of this specific drink (Untappd score, taste consensus, buy verdict, snacks: croutons/fish/chips/hot food, hangover risk, flavor notes in Russian, serving temp).
     """
     pref_instruction = ""
     if user_preference:
-        pref_instruction = f"\nПРЕДПОЧТЕНИЕ ПОЛЬЗОВАТЕЛЯ: '{user_preference}'. Обязательно найди среди напитков на этом фото то, что максимально точно соответствует этому пожеланию!"
+        pref_instruction = f"\nПРЕДПОЧТЕНИЕ / КОММЕНТАРИЙ ПОЛЬЗОВАТЕЛЯ: '{user_preference}'."
 
     prompt = (
         "Ты мировой гранд-сомелье (Master Sommelier) и главный пивной эксперт (Master Cicerone).\n"
-        "Пользователь прислал ФОТО: это витрина, полки супермаркета/холодильника (пиво, вино, сидр, крепкий алкоголь) или барная карта.\n"
+        "Пользователь прислал ФОТО.\n"
         f"{pref_instruction}\n\n"
-        "ТВОЯ ЗАДАЧА — СДЕЛАТЬ МАКСИМАЛЬНО ПОЛНЫЙ И ДЕТАЛЬНЫЙ СКАН ВСЕЙ ВИТРИНЫ:\n"
-        "1. Внимательно осмотри фото и распознай ВСЕ различимые бутылки, банки, этикетки по каждой полке (сверху вниз, слева направо).\n"
-        "2. Для КАЖДОЙ распознанной позиции укажи её точное расположение (например: '1-я слева, коричневая бутылка 0.5л', 'по центру, черная банка', '3-я справа'), стиль, рейтинг Untappd/Vivino/RateBeer и краткий вердикт.\n"
-        "3. Выбери #1 ТОП ВЫБОР на этой витрине с указанием точной полки и места.\n"
-        "4. Выбери #2 Надежную классику и #3 Яркий эксперимент с указанием точной полки.\n"
-        "5. Укажи, что на этой витрине ЛУЧШЕ ПРОПУСТИТЬ (с указанием полки).\n"
-        "6. Оцени похмельный риск и составь список покупок.\n\n"
-        "Верни СТРОГО валидный JSON следующей структуры (без лишнего текста вокруг):\n"
+        "КРИТИЧЕСКИ ВАЖНО — В ПЕРВУЮ ОЧЕРЕДЬ ОПРЕДЕЛИ ТИП ФОТОГРАФИИ:\n"
+        "1. 'shelf' — это витрина магазина, полка супермаркета, холодильник со множеством разных напитков (3+ разных бутылок/банок), либо барная карта/меню.\n"
+        "2. 'single_bottle' — это одна отдельная бутылка, банка, бокал с напитком, этикетка крупным планом, либо фокус на одном конкретном напитке (в руке, на столе, в баре).\n\n"
+        "====================================================\n"
+        "ВАРИАНТ А: ЕСЛИ НА ФОТО ПОЛКА / ВИТРИНА / ХОЛОДИЛЬНИК ('shelf'):\n"
+        "Сделай полный скан всей витрины и верни JSON со структурой:\n"
         "{\n"
+        '  "image_type": "shelf",\n'
         '  "shelf_overview": "Холодильник крафтового и импортного пива (распознано 15+ позиций на 3 полках)",\n'
         '  "shelves": [\n'
         '    {\n'
         '      "shelf_name": "🔝 Верхняя полка",\n'
         '      "items": [\n'
         '        {\n'
-        '          "name": "Schneider Weisse Tap 7 / Paulaner Hefe-Weissbier",\n'
-        '          "position": "1-я слева (коричневая бутылка с золотой этикеткой)",\n'
+        '          "name": "Название пива / вина",\n'
+        '          "position": "1-я слева (коричневая бутылка)",\n'
         '          "style": "Пшеничный эль / Weizen",\n'
         '          "rating": "3.80 ⭐️",\n'
         '          "verdict": "🔥 Топовая пшеничка: банан, гвоздика, густая пена"\n'
-        '        },\n'
-        '        {\n'
-        '          "name": "Guinness Draught",\n'
-        '          "position": "По центру (черная банка с азотом)",\n'
-        '          "style": "Сухой стаут",\n'
-        '          "rating": "3.78 ⭐️",\n'
-        '          "verdict": "✅ Кремовая пена, кофе и горький шоколад"\n'
         '        }\n'
         '      ]\n'
         '    },\n'
@@ -69,7 +57,7 @@ async def analyze_alcohol_shelf(
         '      "items": [\n'
         '        {\n'
         '          "name": "Волковская IPA",\n'
-        '          "position": "1-я слева (сине-желтая банка с волком)",\n'
+        '          "position": "1-я слева (сине-желтая банка)",\n'
         '          "style": "American IPA",\n'
         '          "rating": "3.82 ⭐️",\n'
         '          "verdict": "🔥 Лучший хмель и баланс за свою цену"\n'
@@ -99,23 +87,23 @@ async def analyze_alcohol_shelf(
         '    "ideal_snack": "Чесночные гренки, острые крылышки или выдержанный Чеддер"\n'
         '  },\n'
         '  "safe_pick": {\n'
-        '    "name": "Spaten / Pilsner Urquell / Chianti",\n'
+        '    "name": "Spaten / Pilsner Urquell",\n'
         '    "shelf_location": "Средняя полка, 2-я банка слева",\n'
         '    "style_type": "Мюнхенский светлый лагер, 5.2%",\n'
         '    "rating": "3.35 / 5.0 ⭐️",\n'
-        '    "reason": "Мягкая классика: чистый солодовый вкус без дефектов, пьется легко и понравится всем."\n'
+        '    "reason": "Мягкая классика: чистый солодовый вкус без дефектов, пьется легко."\n'
         '  },\n'
         '  "wildcard_pick": {\n'
-        '    "name": "Salden\'s Tomato Gose / 4Brewers Доза",\n'
+        '    "name": "Salden\'s Tomato Gose",\n'
         '    "shelf_location": "Нижняя полка, крайняя слева",\n'
-        '    "style_type": "Томатный кислый эль / Сауэр смузи",\n'
+        '    "style_type": "Томатный кислый эль",\n'
         '    "rating": "3.95 / 5.0 ⭐️",\n'
         '    "reason": "Для ярких эмоций: взрывной пряный вкус томатов и специй."\n'
         '  },\n'
         '  "avoid_picks": [\n'
         '    {\n'
-        '      "name": "Балтика 9 Крепкое / Дешевый винный напиток",\n'
-        '      "shelf_location": "Средняя полка, крайняя банка справа",\n'
+        '      "name": "Балтика 9 Крепкое",\n'
+        '      "shelf_location": "Средняя полка, крайняя справа",\n'
         '      "reason": "Резкий спиртуозный профиль, тяжелое утро и головная боль."\n'
         '    }\n'
         '  ],\n'
@@ -128,7 +116,42 @@ async def analyze_alcohol_shelf(
         '    "Чесночные гренки или нарезка сыра Чеддер",\n'
         '    "Минеральная вода без газа"\n'
         '  ]\n'
-        "}"
+        "}\n\n"
+        "====================================================\n"
+        "ВАРИАНТ Б: ЕСЛИ НА ФОТО ОДНА ОТДЕЛЬНАЯ БУТЫЛКА / БАНКА / БОКАЛ / ЭТИКЕТКА ('single_bottle'):\n"
+        "Внимательно распознай пиво/напиток по этикетке, найди реальный рейтинг Untappd/Vivino/RateBeer и дай исчерпывающий обзор сомелье в JSON следующей структуры:\n"
+        "{\n"
+        '  "image_type": "single_bottle",\n'
+        '  "beer_name": "🍺 Точное название пива (например: Zagovor - Decontrol / Salden\'s Tomato Gose / Guinness)",\n'
+        '  "brewery": "Пивоварня (например: Zagovor Brewery / Salden\'s / Guinness)",\n'
+        '  "style": "Стиль (например: Double New England IPA / Imperial Gose / Dry Stout / German Pilsner)",\n'
+        '  "abv": "Крепость % (например: 8.0%)",\n'
+        '  "ibu": "Горечь IBU (например: 45 IBU)",\n'
+        '  "density": "Плотность / ЭНС (например: 18.5% Plato)",\n'
+        '  "untappd_rating": "4.15 / 5.0 ⭐️ (Топовый крафтовый рейтинг)",\n'
+        '  "taste_verdict": "🔥 ВКУСНОЕ ИЛИ НЕТ (Консенсус отзывов): Подробное резюме реальных отзывов биргиков — сочность, баланс хмеля и солода, горечь, сладость, карбонизация, скрытость алкоголя, плюсы и минусы.",\n'
+        '  "buy_verdict": "✅ СТОИТ ЛИ БРАТЬ: Исчерпывающий вердикт сомелье (Брать обязательно / На любителя / Лучше пройти мимо, оправдывает ли свою цену).",\n'
+        '  "snacks": {\n'
+        '    "croutons": "Чесночные бородинские гренки со сливочным соусом (какой хлеб и соус)",\n'
+        '    "fish": "Слабосоленая форель, вяленый лосось или кальмар (какая рыба подчеркнет вкус, а какая испортит хмель)",\n'
+        '    "chips": "Рифленые чипсы с паприкой или начос",\n'
+        '    "hot_food": "Сочный бургер с беконом, острые крылышки Баффало, сыр Чеддер"\n'
+        '  },\n'
+        '  "hangover_risk": {\n'
+        '    "risk_level": "⚠️ Средне-высокий (при > 2 банок) / 🟢 Низкий",\n'
+        '    "morning_forecast": "Химический прогноз: плотность, алкоголь и сахар, будет ли утром тяжелая голова.",\n'
+        '    "hangover_cure": "💡 Лайфхак: сколько воды выпить и как пить без последствий."\n'
+        '  },\n'
+        '  "flavor_notes": "Вкусовой профиль СТРОГО НА КРАСИВОМ РУССКОМ ЯЗЫКЕ (например: спелое манго, маракуйя, цитрусовая цедра, сосновая смола, карамель, бисквит)",\n'
+        '  "serving_temp": "8-10°C (бокал тюльпан или снифтер)",\n'
+        '  "shopping_checklist": [\n'
+        '    "Zagovor - Decontrol (1-2 банки)",\n'
+        '    "Чесночные бородинские гренки",\n'
+        '    "Минеральная вода без газа"\n'
+        '  ]\n'
+        "}\n\n"
+        "ВАЖНО: ВСЕ ПОЛЯ JSON И ТЕКСТОВЫЕ ОПИСАНИЯ ДОЛЖНЫ БЫТЬ ТОЛЬКО НА ПОНЯТНОМ И СОЧНОМ РУССКОМ ЯЗЫКЕ!\n"
+        "Верни ТОЛЬКО валидный JSON (без разметки markdown вокруг)."
     )
 
     try:
@@ -139,10 +162,11 @@ async def analyze_alcohol_shelf(
             if isinstance(data, dict):
                 return data
     except Exception as e:
-        logger.error(f"Error in analyze_alcohol_shelf: {e}")
+        logger.error(f"Error in analyze_alcohol_image: {e}")
 
-    # Robust fallback with structured shelves
+    # Robust fallback
     return {
+        "image_type": "shelf",
         "shelf_overview": "Витрина напитков в магазине",
         "shelves": [
             {
@@ -236,6 +260,21 @@ async def analyze_alcohol_shelf(
             "Вода без газа"
         ]
     }
+
+
+async def analyze_alcohol_shelf(
+    user_id: int,
+    image_bytes: bytes,
+    user_preference: str = "",
+    alcohol_category: str = "beer_or_wine"
+) -> Dict[str, Any]:
+    """Legacy alias for backward compatibility."""
+    return await analyze_alcohol_image(
+        user_id=user_id,
+        image_bytes=image_bytes,
+        user_preference=user_preference,
+        alcohol_category=alcohol_category
+    )
 
 
 def format_shelf_advisor_message(data: dict) -> str:

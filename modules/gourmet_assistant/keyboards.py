@@ -45,18 +45,18 @@ def get_category_presets_keyboard(category: str) -> InlineKeyboardMarkup:
     presets = CURATED_PRESETS.get(category, [])
     buttons = []
     
-    # For beer and wine/spirits, highlight the shelf photo scanning feature
+    # For beer and wine/spirits, highlight the shelf & single bottle photo scanning feature
     if category == "beer":
-        buttons.append([InlineKeyboardButton(text="📸 Сфоткать полку с пивом (ИИ выберет лучшее)", callback_data="gourmet_tip_shelf_beer")])
+        buttons.append([InlineKeyboardButton(text="📸 Сфоткать полку или бутылку пива", callback_data="gourmet_tip_shelf_beer")])
     elif category == "wine_spirits":
-        buttons.append([InlineKeyboardButton(text="📸 Сфоткать винную полку / витрину (ИИ выберет)", callback_data="gourmet_tip_shelf_wine_spirits")])
+        buttons.append([InlineKeyboardButton(text="📸 Сфоткать винную полку или бутылку", callback_data="gourmet_tip_shelf_wine_spirits")])
 
     # Add preset buttons in pairs or single
     for p in presets:
         buttons.append([InlineKeyboardButton(text=p["title"], callback_data=f"gourmet_pr_{p['id']}")])
     
     nav_row = [
-        InlineKeyboardButton(text="🎲 Случайный рецепт", callback_data=f"gourmet_rnd_{category}"),
+        InlineKeyboardButton(text="🎲 Случайный сорт" if category in ["beer", "wine_spirits"] else "🎲 Случайный рецепт", callback_data=f"gourmet_rnd_{category}"),
         InlineKeyboardButton(text="🍽 Все категории", callback_data="gourmet_back_to_menu")
     ]
     exit_row = [
@@ -70,14 +70,15 @@ def get_category_presets_keyboard(category: str) -> InlineKeyboardMarkup:
 def get_gourmet_result_keyboard(category: str, has_shoplist: bool = True) -> InlineKeyboardMarkup:
     """
     Клавиатура под готовым рецептом / напитком:
-    - [ 🔄 Другой рецепт (Ещё) ] на первом месте
+    - [ 🔄 Другой сорт / рецепт (Ещё) ] на первом месте
     - [ 🛒 Список покупок в магазин ]
     - Быстрые кнопки других пресетов этой категории
     - Возврат в кулинарный центр и Главное меню
     """
+    more_title = "🔄 Другой сорт (Ещё)" if category in ["beer", "wine_spirits"] else "🔄 Другой рецепт (Ещё)"
     rows = [
         [
-            InlineKeyboardButton(text="🔄 Другой рецепт (Ещё)", callback_data=f"gourmet_more_{category}")
+            InlineKeyboardButton(text=more_title, callback_data=f"gourmet_more_{category}")
         ]
     ]
 

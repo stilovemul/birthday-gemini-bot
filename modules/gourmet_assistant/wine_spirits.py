@@ -72,12 +72,20 @@ async def get_wine_spirits_guide(
 
     if image_bytes:
         prompt_vision = (
-            "Ты мировой гранд-сомелье. Внимательно распознай бутылку алкоголя, этикетку, винтаж и производителя на этом фото.\n"
-            "Найди актуальный рейтинг и отзывы критиков (Vivino / Whiskybase).\n"
-            "Сформируй полный экспертный разбор в формате JSON со следующими полями: "
-            "drink_name, producer, category, origin, abv, rating, taste_verdict (вкус и мягкость), "
-            "buy_verdict (стоит ли брать), pairings (cheeses_meats, hot_dishes, traditional_snacks, fruits_desserts), "
-            "hangover_risk (risk_level, morning_forecast, safety_rule), tasting_notes, serving."
+            "Ты мировой гранд-сомелье (Master Sommelier) и эксперт по винам и крепким напиткам.\n"
+            "Пользователь прислал ФОТО: это отдельная бутылка, бокал, этикетка вина, коньяка, виски, водки или другого алкоголя.\n"
+            "1. Внимательно распознай напиток, производителя, регион/страну, сорт винограда / сырье и выдержку по этикетке.\n"
+            "2. Найди актуальные мировые оценки критиков и отзывы ценителей (Vivino / Whiskybase / Distiller).\n"
+            "3. Определи крепость (ABV), сладость, органолептические параметры.\n"
+            "4. Дай честный консенсус: ВКУСНОЕ / МЯГКОЕ ИЛИ НЕТ? Пьется легко или спиртуозно?\n"
+            "5. Дай вердикт сомелье: СТОИТ ЛИ ПОКУПАТЬ? Оправдывает ли свою цену?\n"
+            "6. Подбери идеальные гастропары (сыры/деликатесы, горячие блюда, закуски под крепкое, десерты/фрукты).\n"
+            "7. Оцени похмельный фактор (будет ли утром болеть голова, прогноз и золотое правило безопасности).\n"
+            "8. Опиши вкусовой букет СТРОГО НА КРАСИВОМ РУССКОМ ЯЗЫКЕ, температуру подачи и правильный бокал.\n\n"
+            "Верни ТОЛЬКО валидный JSON со следующими полями: "
+            "drink_name, producer, category, origin, abv, rating, taste_verdict, buy_verdict, "
+            "pairings (cheeses_meats, hot_dishes, traditional_snacks, fruits_desserts), "
+            "hangover_risk (risk_level, morning_forecast, safety_rule), tasting_notes, serving, shopping_checklist."
         )
         resp = await ask_gemini(user_id, prompt_vision, image_bytes=image_bytes)
     else:
@@ -111,5 +119,10 @@ async def get_wine_spirits_guide(
             "safety_rule": "Пейте воду!"
         },
         "tasting_notes": "Ягодный букет, дуб, специи",
-        "serving": "16-18°C"
+        "serving": "16-18°C",
+        "shopping_checklist": [
+            "Благородное вино",
+            "Сыр Пармезан",
+            "Минеральная вода"
+        ]
     }

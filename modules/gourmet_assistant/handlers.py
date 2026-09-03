@@ -43,6 +43,7 @@ from modules.gourmet_assistant.asian_cuisine import get_asian_dish_recipe
 from modules.gourmet_assistant.craft_beer import get_craft_beer_guide
 from modules.gourmet_assistant.wine_spirits import get_wine_spirits_guide
 from modules.gourmet_assistant.shelf_advisor import (
+    analyze_alcohol_image,
     analyze_alcohol_shelf,
     format_shelf_advisor_message,
     ask_shelf_followup,
@@ -311,19 +312,22 @@ def format_craft_beer_message(data: dict) -> str:
     fn_str = translate_flavor_notes(fn_str)
 
     b_name = html.escape(str(data.get('beer_name', 'Крафтовое пиво')))
-    brewery = html.escape(str(data.get('brewery', 'Крафтовая')))
+    brewery = html.escape(str(data.get('brewery', 'Крафтовая пивоварня')))
     style = html.escape(str(data.get('style', 'Ale')))
     abv = html.escape(str(data.get('abv', '5.0%')))
     ibu = html.escape(str(data.get('ibu', '20 IBU')))
-    untappd = html.escape(str(data.get('untappd_rating', '4.0/5')))
+    density = html.escape(str(data.get('density', '')))
+    untappd = html.escape(str(data.get('untappd_rating', '4.0 / 5.0')))
     taste = html.escape(str(data.get('taste_verdict', '')))
     buy = html.escape(str(data.get('buy_verdict', '')))
     temp = html.escape(str(data.get('serving_temp', '6-8°C')))
 
+    density_str = f" | Плотность: <b>{density}</b>" if density else ""
+
     lines = [
         f"🍺 <b>{b_name}</b>",
         f"🏭 Пивоварня: <b>{brewery}</b> | Стиль: <i>{style}</i>",
-        f"📊 Крепость: <b>{abv}</b> | Горечь: <b>{ibu}</b> | ⭐️ <b>Untappd: {untappd}</b>\n",
+        f"📊 Крепость: <b>{abv}</b> | Горечь: <b>{ibu}</b>{density_str} | ⭐️ <b>Untappd: {untappd}</b>\n",
         f"👅 <b>Вкусное или нет? (Консенсус отзывов):</b>\n{taste}\n",
         f"🛒 <b>Вердикт сомелье:</b>\n{buy}\n",
         "🍟 <b>ИДЕАЛЬНЫЕ ЗАКУСКИ (FOOD PAIRING):</b>"
@@ -771,17 +775,19 @@ async def cb_mode_exit_to_main(callback: types.CallbackQuery, state: FSMContext)
 
 @router.callback_query(F.data.in_(["gourmet_tip_shelf_beer", "gourmet_tip_shelf_wine_spirits"]))
 async def cb_gourmet_shelf_tip(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("📸 Сфотографируйте полку")
+    await callback.answer("📸 Сфотографируйте полку или бутылку")
     is_wine = "wine" in callback.data
     target_state = ActiveModeStates.wine_spirits_mode if is_wine else ActiveModeStates.craft_beer_mode
     await state.set_state(target_state)
     cat = "wine_spirits" if is_wine else "beer"
 
     text = (
-        "📸 <b>ИИ-Сомелье: Подбор напитка по фото полки / витрины / меню</b>\n\n"
-        "1. <b>Сделайте фото</b> полки с пивом или алкоголем в магазине (К&Б, Перекрёсток, ВкусВилл, Винлаб, крафтовый бар) или барной карты.\n"
-        "2. <b>Отправьте фото сюда в чат</b> (можно с комментарием в подписи: <i>«хочу кислое ягодное»</i>, <i>«красное сухое к стейку»</i> или <i>«до 300 руб»</i>).\n\n"
-        "🤖 <i>ИИ-сомелье мгновенно распознает все этикетки, сравнит мировые рейтинги Untappd / Vivino, выберет <b>ТОП-1 напиток</b> на этой полке, назовет безопасную классику и предупредит, чего брать не стоит!</i>"
+        "📸 <b>ИИ-Сомелье: Полный скан полки или разбор отдельной бутылки</b>\n\n"
+        "1. <b>Сделайте фото:</b>\n"
+        "   • <b>Витрина / Полка / Холодильник</b> в магазине (К&Б, Перекрёсток, ВкусВилл, Винлаб, крафтовый бар) или барная карта — <i>сомелье просканирует все полки, укажет точные координаты и выберет ТОП-3</i>.\n"
+        "   • <b>Отдельная бутылка / банка / этикетка</b> (в руке, на столе или в бокале) — <i>сомелье выдаст полный обзор: рейтинг Untappd/Vivino, вкусное или нет, вердикт брать/нет, идеальные закуски, похмельный фактор и бокал</i>.\n\n"
+        "2. <b>Отправьте фото сюда в чат</b> (можно с пожеланием в подписи: <i>«хочу кислое ягодное»</i>, <i>«к стейку»</i> или <i>«до 300 руб»</i>).\n\n"
+        "🤖 <i>ИИ-сомелье мгновенно определит формат фото и выдаст идеальную рекомендацию!</i>"
     )
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -1006,9 +1012,14 @@ async def handle_universal_gourmet_input(message: types.Message, state: FSMConte
             formatted_text = format_asian_message(data)
         elif cat == "beer":
             if image_bytes:
-                data = await analyze_alcohol_shelf(user_id, image_bytes=image_bytes, user_preference=extracted_text, alcohol_category="beer")
-                set_shelf_session(user_id, image_bytes, data)
-                formatted_text = format_shelf_advisor_message(data)
+                data = await analyze_alcohol_image(user_id, image_bytes=image_bytes, user_preference=extracted_text, alcohol_category="beer")
+                img_type = data.get("image_type", "shelf")
+                if img_type == "shelf" or "shelves" in data:
+                    set_shelf_session(user_id, image_bytes, data)
+                    formatted_text = format_shelf_advisor_message(data)
+                else:
+                    clear_shelf_session(user_id)
+                    formatted_text = format_craft_beer_message(data)
             else:
                 shelf_sess = get_shelf_session(user_id)
                 if shelf_sess and (is_shelf_followup_question(extracted_text) or not extracted_text.startswith("/")):
@@ -1028,9 +1039,14 @@ async def handle_universal_gourmet_input(message: types.Message, state: FSMConte
                     formatted_text = format_craft_beer_message(data)
         elif cat == "wine_spirits":
             if image_bytes:
-                data = await analyze_alcohol_shelf(user_id, image_bytes=image_bytes, user_preference=extracted_text, alcohol_category="wine_spirits")
-                set_shelf_session(user_id, image_bytes, data)
-                formatted_text = format_shelf_advisor_message(data)
+                data = await analyze_alcohol_image(user_id, image_bytes=image_bytes, user_preference=extracted_text, alcohol_category="wine_spirits")
+                img_type = data.get("image_type", "shelf")
+                if img_type == "shelf" or "shelves" in data:
+                    set_shelf_session(user_id, image_bytes, data)
+                    formatted_text = format_shelf_advisor_message(data)
+                else:
+                    clear_shelf_session(user_id)
+                    formatted_text = format_wine_spirits_message(data)
             else:
                 shelf_sess = get_shelf_session(user_id)
                 if shelf_sess and (is_shelf_followup_question(extracted_text) or not extracted_text.startswith("/")):
