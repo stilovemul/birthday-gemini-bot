@@ -21,13 +21,12 @@ from modules.custom_rules.storage import get_user_rules
 logger = logging.getLogger("GeminiEngine")
 
 CANDIDATE_MODELS = [
-    "gemini-3.1-flash-lite",
-    "gemini-flash-latest",
-    "gemini-flash-lite-latest",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
     "gemini-3.5-flash",
     "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-    "gemini-3.6-flash"
+    "gemini-3.1-flash-lite",
+    "gemini-flash-latest"
 ]
 
 client = None
@@ -36,8 +35,7 @@ client = None
 def get_genai_client():
     global client
     if client is None:
-        api_key = os.getenv("GEMINI_API_KEY", GEMINI_API_KEY)
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(api_key=GEMINI_API_KEY)
     return client
 
 
@@ -250,9 +248,8 @@ def reset_chat_session(user_id: int):
         del user_chats[user_id]
 
 
-async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = None, mime_type: str = "image/jpeg") -> str:
+async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = None, mime_type: str = "image/jpeg", system_instruction: Optional[str] = None) -> str:
     c = get_genai_client()
-    sys_inst = get_system_instruction(user_id)
     
     for model_name in CANDIDATE_MODELS:
         try:
@@ -261,16 +258,18 @@ async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = N
                     types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                     prompt or "Что изображено на этом фото? Опиши подробно."
                 ]
+                cfg = types.GenerateContentConfig(
+                    system_instruction=system_instruction or "Ты профессиональный ИИ-эксперт и сомелье. Внимательно анализируй изображения и следуй инструкциям пользователя."
+                )
                 response = await c.aio.models.generate_content(
                     model=model_name,
                     contents=contents,
-                    config=types.GenerateContentConfig(
-                        system_instruction=sys_inst
-                    )
+                    config=cfg
                 )
                 if response and response.text:
                     return response.text.strip()
             else:
+                sys_inst = system_instruction or get_system_instruction(user_id)
                 reset_chat_session(user_id)
                 chat = get_or_create_chat(user_id, model_name)
                 response = await chat.send_message(prompt)
