@@ -1031,10 +1031,51 @@ async def cb_goto_music_sommelier(callback: types.CallbackQuery, state: FSMConte
 
 # --- DEDICATED SOMMELIER & FOOD INTERACTIVE CALLBACKS ---
 
+def clean_telegram_html(text: str) -> str:
+    """
+    Очищает и форматирует HTML под спецификацию Telegram Bot API:
+    - Конвертирует <ul>, <ol>, <li> в красивые списки с маркерами •
+    - Конвертирует <p>, <br> в переносы строк
+    - Заменяет <h1>..<h6> на <b>
+    - Конвертирует markdown **bold** в <b>bold</b>
+    - Вырезает неподдерживаемые Telegram теги
+    - Экранирует некорректные амперсанды
+    """
+    if not text:
+        return ""
+    
+    # 1. Списки и параграфы
+    text = re.sub(r'<\s*br\s*/?\s*>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'<\s*/?\s*(ul|ol)\s*>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'<\s*li\s*>', '• ', text, flags=re.IGNORECASE)
+    text = re.sub(r'<\s*/\s*li\s*>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'<\s*p\s*>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'<\s*/\s*p\s*>', '\n\n', text, flags=re.IGNORECASE)
+    
+    # 2. Заголовки
+    text = re.sub(r'<\s*h[1-6]\s*>', '<b>', text, flags=re.IGNORECASE)
+    text = re.sub(r'<\s*/\s*h[1-6]\s*>', '</b>\n', text, flags=re.IGNORECASE)
+    
+    # 3. Маркдаун вставки
+    text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
+    text = re.sub(r'(?m)^[\*\-]\s+', '• ', text)
+
+    # 4. Удаление любых тегов кроме разрешенных Telegram API
+    text = re.sub(r'<(?!\/?(?:b|strong|i|em|u|ins|s|strike|del|a|code|pre|blockquote|tg-spoiler|tg-emoji)\b)[^>]+>', '', text, flags=re.IGNORECASE)
+    
+    # 5. Экранирование &
+    text = re.sub(r'&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)', '&amp;', text)
+    
+    # 6. Убираем лишние пустые строки подряд
+    text = re.sub(r'\n{3,}', '\n\n', text).strip()
+    return text
+
+
 async def safe_reply(message: types.Message, text: str, reply_markup=None):
-    """Безопасная отправка ответа с fallback на Markdown и обычный текст"""
+    """Безопасная отправка ответа с авто-очисткой HTML для Telegram"""
+    cleaned_html = clean_telegram_html(text)
     try:
-        await message.reply(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
+        await message.reply(cleaned_html, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
         return
     except Exception as e:
         logger.warning(f"HTML reply failed: {e}. Trying Markdown...")
@@ -1042,13 +1083,15 @@ async def safe_reply(message: types.Message, text: str, reply_markup=None):
         await message.reply(text, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
         return
     except Exception as e:
-        logger.warning(f"Markdown reply failed: {e}. Falling back to plain text...")
+        logger.warning(f"Markdown reply failed: {e}. Falling back to plain text without tags...")
     try:
-        await message.reply(text, reply_markup=reply_markup)
+        plain_text = re.sub(r'<[^>]+>', '', text)
+        await message.reply(plain_text, reply_markup=reply_markup)
     except Exception as e:
         logger.error(f"Failed to reply to message: {e}")
         try:
-            await message.answer(text, reply_markup=reply_markup)
+            plain_text = re.sub(r'<[^>]+>', '', text)
+            await message.answer(plain_text, reply_markup=reply_markup)
         except Exception:
             pass
 
@@ -1075,7 +1118,7 @@ async def cb_somm_eval(callback: types.CallbackQuery):
         "2. 👃 <b>АРОМАТ И ВКУСОВЫЕ НОТЫ:</b> Баланс солодовой сладости, хмелевая горечь (IBU), освежающий профиль, послевкусие.\n"
         "3. ❄️ <b>ИДЕАЛЬНАЯ ПОДАЧА:</b> Температура сервировки (°C), рекомендуемая форма бокала (пилснер, тюльпан, пинта).\n"
         "4. 🎯 <b>ВЕРДИКТ СОМЕЛЬЕ:</b> Честная экспертная оценка, для каких ситуаций подходит лучше всего.\n\n"
-        "Форматируй ответ в красивом HTML (<b>, <i>, <code>), используй живые эмодзи."
+        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
     )
     
     resp = await ask_gemini(user_id, prompt)
@@ -1117,7 +1160,7 @@ async def cb_somm_pair(callback: types.CallbackQuery):
         "2. 🍤 <b>Горячие закуски:</b> (крылышки, креветки, колбаски, кольца кальмара, жареный сыр)\n"
         "3. 🍕 <b>Сытные блюда:</b> (пицца, бургеры, стейк, шашлык)\n"
         "4. 💡 <b>Необычный совет от шефа:</b> секретный вкусовой акцент.\n\n"
-        "Форматируй в HTML с эмодзи."
+        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
     )
     
     resp = await ask_gemini(user_id, prompt)
@@ -1157,7 +1200,7 @@ async def cb_somm_rate(callback: types.CallbackQuery):
         "1. ⭐️ <b>Рейтинг ценителей:</b> (Untappd / RateBeer / Vivino / Отзовик).\n"
         "2. 🏭 <b>Производитель и история:</b> Где и кем производится, традиции завода.\n"
         "3. 💰 <b>Честность цены:</b> Оправдана ли стоимость на полке, есть ли более интересные аналоги за те же деньги.\n\n"
-        "Форматируй в HTML с эмодзи."
+        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
     )
     
     resp = await ask_gemini(user_id, prompt)
@@ -1245,7 +1288,7 @@ async def cb_food_recipe(callback: types.CallbackQuery):
         "1. 🛒 Список ингредиентов и точные пропорции.\n"
         "2. 👨‍🍳 Пошаговый процесс приготовления (температура, время, текстура).\n"
         "3. 🌟 Секретный соус или фишка от шефа, делающая вкус незабываемым.\n\n"
-        "Форматируй в HTML с эмодзи."
+        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
     )
     resp = await ask_gemini(user_id, prompt)
     
@@ -1281,7 +1324,7 @@ async def cb_food_pairing_btn(callback: types.CallbackQuery):
         "1. 🍷 Идеальное вино (сорт, регион, почему подходит)\n"
         "2. 🍺 Идеальное пиво или сидр (стиль, горечь/сладость)\n"
         "3. 🍹 Безалкогольная пара (авторский лимонад / чай / моктейль)\n\n"
-        "Форматируй в HTML."
+        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
     )
     resp = await ask_gemini(user_id, prompt)
     await safe_reply(callback.message, resp, reply_markup=get_main_menu())
@@ -1302,7 +1345,8 @@ async def cb_fridge_chef(callback: types.CallbackQuery, state: FSMContext):
     
     prompt = (
         f"Ты — шеф-повар Dark Kitchen. Пользователь сфотографировал продукты ({title}). "
-        "Придумай ресторанный ужин за 15 минут строго из того, что есть в списке, с пошаговыми инструкциями!"
+        "Придумай ресторанный ужин за 15 минут строго из того, что есть в списке, с пошаговыми инструкциями!\n\n"
+        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
     )
     resp = await ask_gemini(user_id, prompt)
     await safe_reply(callback.message, resp, reply_markup=get_main_menu())
