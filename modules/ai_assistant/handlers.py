@@ -194,16 +194,32 @@ async def handle_photo(message: types.Message, bot: Bot):
             )
             return
 
-        # 2. Check if photo is an alcohol shelf/drink bottles
+        # 2. Check if photo is an alcohol shelf/drink bottles (Interactive Sommelier Router)
         shelf_data = await analyze_alcohol_shelf(user_id, image_bytes=image_bytes, user_preference=caption or "")
         top_name = shelf_data.get("top_pick", {}).get("name", "")
         if shelf_data and (shelf_data.get("shelves") or (top_name and "топовый" not in top_name.lower())):
             set_shelf_session(user_id, image_bytes, shelf_data)
             card_text = format_shelf_advisor_message(shelf_data)
-            await message.answer(card_text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+            
+            kb = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(text="🍷 Винный Сомелье (Выбор с полки)", callback_data="act_shelf_sommelier"),
+                        InlineKeyboardButton(text="🥩 Гастропара (Под мясо/рыбу)", callback_data="act_shelf_pairing")
+                    ],
+                    [
+                        InlineKeyboardButton(text="⭐ Рейтинги Vivino & Цены", callback_data="act_shelf_ratings"),
+                        InlineKeyboardButton(text="🍸 Коктейли & Миксы", callback_data="act_shelf_cocktails")
+                    ],
+                    [
+                        InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
+                    ]
+                ]
+            )
+            await message.answer(card_text, parse_mode=ParseMode.HTML, reply_markup=kb)
             return
 
-        # 3. Fallback to general vision prompt
+        # 3. Fallback to general vision prompt with interactive contextual chips
         prompt_text = caption or "Подробно и полезно ответь на вопрос пользователя или опиши изображение."
         reply_text = await ask_gemini(user_id, prompt_text, image_bytes=image_bytes)
         
@@ -222,6 +238,65 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     text = (message.text or "").strip()
     user_id = message.from_user.id
     t_lower = text.lower()
+
+    # 0. Interactive Quick Topic Router (Выходные, Отдых, Загород, Сомелье, Бармен, Кино, Ужин)
+    if t_lower in ["выходные", "выходной", "уикенд", "отдых", "загород", "куда сходить", "что поделать", "планы на выходные", "куда поехать"]:
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="🏕 Загородные клубы, Бани & Спа", callback_data="act_goto_country"),
+                ],
+                [
+                    InlineKeyboardButton(text="🚗 Авто-маршруты & Роадтрипы", callback_data="act_goto_weekend"),
+                ],
+                [
+                    InlineKeyboardButton(text="👶 Отдых с малышом (1–3 года)", callback_data="act_goto_kids"),
+                ],
+                [
+                    InlineKeyboardButton(text="🎬 Киномарафон & Фильмы", callback_data="act_goto_cinema"),
+                    InlineKeyboardButton(text="🍳 Рецепты от Шефа", callback_data="act_goto_chef")
+                ],
+                [
+                    InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
+                ]
+            ]
+        )
+        await message.answer(
+            "✨ <b>Интерактивный подбор планов на выходные:</b>\n\n"
+            "Я могу составить идеальный сценарий отдыха! Выберите подходящее направление:",
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb
+        )
+        return
+
+    if t_lower in ["сомелье", "вино", "выбрать вино", "алкоголь", "бармен", "коктейль", "коктейли", "пиво"]:
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="🍷 Винный гид & Подбор по полке", callback_data="act_goto_sommelier"),
+                ],
+                [
+                    InlineKeyboardButton(text="🥩 Гастропара (Вино под блюдо)", callback_data="act_goto_pairing"),
+                ],
+                [
+                    InlineKeyboardButton(text="🍸 Авторские коктейли & Бармен", callback_data="act_goto_cocktails"),
+                ],
+                [
+                    InlineKeyboardButton(text="📚 Книжный сомелье", callback_data="act_goto_book_sommelier"),
+                    InlineKeyboardButton(text="🎵 Музыкальный сомелье", callback_data="act_goto_music_sommelier")
+                ],
+                [
+                    InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
+                ]
+            ]
+        )
+        await message.answer(
+            "🍷 <b>Интерактивный Сомелье & Бармен гид:</b>\n\n"
+            "Выберите интересующий модуль или просто отправьте фото полки в магазине / блюда:",
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb
+        )
+        return
 
     # Check if user is asking for Food Pairing ("буду кушать пиццу, какое пиво взять?", "под стейк какое вино?", etc.)
     if is_food_pairing_query(text):
@@ -654,3 +729,210 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     except Exception as e:
         logger.warning(f"Markdown send failed: {e}. Sending plain text...")
         await message.answer(ai_reply, reply_markup=get_main_menu())
+
+
+# --- INTERACTIVE MODULE ROUTER CALLBACKS ---
+
+@router.callback_query(F.data == "act_shelf_sommelier")
+async def cb_shelf_sommelier(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    shelf_sess = get_shelf_session(user_id)
+    if not shelf_sess:
+        await callback.answer("⚠️ Срок сессии фото истек. Отправьте фото заново.", show_alert=True)
+        return
+    await callback.answer("🍷 Анализирую полку как сомелье...")
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    
+    question = "Выдели 2-3 самых лучших вина на этой полке по соотношению цена/качество. Объясни сорта винограда, вкусовой профиль и почему их стоит взять."
+    resp = await ask_shelf_followup(
+        user_id=user_id,
+        question=question,
+        shelf_data=shelf_sess.get("shelf_data", {}),
+        image_bytes=shelf_sess.get("image_bytes")
+    )
+    
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🥩 Гастропара к блюдам", callback_data="act_shelf_pairing"),
+                InlineKeyboardButton(text="⭐ Vivino & Рейтинги", callback_data="act_shelf_ratings")
+            ],
+            [
+                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
+            ]
+        ]
+    )
+    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
+
+
+@router.callback_query(F.data == "act_shelf_pairing")
+async def cb_shelf_pairing(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    shelf_sess = get_shelf_session(user_id)
+    if not shelf_sess:
+        await callback.answer("⚠️ Отправьте фото полки заново.", show_alert=True)
+        return
+    await callback.answer("🥩 Подбираю гастрономические пары...")
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    
+    question = "Подбери идеальные гастропары (food pairing) к винам/напиткам на этом фото: что взять под стейк/мясо, что под морепродукты/рыбу, и что под сырную тарелку."
+    resp = await ask_shelf_followup(
+        user_id=user_id,
+        question=question,
+        shelf_data=shelf_sess.get("shelf_data", {}),
+        image_bytes=shelf_sess.get("image_bytes")
+    )
+    
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🍷 Топ сомелье", callback_data="act_shelf_sommelier"),
+                InlineKeyboardButton(text="⭐ Рейтинги Vivino", callback_data="act_shelf_ratings")
+            ],
+            [
+                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
+            ]
+        ]
+    )
+    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
+
+
+@router.callback_query(F.data == "act_shelf_ratings")
+async def cb_shelf_ratings(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    shelf_sess = get_shelf_session(user_id)
+    if not shelf_sess:
+        await callback.answer("⚠️ Отправьте фото заново.", show_alert=True)
+        return
+    await callback.answer("⭐ Оцениваю рейтинги и выгоду...")
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    
+    question = "Оцени рейтинг вин на фото по шкале Vivino и мировым винным критикам. Укажи, какие позиции сейчас продаются по честной и выгодной цене, а какие переоценены."
+    resp = await ask_shelf_followup(
+        user_id=user_id,
+        question=question,
+        shelf_data=shelf_sess.get("shelf_data", {}),
+        image_bytes=shelf_sess.get("image_bytes")
+    )
+    
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🍷 Топ сомелье", callback_data="act_shelf_sommelier"),
+                InlineKeyboardButton(text="🥩 Гастропара", callback_data="act_shelf_pairing")
+            ],
+            [
+                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
+            ]
+        ]
+    )
+    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
+
+
+@router.callback_query(F.data == "act_shelf_cocktails")
+async def cb_shelf_cocktails(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    shelf_sess = get_shelf_session(user_id)
+    if not shelf_sess:
+        await callback.answer("⚠️ Отправьте фото заново.", show_alert=True)
+        return
+    await callback.answer("🍸 Составляю рецепты коктейлей...")
+    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
+    
+    question = "Предложи 2-3 авторских или классических коктейля, которые можно приготовить с напитками с этой полки, с рецептом и пропорциями."
+    resp = await ask_shelf_followup(
+        user_id=user_id,
+        question=question,
+        shelf_data=shelf_sess.get("shelf_data", {}),
+        image_bytes=shelf_sess.get("image_bytes")
+    )
+    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+
+
+# Быстрые переходы в модули
+@router.callback_query(F.data == "act_goto_country")
+async def cb_goto_country(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("🏕 Перехожу в модуль Загородный отдых...")
+    from modules.country_relax.handlers import cmd_country_relax
+    await cmd_country_relax(callback.message, state)
+
+
+@router.callback_query(F.data == "act_goto_weekend")
+async def cb_goto_weekend(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("🚗 Перехожу в модуль Сценарист выходных...")
+    from modules.weekend_trips.handlers import cmd_weekend_trips
+    await cmd_weekend_trips(callback.message, state)
+
+
+@router.callback_query(F.data == "act_goto_kids")
+async def cb_goto_kids(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("👶 Открываю развлечения для малыша 1–3 года...")
+    from core.states import ActiveModeStates
+    from modules.weekend_trips.handlers import get_kids_menu_keyboard
+    await state.set_state(ActiveModeStates.weekend_planner_mode)
+    text = (
+        "👶 <b>Развлечения с малышом 1–3 года в Санкт-Петербурге и ЛО:</b>\n\n"
+        "Мягкие тоддлер-зоны 0–3, камерные бэби-театры на подушках, тёплые лягушатники (+32...+34°C), "
+        "пушистые ручные альпаки, океанариум и живописные экотропы под детскую коляску!\n\n"
+        "👇 <b>Выберите категорию для малыша:</b>"
+    )
+    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_kids_menu_keyboard())
+
+
+@router.callback_query(F.data == "act_goto_cinema")
+async def cb_goto_cinema(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("🎬 Перехожу в Киносомелье...")
+    from modules.cinema_matchmaker.handlers import cmd_cinema_matchmaker
+    await cmd_cinema_matchmaker(callback.message, state)
+
+
+@router.callback_query(F.data == "act_goto_chef")
+async def cb_goto_chef(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("🍳 Перехожу в Шеф-повар из холодильника...")
+    from modules.dark_kitchen.handlers import cmd_dark_kitchen
+    await cmd_dark_kitchen(callback.message, state)
+
+
+@router.callback_query(F.data == "act_goto_sommelier")
+async def cb_goto_sommelier(callback: types.CallbackQuery):
+    await callback.answer("🍷 Модуль Винный сомелье активирован!")
+    await callback.message.answer(
+        "🍷 <b>Винный сомелье & Кавист:</b>\n\n"
+        "📸 <b>Просто отправьте фото полки в супермаркете или винотеке</b> — я моментально определю сорта, лучшие винтажи, соотношение цена/качество и скидки!\n\n"
+        "💬 <i>Либо напишите, какое вино ищете: «Красное сухое до 1500 рублей под мясо».</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_menu()
+    )
+
+
+@router.callback_query(F.data == "act_goto_pairing")
+async def cb_goto_pairing(callback: types.CallbackQuery):
+    await callback.answer("🥩 Модуль Гастропара активирован!")
+    await callback.message.answer(
+        "🥩 <b>Гастрономический гид (Food Pairing):</b>\n\n"
+        "Напишите, какое блюдо вы планируете приготовить или заказать (например: <i>«Стейк рибай прожарки medium», «Паста с морепродуктами», «Утка с яблоками»</i>) — и я подберу идеальный напиток!",
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_menu()
+    )
+
+
+@router.callback_query(F.data == "act_goto_cocktails")
+async def cb_goto_cocktails(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("🍸 Модуль Бармен активирован!")
+    from modules.gourmet_assistant.handlers import cmd_cocktails
+    await cmd_cocktails(callback.message, state)
+
+
+@router.callback_query(F.data == "act_goto_book_sommelier")
+async def cb_goto_book_sommelier(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("📚 Модуль Книжный сомелье...")
+    from modules.book_sommelier.handlers import cmd_book_sommelier
+    await cmd_book_sommelier(callback.message, state)
+
+
+@router.callback_query(F.data == "act_goto_music_sommelier")
+async def cb_goto_music_sommelier(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("🎵 Модуль Музыкальный сомелье...")
+    from modules.music_sommelier.handlers import cmd_music_sommelier
+    await cmd_music_sommelier(callback.message, state)
+
