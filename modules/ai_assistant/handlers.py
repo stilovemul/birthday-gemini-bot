@@ -859,12 +859,12 @@ async def cb_shelf_sommelier(callback: types.CallbackQuery):
 
 @router.callback_query(F.data == "act_shelf_pairing")
 async def cb_shelf_pairing(callback: types.CallbackQuery):
+    await callback.answer()
     user_id = callback.from_user.id
     shelf_sess = get_shelf_session(user_id)
     if not shelf_sess:
-        await callback.answer("⚠️ Отправьте фото полки заново.", show_alert=True)
+        await callback.message.answer("⚠️ Отправьте фото полки заново.")
         return
-    await callback.answer("🥩 Подбираю гастрономические пары...")
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     question = "Подбери идеальные гастропары (food pairing) к винам/напиткам на этом фото: что взять под стейк/мясо, что под морепродукты/рыбу, и что под сырную тарелку."
@@ -886,17 +886,17 @@ async def cb_shelf_pairing(callback: types.CallbackQuery):
             ]
         ]
     )
-    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
+    await safe_reply(callback.message, resp, reply_markup=kb)
 
 
 @router.callback_query(F.data == "act_shelf_ratings")
 async def cb_shelf_ratings(callback: types.CallbackQuery):
+    await callback.answer()
     user_id = callback.from_user.id
     shelf_sess = get_shelf_session(user_id)
     if not shelf_sess:
-        await callback.answer("⚠️ Отправьте фото заново.", show_alert=True)
+        await callback.message.answer("⚠️ Отправьте фото заново.")
         return
-    await callback.answer("⭐ Оцениваю рейтинги и выгоду...")
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     question = "Оцени рейтинг вин на фото по шкале Vivino и мировым винным критикам. Укажи, какие позиции сейчас продаются по честной и выгодной цене, а какие переоценены."
@@ -918,17 +918,17 @@ async def cb_shelf_ratings(callback: types.CallbackQuery):
             ]
         ]
     )
-    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
+    await safe_reply(callback.message, resp, reply_markup=kb)
 
 
 @router.callback_query(F.data == "act_shelf_cocktails")
 async def cb_shelf_cocktails(callback: types.CallbackQuery):
+    await callback.answer()
     user_id = callback.from_user.id
     shelf_sess = get_shelf_session(user_id)
     if not shelf_sess:
-        await callback.answer("⚠️ Отправьте фото заново.", show_alert=True)
+        await callback.message.answer("⚠️ Отправьте фото заново.")
         return
-    await callback.answer("🍸 Составляю рецепты коктейлей...")
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     question = "Предложи 2-3 авторских или классических коктейля, которые можно приготовить с напитками с этой полки, с рецептом и пропорциями."
@@ -938,7 +938,7 @@ async def cb_shelf_cocktails(callback: types.CallbackQuery):
         shelf_data=shelf_sess.get("shelf_data", {}),
         image_bytes=shelf_sess.get("image_bytes")
     )
-    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+    await safe_reply(callback.message, resp, reply_markup=get_main_menu())
 
 
 # Быстрые переходы в модули
@@ -1031,33 +1031,54 @@ async def cb_goto_music_sommelier(callback: types.CallbackQuery, state: FSMConte
 
 # --- DEDICATED SOMMELIER & FOOD INTERACTIVE CALLBACKS ---
 
+async def safe_reply(message: types.Message, text: str, reply_markup=None):
+    """Безопасная отправка ответа с fallback на Markdown и обычный текст"""
+    try:
+        await message.reply(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
+        return
+    except Exception as e:
+        logger.warning(f"HTML reply failed: {e}. Trying Markdown...")
+    try:
+        await message.reply(text, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+        return
+    except Exception as e:
+        logger.warning(f"Markdown reply failed: {e}. Falling back to plain text...")
+    try:
+        await message.reply(text, reply_markup=reply_markup)
+    except Exception as e:
+        logger.error(f"Failed to reply to message: {e}")
+        try:
+            await message.answer(text, reply_markup=reply_markup)
+        except Exception:
+            pass
+
+
 @router.callback_query(F.data == "act_somm_eval")
 async def cb_somm_eval(callback: types.CallbackQuery):
+    await callback.answer()
     user_id = callback.from_user.id
     sess = get_pending_photo_session(user_id)
     if not sess:
-        await callback.answer("⚠️ Сессия фото истекла. Отправьте фото заново.", show_alert=True)
+        await callback.message.answer("⚠️ Сессия фото истекла. Пожалуйста, отправьте фото заново.")
         return
     
     data = sess.get("data", {})
     title = data.get("title", "Напиток")
-    img = sess.get("image_bytes")
     
-    await callback.answer("🍺 Составляю разбор сомелье...")
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     prompt = (
         f"Ты — признанный пивной и винный сомелье (кавист).\n"
-        f"Внимательно изучи напиток на фото (название: «{title}»).\n\n"
+        f"Напиток пользователя: «{title}».\n\n"
         "Составь профессиональный и сочный разбор сомелье:\n"
-        "1. 🍺/🍷 **СТИЛЬ И ХАРАКТЕР:** Стиль/сорт (светлый лагер, пилснер, IPA, стаут, сухое вино), плотность, цвет, карбонизация, крепость.\n"
-        "2. 👃 **АРОМАТ И ВКУСОВЫЕ НОТЫ:** Баланс солодовой сладости, хмелевая горечь (IBU), освежающий профиль, послевкусие.\n"
-        "3. ❄️ **ИДЕАЛЬНАЯ ПОДАЧА:** Температура сервировки (°C), рекомендуемая форма бокала (пилснер, тюльпан, пинта).\n"
-        "4. 🎯 **ВЕРДИКТ СОМЕЛЬЕ:** Честная экспертная оценка, для каких ситуаций подходит лучше всего.\n\n"
+        "1. 🍺/🍷 <b>СТИЛЬ И ХАРАКТЕР:</b> Стиль/сорт (светлый лагер, пилснер, IPA, стаут, сухое вино), плотность, цвет, карбонизация, крепость.\n"
+        "2. 👃 <b>АРОМАТ И ВКУСОВЫЕ НОТЫ:</b> Баланс солодовой сладости, хмелевая горечь (IBU), освежающий профиль, послевкусие.\n"
+        "3. ❄️ <b>ИДЕАЛЬНАЯ ПОДАЧА:</b> Температура сервировки (°C), рекомендуемая форма бокала (пилснер, тюльпан, пинта).\n"
+        "4. 🎯 <b>ВЕРДИКТ СОМЕЛЬЕ:</b> Честная экспертная оценка, для каких ситуаций подходит лучше всего.\n\n"
         "Форматируй ответ в красивом HTML (<b>, <i>, <code>), используй живые эмодзи."
     )
     
-    resp = await ask_gemini(user_id, prompt, image_bytes=img)
+    resp = await ask_gemini(user_id, prompt)
     
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -1072,38 +1093,34 @@ async def cb_somm_eval(callback: types.CallbackQuery):
         ]
     )
     
-    try:
-        await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
-    except Exception:
-        await callback.message.reply(resp, reply_markup=kb)
+    await safe_reply(callback.message, resp, reply_markup=kb)
 
 
 @router.callback_query(F.data == "act_somm_pair")
 async def cb_somm_pair(callback: types.CallbackQuery):
+    await callback.answer()
     user_id = callback.from_user.id
     sess = get_pending_photo_session(user_id)
     if not sess:
-        await callback.answer("⚠️ Отправьте фото заново.", show_alert=True)
+        await callback.message.answer("⚠️ Сессия фото истекла. Пожалуйста, отправьте фото заново.")
         return
         
     data = sess.get("data", {})
     title = data.get("title", "Напиток")
-    img = sess.get("image_bytes")
     
-    await callback.answer("🥨 Подбираю идеальные закуски...")
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     prompt = (
         f"Ты — шеф-повар и эксперт по гастропарам (food pairing).\n"
         f"Подбери лучшие закуски, снеки и блюда, которые идеально раскроют вкус напитка «{title}»:\n\n"
-        "1. 🍟 **Быстрые снеки к бокалу:** (чипсы, гренки, сыр, орешки, вяленая рыба/мясо)\n"
-        "2. 🍤 **Горячие закуски:** (крылышки, креветки, колбаски, кольца кальмара, жареный сыр)\n"
-        "3. 🍕 **Сытные блюда:** (пицца, бургеры, стейк, шашлык)\n"
-        "4. 💡 **Необычный совет от шефа:** секретный вкусовой акцент.\n\n"
+        "1. 🍟 <b>Быстрые снеки к бокалу:</b> (чипсы, гренки, сыр, орешки, вяленая рыба/мясо)\n"
+        "2. 🍤 <b>Горячие закуски:</b> (крылышки, креветки, колбаски, кольца кальмара, жареный сыр)\n"
+        "3. 🍕 <b>Сытные блюда:</b> (пицца, бургеры, стейк, шашлык)\n"
+        "4. 💡 <b>Необычный совет от шефа:</b> секретный вкусовой акцент.\n\n"
         "Форматируй в HTML с эмодзи."
     )
     
-    resp = await ask_gemini(user_id, prompt, image_bytes=img)
+    resp = await ask_gemini(user_id, prompt)
     
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -1118,36 +1135,32 @@ async def cb_somm_pair(callback: types.CallbackQuery):
         ]
     )
     
-    try:
-        await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
-    except Exception:
-        await callback.message.reply(resp, reply_markup=kb)
+    await safe_reply(callback.message, resp, reply_markup=kb)
 
 
 @router.callback_query(F.data == "act_somm_rate")
 async def cb_somm_rate(callback: types.CallbackQuery):
+    await callback.answer()
     user_id = callback.from_user.id
     sess = get_pending_photo_session(user_id)
     if not sess:
-        await callback.answer("⚠️ Отправьте фото заново.", show_alert=True)
+        await callback.message.answer("⚠️ Сессия фото истекла. Пожалуйста, отправьте фото заново.")
         return
         
     data = sess.get("data", {})
     title = data.get("title", "Напиток")
-    img = sess.get("image_bytes")
     
-    await callback.answer("⭐ Анализирую рейтинги и репутацию...")
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     prompt = (
         f"Расскажи о репутации, оценках и отзывах о напитке «{title}»:\n"
-        "1. ⭐️ **Рейтинг ценителей:** (Untappd / RateBeer / Vivino / Киноманы / Отзовик).\n"
-        "2. 🏭 **Производитель и история:** Где и кем производится, традиции завода.\n"
-        "3. 💰 **Честность цены:** Оправдана ли стоимость на полке, есть ли более интересные аналоги за те же деньги.\n\n"
+        "1. ⭐️ <b>Рейтинг ценителей:</b> (Untappd / RateBeer / Vivino / Отзовик).\n"
+        "2. 🏭 <b>Производитель и история:</b> Где и кем производится, традиции завода.\n"
+        "3. 💰 <b>Честность цены:</b> Оправдана ли стоимость на полке, есть ли более интересные аналоги за те же деньги.\n\n"
         "Форматируй в HTML с эмодзи."
     )
     
-    resp = await ask_gemini(user_id, prompt, image_bytes=img)
+    resp = await ask_gemini(user_id, prompt)
     
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -1160,18 +1173,16 @@ async def cb_somm_rate(callback: types.CallbackQuery):
             ]
         ]
     )
-    try:
-        await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
-    except Exception:
-        await callback.message.reply(resp, reply_markup=kb)
+    await safe_reply(callback.message, resp, reply_markup=kb)
 
 
 @router.callback_query(F.data.in_(["act_somm_kbju", "act_food_do_log"]))
 async def cb_food_log(callback: types.CallbackQuery):
+    await callback.answer("✅ Записываю в рацион...")
     user_id = callback.from_user.id
     sess = get_pending_photo_session(user_id)
     if not sess:
-        await callback.answer("⚠️ Срок сессии истек. Отправьте фото заново.", show_alert=True)
+        await callback.message.answer("⚠️ Срок сессии истек. Отправьте фото заново.")
         return
         
     data = sess.get("data", {})
@@ -1213,22 +1224,20 @@ async def cb_food_log(callback: types.CallbackQuery):
         f"🥩 Б: <code>{summary['total_protein']}г</code> | 🧈 Ж: <code>{summary['total_fat']}г</code> | 🍞 У: <code>{summary['total_carbs']}г</code>"
     )
 
-    await callback.answer("✅ Успешно записано в рацион!")
-    await callback.message.reply(card_text, parse_mode=ParseMode.HTML, reply_markup=get_food_meal_keyboard(entry["id"]))
+    await safe_reply(callback.message, card_text, reply_markup=get_food_meal_keyboard(entry["id"]))
 
 
 @router.callback_query(F.data == "act_food_recipe")
 async def cb_food_recipe(callback: types.CallbackQuery):
+    await callback.answer()
     user_id = callback.from_user.id
     sess = get_pending_photo_session(user_id)
     if not sess:
-        await callback.answer("⚠️ Отправьте фото заново.", show_alert=True)
+        await callback.message.answer("⚠️ Сессия истекла. Отправьте фото заново.")
         return
         
     title = sess.get("data", {}).get("title", "Блюдо")
-    img = sess.get("image_bytes")
     
-    await callback.answer("🍳 Составляю авторский рецепт...")
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     prompt = (
@@ -1238,7 +1247,7 @@ async def cb_food_recipe(callback: types.CallbackQuery):
         "3. 🌟 Секретный соус или фишка от шефа, делающая вкус незабываемым.\n\n"
         "Форматируй в HTML с эмодзи."
     )
-    resp = await ask_gemini(user_id, prompt, image_bytes=img)
+    resp = await ask_gemini(user_id, prompt)
     
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -1251,21 +1260,20 @@ async def cb_food_recipe(callback: types.CallbackQuery):
             ]
         ]
     )
-    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
+    await safe_reply(callback.message, resp, reply_markup=kb)
 
 
 @router.callback_query(F.data == "act_food_pairing")
 async def cb_food_pairing_btn(callback: types.CallbackQuery):
+    await callback.answer()
     user_id = callback.from_user.id
     sess = get_pending_photo_session(user_id)
     if not sess:
-        await callback.answer("⚠️ Отправьте фото заново.", show_alert=True)
+        await callback.message.answer("⚠️ Сессия истекла. Отправьте фото заново.")
         return
         
     title = sess.get("data", {}).get("title", "Блюдо")
-    img = sess.get("image_bytes")
     
-    await callback.answer("🍷 Подбираю напитки к блюду...")
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     prompt = (
@@ -1275,29 +1283,28 @@ async def cb_food_pairing_btn(callback: types.CallbackQuery):
         "3. 🍹 Безалкогольная пара (авторский лимонад / чай / моктейль)\n\n"
         "Форматируй в HTML."
     )
-    resp = await ask_gemini(user_id, prompt, image_bytes=img)
-    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+    resp = await ask_gemini(user_id, prompt)
+    await safe_reply(callback.message, resp, reply_markup=get_main_menu())
 
 
 @router.callback_query(F.data == "act_fridge_chef")
 async def cb_fridge_chef(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
     user_id = callback.from_user.id
     sess = get_pending_photo_session(user_id)
     if not sess:
-        await callback.answer("⚠️ Отправьте фото заново.", show_alert=True)
+        await callback.message.answer("⚠️ Сессия истекла. Отправьте фото заново.")
         return
         
     title = sess.get("data", {}).get("title", "Продукты")
-    img = sess.get("image_bytes")
     
-    await callback.answer("👨‍🍳 Готовлю рецепт из наличия...")
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     
     prompt = (
-        f"Ты — шеф-повар Dark Kitchen. Посмотри на продукты на фото ({title}) и придумай "
-        "ресторанный ужин за 15 минут строго из того, что есть на фото, с пошаговыми инструкциями!"
+        f"Ты — шеф-повар Dark Kitchen. Пользователь сфотографировал продукты ({title}). "
+        "Придумай ресторанный ужин за 15 минут строго из того, что есть в списке, с пошаговыми инструкциями!"
     )
-    resp = await ask_gemini(user_id, prompt, image_bytes=img)
-    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
+    resp = await ask_gemini(user_id, prompt)
+    await safe_reply(callback.message, resp, reply_markup=get_main_menu())
 
 
