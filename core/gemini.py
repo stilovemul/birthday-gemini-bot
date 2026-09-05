@@ -270,18 +270,13 @@ async def ask_gemini(user_id: int, prompt: str, image_bytes: Optional[bytes] = N
                     return response.text.strip()
             else:
                 sys_inst = system_instruction or get_system_instruction(user_id)
-                cfg = types.GenerateContentConfig(
-                    system_instruction=sys_inst,
-                    temperature=0.7
-                )
-                response = await c.aio.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config=cfg
-                )
+                reset_chat_session(user_id)
+                chat = get_or_create_chat(user_id, model_name)
+                response = await chat.send_message(prompt)
                 if response and response.text:
                     return response.text.strip()
         except Exception as e:
             logger.warning(f"Model {model_name} failed: {e}. Trying next candidate...")
+            reset_chat_session(user_id)
 
     return "⏳ <b>Нейросеть Gemini сейчас испытывает кратковременную нагрузку.</b>\nПожалуйста, отправьте сообщение через 15 секунд — я сразу отвечу!"

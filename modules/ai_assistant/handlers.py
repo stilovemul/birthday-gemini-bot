@@ -1,7 +1,5 @@
 from aiogram.fsm.context import FSMContext
-from typing import Dict, Any, Optional, List
 import io
-import html
 import re
 import logging
 from aiogram import Router, types, F, Bot
@@ -135,82 +133,6 @@ async def cmd_gemini_info(message: types.Message, state: FSMContext):
     )
 
 
-# --- MULTIMODAL PHOTO CLASSIFIER & ROUTER ---
-
-# In-memory photo session storage: {user_id: {"image_bytes": bytes, "data": dict, "timestamp": float}}
-_pending_photo_sessions: Dict[int, Dict[str, Any]] = {}
-
-
-def set_pending_photo_session(user_id: int, image_bytes: bytes, data: dict):
-    import time
-    _pending_photo_sessions[user_id] = {
-        "image_bytes": image_bytes,
-        "data": data,
-        "timestamp": time.time()
-    }
-
-
-def get_pending_photo_session(user_id: int) -> Optional[Dict[str, Any]]:
-    import time
-    sess = _pending_photo_sessions.get(user_id)
-    if not sess:
-        return None
-    if time.time() - sess.get("timestamp", 0) > 3 * 3600:
-        _pending_photo_sessions.pop(user_id, None)
-        return None
-    return sess
-
-
-async def classify_photo_multimodal(image_bytes: bytes, caption: str = "") -> dict:
-    """Умный классификатор: определяет категорию, точное название и КБЖУ в один вызов"""
-    prompt = (
-        "Ты — высокоточный мультимодальный классификатор для Telegram-бота.\n"
-        "Внимательно изучи изображение и определи, что именно на нём изображено.\n\n"
-        "1. main_category:\n"
-        "   - 'alcohol_drink': если на фото бутылка или банка пива, вино, крепкий алкоголь, сидр, коктейль, винная полка в магазине или бар.\n"
-        "   - 'food_dish': если на фото готовое блюдо на тарелке, фастфуд, пицца, салат, десерт, выпечка, суп, стейк.\n"
-        "   - 'fridge_groceries': если на фото открытый холодильник или набор сырых продуктов для готовки.\n"
-        "   - 'general': пейзаж, природа, машина, чек, код на экране, интерьер, документ, другое.\n"
-        "2. title: Точное название конкретного объекта/напитка/блюда на русском (например: 'Пиво светлое Балтика №1', 'Вино Chianti Classico', 'Паста Карбонара', 'Стейк Рибай с овощами').\n"
-        "3. drink_type: 'beer', 'wine', 'spirits', 'cocktail' или 'non_alcohol' (если это напиток).\n"
-        "4. short_summary: Краткое (1 предложение) живое описание увиденного.\n"
-        "5. food_kbju: расчет КБЖУ (dish_name, calories, protein, fat, carbs, estimated_weight_g, ingredients, healthy_verdict).\n\n"
-        "Верни ТОЛЬКО валидный JSON в формате:\n"
-        "{\n"
-        '  "main_category": "alcohol_drink",\n'
-        '  "title": "Пиво светлое Балтика №1",\n'
-        '  "drink_type": "beer",\n'
-        '  "short_summary": "Светлый лагер Балтика №1 в стеклянной бутылке на столе",\n'
-        '  "food_kbju": {\n'
-        '    "dish_name": "Пиво светлое Балтика №1",\n'
-        '    "calories": 150,\n'
-        '    "protein": 1.5,\n'
-        '    "fat": 0.0,\n'
-        '    "carbs": 14.0,\n'
-        '    "estimated_weight_g": 450,\n'
-        '    "ingredients": [{"name": "Пиво светлое", "weight": "450 мл", "kcal": 150, "p": 1.5, "f": 0.0, "c": 14.0}],\n'
-        '    "healthy_verdict": "Светлое фильтрованное пиво"\n'
-        '  }\n'
-        "}"
-    )
-    try:
-        resp = await ask_gemini(157236577, prompt, image_bytes=image_bytes)
-        import json
-        m = re.search(r"\{.*\}", resp, re.DOTALL)
-        if m:
-            return json.loads(m.group(0))
-    except Exception as e:
-        logger.warning(f"Error in classify_photo_multimodal: {e}")
-
-    return {
-        "main_category": "general",
-        "title": "Объект на фото",
-        "drink_type": "other",
-        "short_summary": caption or "Фотография получена",
-        "food_kbju": {}
-    }
-
-
 @router.message(F.photo)
 async def handle_photo(message: types.Message, bot: Bot):
     end_image_session(message.from_user.id)
@@ -225,96 +147,66 @@ async def handle_photo(message: types.Message, bot: Bot):
         image_bytes = file_io.getvalue()
         caption = message.caption or ""
 
-        # Умная мультимодальная классификация кадра
-        classified = await classify_photo_multimodal(image_bytes, caption)
-        cat = classified.get("main_category", "general")
-        title = html.escape(str(classified.get("title", "Объект на фото")))
-        summary = html.escape(str(classified.get("short_summary", "")))
-        drink_type = classified.get("drink_type", "alcohol")
+        # 1. Check if photo contains food (Smart Food & Calorie Scanner)
+        is_food, food_data, _ = await analyze_food_photo(image_bytes, user_comment=caption)
         
-        # Сохраняем сессию фото в кэш
-        set_pending_photo_session(user_id, image_bytes, classified)
-        set_shelf_session(user_id, image_bytes, {"top_pick": {"name": title}})
+        if is_food and food_data:
+            dish = food_data.get("dish_name", "Блюдо")
+            kcal = food_data.get("calories", 0)
+            p = food_data.get("protein", 0)
+            f = food_data.get("fat", 0)
+            c = food_data.get("carbs", 0)
+            weight = food_data.get("estimated_weight_g", 0)
+            ingredients = food_data.get("ingredients", [])
+            verdict = food_data.get("healthy_verdict", "")
 
-        # 1. АЛКОГОЛЬ, ПИВО, ВИНО, ПОЛКА МАГАЗИНА (Сомелье в приоритете!)
-        if cat == "alcohol_drink":
-            is_beer = "пив" in title.lower() or drink_type == "beer" or "лагер" in title.lower() or "эль" in title.lower()
-            icon = "🍺" if is_beer else "🍷"
-            somm_label = "🍺 Пивной сомелье (Вкус & сорт)" if is_beer else "🍷 Винный сомелье (Разбор & вкус)"
-            pair_label = "🥨 Закуски & Снеки к пиву" if is_beer else "🥩 Гастропара к напитку"
-            
-            kb = InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(text=somm_label, callback_data="act_somm_eval"),
-                        InlineKeyboardButton(text=pair_label, callback_data="act_somm_pair")
-                    ],
-                    [
-                        InlineKeyboardButton(text="⭐ Рейтинг & Отзывы", callback_data="act_somm_rate"),
-                        InlineKeyboardButton(text="🥗 Расчет КБЖУ и запись", callback_data="act_somm_kbju")
-                    ],
-                    [
-                        InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-                    ]
-                ]
+            breakdown_lines = []
+            for ing in ingredients[:5]:
+                breakdown_lines.append(f"• {ing.get('name')} ({ing.get('weight', '')}): {ing.get('kcal', '')} ккал (Б:{ing.get('p')} Ж:{ing.get('f')} У:{ing.get('c')})")
+            breakdown_str = "\n".join(breakdown_lines)
+
+            entry = log_meal(user_id, dish, kcal, p, f, c, weight_g=weight, breakdown_text=breakdown_str)
+            summary = get_daily_summary(user_id)
+
+            weight_info = f"⚖️ <i>Примерный вес: ~{weight} г</i>\n" if weight else ""
+            ing_info = f"📋 <b>Состав порции:</b>\n{breakdown_str}\n\n" if breakdown_str else ""
+            verdict_info = f"💡 <i>{verdict}</i>\n\n" if verdict else ""
+
+            card_text = (
+                f"🥗 <b>{dish}</b>\n"
+                f"{weight_info}\n"
+                f"🔥 <b>Калории:</b> <code>{kcal} ккал</code>\n"
+                f"🥩 <b>Белки:</b> <code>{p} г</code>\n"
+                f"🧈 <b>Жиры:</b> <code>{f} г</code>\n"
+                f"🍞 <b>Углеводы:</b> <code>{c} г</code>\n\n"
+                f"{ing_info}"
+                f"{verdict_info}"
+                f"➖➖➖➖➖➖➖➖➖➖\n"
+                f"📊 <b>Итого за сегодня ({summary['date']}):</b>\n"
+                f"🔥 <code>{summary['total_calories']} / {summary['goal_calories']} ккал</code> (осталось {summary['remaining_calories']} ккал)\n"
+                f"🥩 Б: <code>{summary['total_protein']}г</code> | 🧈 Ж: <code>{summary['total_fat']}г</code> | 🍞 У: <code>{summary['total_carbs']}г</code>"
             )
+
             await message.answer(
-                f"📸 <b>Распознано:</b> {icon} <b>{title}</b>\n"
-                f"<i>«{summary}»</i>\n\n"
-                f"👉 <b>Выберите, в каком формате разобрать этот напиток:</b>",
+                card_text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=kb
+                reply_markup=get_food_meal_keyboard(entry["id"])
             )
             return
 
-        # 2. ГОТОВОЕ БЛЮДО / ЕДА
-        if cat == "food_dish":
-            kb = InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(text="📊 Записать в дневник КБЖУ", callback_data="act_food_do_log"),
-                        InlineKeyboardButton(text="🍳 Рецепт от Шеф-повара", callback_data="act_food_recipe")
-                    ],
-                    [
-                        InlineKeyboardButton(text="🍷 Подобрать напиток/вино", callback_data="act_food_pairing"),
-                        InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-                    ]
-                ]
-            )
-            await message.answer(
-                f"📸 <b>Распознано блюдо:</b> 🥗 <b>{title}</b>\n"
-                f"<i>«{summary}»</i>\n\n"
-                f"👉 <b>Выберите интересующее действие:</b>",
-                parse_mode=ParseMode.HTML,
-                reply_markup=kb
-            )
+        # 2. Check if photo is an alcohol shelf/drink bottles
+        shelf_data = await analyze_alcohol_shelf(user_id, image_bytes=image_bytes, user_preference=caption or "")
+        top_name = shelf_data.get("top_pick", {}).get("name", "")
+        if shelf_data and (shelf_data.get("shelves") or (top_name and "топовый" not in top_name.lower())):
+            set_shelf_session(user_id, image_bytes, shelf_data)
+            card_text = format_shelf_advisor_message(shelf_data)
+            await message.answer(card_text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
             return
 
-        # 3. ХОЛОДИЛЬНИК / ИНГРЕДИЕНТЫ
-        if cat == "fridge_groceries":
-            kb = InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(text="👨‍🍳 Шедевр Шефа из наличия", callback_data="act_fridge_chef"),
-                        InlineKeyboardButton(text="🥗 Расчет КБЖУ продуктов", callback_data="act_food_do_log")
-                    ],
-                    [
-                        InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-                    ]
-                ]
-            )
-            await message.answer(
-                f"📸 <b>Распознаны продукты:</b> 🍳 <b>{title}</b>\n"
-                f"<i>«{summary}»</i>\n\n"
-                f"👉 <b>Что приготовим?</b>",
-                parse_mode=ParseMode.HTML,
-                reply_markup=kb
-            )
-            return
-
-        # 4. ОБЩИЙ РЕЖИМ (Пейзаж, код, чек, предмет)
+        # 3. Fallback to general vision prompt
         prompt_text = caption or "Подробно и полезно ответь на вопрос пользователя или опиши изображение."
         reply_text = await ask_gemini(user_id, prompt_text, image_bytes=image_bytes)
+        
         try:
             await message.answer(reply_text, parse_mode=ParseMode.MARKDOWN, reply_markup=get_main_menu())
         except Exception:
@@ -330,65 +222,6 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     text = (message.text or "").strip()
     user_id = message.from_user.id
     t_lower = text.lower()
-
-    # 0. Interactive Quick Topic Router (Выходные, Отдых, Загород, Сомелье, Бармен, Кино, Ужин)
-    if t_lower in ["выходные", "выходной", "уикенд", "отдых", "загород", "куда сходить", "что поделать", "планы на выходные", "куда поехать"]:
-        kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(text="🏕 Загородные клубы, Бани & Спа", callback_data="act_goto_country"),
-                ],
-                [
-                    InlineKeyboardButton(text="🚗 Авто-маршруты & Роадтрипы", callback_data="act_goto_weekend"),
-                ],
-                [
-                    InlineKeyboardButton(text="👶 Отдых с малышом (1–3 года)", callback_data="act_goto_kids"),
-                ],
-                [
-                    InlineKeyboardButton(text="🎬 Киномарафон & Фильмы", callback_data="act_goto_cinema"),
-                    InlineKeyboardButton(text="🍳 Рецепты от Шефа", callback_data="act_goto_chef")
-                ],
-                [
-                    InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-                ]
-            ]
-        )
-        await message.answer(
-            "✨ <b>Интерактивный подбор планов на выходные:</b>\n\n"
-            "Я могу составить идеальный сценарий отдыха! Выберите подходящее направление:",
-            parse_mode=ParseMode.HTML,
-            reply_markup=kb
-        )
-        return
-
-    if t_lower in ["сомелье", "вино", "выбрать вино", "алкоголь", "бармен", "коктейль", "коктейли", "пиво"]:
-        kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(text="🍷 Винный гид & Подбор по полке", callback_data="act_goto_sommelier"),
-                ],
-                [
-                    InlineKeyboardButton(text="🥩 Гастропара (Вино под блюдо)", callback_data="act_goto_pairing"),
-                ],
-                [
-                    InlineKeyboardButton(text="🍸 Авторские коктейли & Бармен", callback_data="act_goto_cocktails"),
-                ],
-                [
-                    InlineKeyboardButton(text="📚 Книжный сомелье", callback_data="act_goto_book_sommelier"),
-                    InlineKeyboardButton(text="🎵 Музыкальный сомелье", callback_data="act_goto_music_sommelier")
-                ],
-                [
-                    InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-                ]
-            ]
-        )
-        await message.answer(
-            "🍷 <b>Интерактивный Сомелье & Бармен гид:</b>\n\n"
-            "Выберите интересующий модуль или просто отправьте фото полки в магазине / блюда:",
-            parse_mode=ParseMode.HTML,
-            reply_markup=kb
-        )
-        return
 
     # Check if user is asking for Food Pairing ("буду кушать пиццу, какое пиво взять?", "под стейк какое вино?", etc.)
     if is_food_pairing_query(text):
@@ -821,534 +654,3 @@ async def handle_generic_text(message: types.Message, bot: Bot):
     except Exception as e:
         logger.warning(f"Markdown send failed: {e}. Sending plain text...")
         await message.answer(ai_reply, reply_markup=get_main_menu())
-
-
-# --- INTERACTIVE MODULE ROUTER CALLBACKS ---
-
-@router.callback_query(F.data == "act_shelf_sommelier")
-async def cb_shelf_sommelier(callback: types.CallbackQuery):
-    user_id = callback.from_user.id
-    shelf_sess = get_shelf_session(user_id)
-    if not shelf_sess:
-        await callback.answer("⚠️ Срок сессии фото истек. Отправьте фото заново.", show_alert=True)
-        return
-    await callback.answer("🍷 Анализирую полку как сомелье...")
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    question = "Выдели 2-3 самых лучших вина на этой полке по соотношению цена/качество. Объясни сорта винограда, вкусовой профиль и почему их стоит взять."
-    resp = await ask_shelf_followup(
-        user_id=user_id,
-        question=question,
-        shelf_data=shelf_sess.get("shelf_data", {}),
-        image_bytes=shelf_sess.get("image_bytes")
-    )
-    
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🥩 Гастропара к блюдам", callback_data="act_shelf_pairing"),
-                InlineKeyboardButton(text="⭐ Vivino & Рейтинги", callback_data="act_shelf_ratings")
-            ],
-            [
-                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-            ]
-        ]
-    )
-    await callback.message.reply(resp, parse_mode=ParseMode.HTML, reply_markup=kb)
-
-
-@router.callback_query(F.data == "act_shelf_pairing")
-async def cb_shelf_pairing(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    shelf_sess = get_shelf_session(user_id)
-    if not shelf_sess:
-        await callback.message.answer("⚠️ Отправьте фото полки заново.")
-        return
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    question = "Подбери идеальные гастропары (food pairing) к винам/напиткам на этом фото: что взять под стейк/мясо, что под морепродукты/рыбу, и что под сырную тарелку."
-    resp = await ask_shelf_followup(
-        user_id=user_id,
-        question=question,
-        shelf_data=shelf_sess.get("shelf_data", {}),
-        image_bytes=shelf_sess.get("image_bytes")
-    )
-    
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🍷 Топ сомелье", callback_data="act_shelf_sommelier"),
-                InlineKeyboardButton(text="⭐ Рейтинги Vivino", callback_data="act_shelf_ratings")
-            ],
-            [
-                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-            ]
-        ]
-    )
-    await safe_reply(callback.message, resp, reply_markup=kb)
-
-
-@router.callback_query(F.data == "act_shelf_ratings")
-async def cb_shelf_ratings(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    shelf_sess = get_shelf_session(user_id)
-    if not shelf_sess:
-        await callback.message.answer("⚠️ Отправьте фото заново.")
-        return
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    question = "Оцени рейтинг вин на фото по шкале Vivino и мировым винным критикам. Укажи, какие позиции сейчас продаются по честной и выгодной цене, а какие переоценены."
-    resp = await ask_shelf_followup(
-        user_id=user_id,
-        question=question,
-        shelf_data=shelf_sess.get("shelf_data", {}),
-        image_bytes=shelf_sess.get("image_bytes")
-    )
-    
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🍷 Топ сомелье", callback_data="act_shelf_sommelier"),
-                InlineKeyboardButton(text="🥩 Гастропара", callback_data="act_shelf_pairing")
-            ],
-            [
-                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-            ]
-        ]
-    )
-    await safe_reply(callback.message, resp, reply_markup=kb)
-
-
-@router.callback_query(F.data == "act_shelf_cocktails")
-async def cb_shelf_cocktails(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    shelf_sess = get_shelf_session(user_id)
-    if not shelf_sess:
-        await callback.message.answer("⚠️ Отправьте фото заново.")
-        return
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    question = "Предложи 2-3 авторских или классических коктейля, которые можно приготовить с напитками с этой полки, с рецептом и пропорциями."
-    resp = await ask_shelf_followup(
-        user_id=user_id,
-        question=question,
-        shelf_data=shelf_sess.get("shelf_data", {}),
-        image_bytes=shelf_sess.get("image_bytes")
-    )
-    await safe_reply(callback.message, resp, reply_markup=get_main_menu())
-
-
-# Быстрые переходы в модули
-@router.callback_query(F.data == "act_goto_country")
-async def cb_goto_country(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("🏕 Перехожу в модуль Загородный отдых...")
-    from modules.country_relax.handlers import cmd_country_relax
-    await cmd_country_relax(callback.message, state)
-
-
-@router.callback_query(F.data == "act_goto_weekend")
-async def cb_goto_weekend(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("🚗 Перехожу в модуль Сценарист выходных...")
-    from modules.weekend_trips.handlers import cmd_weekend_trips
-    await cmd_weekend_trips(callback.message, state)
-
-
-@router.callback_query(F.data == "act_goto_kids")
-async def cb_goto_kids(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("👶 Открываю развлечения для малыша 1–3 года...")
-    from core.states import ActiveModeStates
-    from modules.weekend_trips.handlers import get_kids_menu_keyboard
-    await state.set_state(ActiveModeStates.weekend_planner_mode)
-    text = (
-        "👶 <b>Развлечения с малышом 1–3 года в Санкт-Петербурге и ЛО:</b>\n\n"
-        "Мягкие тоддлер-зоны 0–3, камерные бэби-театры на подушках, тёплые лягушатники (+32...+34°C), "
-        "пушистые ручные альпаки, океанариум и живописные экотропы под детскую коляску!\n\n"
-        "👇 <b>Выберите категорию для малыша:</b>"
-    )
-    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_kids_menu_keyboard())
-
-
-@router.callback_query(F.data == "act_goto_cinema")
-async def cb_goto_cinema(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("🎬 Перехожу в Киносомелье...")
-    from modules.cinema_matchmaker.handlers import cmd_cinema_matchmaker
-    await cmd_cinema_matchmaker(callback.message, state)
-
-
-@router.callback_query(F.data == "act_goto_chef")
-async def cb_goto_chef(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("🍳 Перехожу в Шеф-повар из холодильника...")
-    from modules.dark_kitchen.handlers import cmd_dark_kitchen
-    await cmd_dark_kitchen(callback.message, state)
-
-
-@router.callback_query(F.data == "act_goto_sommelier")
-async def cb_goto_sommelier(callback: types.CallbackQuery):
-    await callback.answer("🍷 Модуль Винный сомелье активирован!")
-    await callback.message.answer(
-        "🍷 <b>Винный сомелье & Кавист:</b>\n\n"
-        "📸 <b>Просто отправьте фото полки в супермаркете или винотеке</b> — я моментально определю сорта, лучшие винтажи, соотношение цена/качество и скидки!\n\n"
-        "💬 <i>Либо напишите, какое вино ищете: «Красное сухое до 1500 рублей под мясо».</i>",
-        parse_mode=ParseMode.HTML,
-        reply_markup=get_main_menu()
-    )
-
-
-@router.callback_query(F.data == "act_goto_pairing")
-async def cb_goto_pairing(callback: types.CallbackQuery):
-    await callback.answer("🥩 Модуль Гастропара активирован!")
-    await callback.message.answer(
-        "🥩 <b>Гастрономический гид (Food Pairing):</b>\n\n"
-        "Напишите, какое блюдо вы планируете приготовить или заказать (например: <i>«Стейк рибай прожарки medium», «Паста с морепродуктами», «Утка с яблоками»</i>) — и я подберу идеальный напиток!",
-        parse_mode=ParseMode.HTML,
-        reply_markup=get_main_menu()
-    )
-
-
-@router.callback_query(F.data == "act_goto_cocktails")
-async def cb_goto_cocktails(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("🍸 Модуль Бармен активирован!")
-    from modules.gourmet_assistant.handlers import cmd_cocktails
-    await cmd_cocktails(callback.message, state)
-
-
-@router.callback_query(F.data == "act_goto_book_sommelier")
-async def cb_goto_book_sommelier(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("📚 Модуль Книжный сомелье...")
-    from modules.book_sommelier.handlers import cmd_book_sommelier
-    await cmd_book_sommelier(callback.message, state)
-
-
-@router.callback_query(F.data == "act_goto_music_sommelier")
-async def cb_goto_music_sommelier(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer("🎵 Модуль Музыкальный сомелье...")
-    from modules.music_sommelier.handlers import cmd_music_sommelier
-    await cmd_music_sommelier(callback.message, state)
-
-
-# --- DEDICATED SOMMELIER & FOOD INTERACTIVE CALLBACKS ---
-
-def clean_telegram_html(text: str) -> str:
-    """
-    Очищает и форматирует HTML под спецификацию Telegram Bot API:
-    - Конвертирует <ul>, <ol>, <li> в красивые списки с маркерами •
-    - Конвертирует <p>, <br> в переносы строк
-    - Заменяет <h1>..<h6> на <b>
-    - Конвертирует markdown **bold** в <b>bold</b>
-    - Вырезает неподдерживаемые Telegram теги
-    - Экранирует некорректные амперсанды
-    """
-    if not text:
-        return ""
-    
-    # 1. Списки и параграфы
-    text = re.sub(r'<\s*br\s*/?\s*>', '\n', text, flags=re.IGNORECASE)
-    text = re.sub(r'<\s*/?\s*(ul|ol)\s*>', '\n', text, flags=re.IGNORECASE)
-    text = re.sub(r'<\s*li\s*>', '• ', text, flags=re.IGNORECASE)
-    text = re.sub(r'<\s*/\s*li\s*>', '\n', text, flags=re.IGNORECASE)
-    text = re.sub(r'<\s*p\s*>', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'<\s*/\s*p\s*>', '\n\n', text, flags=re.IGNORECASE)
-    
-    # 2. Заголовки
-    text = re.sub(r'<\s*h[1-6]\s*>', '<b>', text, flags=re.IGNORECASE)
-    text = re.sub(r'<\s*/\s*h[1-6]\s*>', '</b>\n', text, flags=re.IGNORECASE)
-    
-    # 3. Маркдаун вставки
-    text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
-    text = re.sub(r'(?m)^[\*\-]\s+', '• ', text)
-
-    # 4. Удаление любых тегов кроме разрешенных Telegram API
-    text = re.sub(r'<(?!\/?(?:b|strong|i|em|u|ins|s|strike|del|a|code|pre|blockquote|tg-spoiler|tg-emoji)\b)[^>]+>', '', text, flags=re.IGNORECASE)
-    
-    # 5. Экранирование &
-    text = re.sub(r'&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)', '&amp;', text)
-    
-    # 6. Убираем лишние пустые строки подряд
-    text = re.sub(r'\n{3,}', '\n\n', text).strip()
-    return text
-
-
-async def safe_reply(message: types.Message, text: str, reply_markup=None):
-    """Безопасная отправка ответа с авто-очисткой HTML для Telegram"""
-    cleaned_html = clean_telegram_html(text)
-    try:
-        await message.reply(cleaned_html, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
-        return
-    except Exception as e:
-        logger.warning(f"HTML reply failed: {e}. Trying Markdown...")
-    try:
-        await message.reply(text, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
-        return
-    except Exception as e:
-        logger.warning(f"Markdown reply failed: {e}. Falling back to plain text without tags...")
-    try:
-        plain_text = re.sub(r'<[^>]+>', '', text)
-        await message.reply(plain_text, reply_markup=reply_markup)
-    except Exception as e:
-        logger.error(f"Failed to reply to message: {e}")
-        try:
-            plain_text = re.sub(r'<[^>]+>', '', text)
-            await message.answer(plain_text, reply_markup=reply_markup)
-        except Exception:
-            pass
-
-
-@router.callback_query(F.data == "act_somm_eval")
-async def cb_somm_eval(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    sess = get_pending_photo_session(user_id)
-    if not sess:
-        await callback.message.answer("⚠️ Сессия фото истекла. Пожалуйста, отправьте фото заново.")
-        return
-    
-    data = sess.get("data", {})
-    title = data.get("title", "Напиток")
-    
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    prompt = (
-        f"Ты — признанный пивной и винный сомелье (кавист).\n"
-        f"Напиток пользователя: «{title}».\n\n"
-        "Составь профессиональный и сочный разбор сомелье:\n"
-        "1. 🍺/🍷 <b>СТИЛЬ И ХАРАКТЕР:</b> Стиль/сорт (светлый лагер, пилснер, IPA, стаут, сухое вино), плотность, цвет, карбонизация, крепость.\n"
-        "2. 👃 <b>АРОМАТ И ВКУСОВЫЕ НОТЫ:</b> Баланс солодовой сладости, хмелевая горечь (IBU), освежающий профиль, послевкусие.\n"
-        "3. ❄️ <b>ИДЕАЛЬНАЯ ПОДАЧА:</b> Температура сервировки (°C), рекомендуемая форма бокала (пилснер, тюльпан, пинта).\n"
-        "4. 🎯 <b>ВЕРДИКТ СОМЕЛЬЕ:</b> Честная экспертная оценка, для каких ситуаций подходит лучше всего.\n\n"
-        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
-    )
-    
-    resp = await ask_gemini(user_id, prompt)
-    
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🥨 Закуски & Снеки к напитку", callback_data="act_somm_pair"),
-                InlineKeyboardButton(text="⭐ Рейтинг & Отзывы", callback_data="act_somm_rate")
-            ],
-            [
-                InlineKeyboardButton(text="🥗 Расчет КБЖУ и запись в рацион", callback_data="act_somm_kbju"),
-                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-            ]
-        ]
-    )
-    
-    await safe_reply(callback.message, resp, reply_markup=kb)
-
-
-@router.callback_query(F.data == "act_somm_pair")
-async def cb_somm_pair(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    sess = get_pending_photo_session(user_id)
-    if not sess:
-        await callback.message.answer("⚠️ Сессия фото истекла. Пожалуйста, отправьте фото заново.")
-        return
-        
-    data = sess.get("data", {})
-    title = data.get("title", "Напиток")
-    
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    prompt = (
-        f"Ты — шеф-повар и эксперт по гастропарам (food pairing).\n"
-        f"Подбери лучшие закуски, снеки и блюда, которые идеально раскроют вкус напитка «{title}»:\n\n"
-        "1. 🍟 <b>Быстрые снеки к бокалу:</b> (чипсы, гренки, сыр, орешки, вяленая рыба/мясо)\n"
-        "2. 🍤 <b>Горячие закуски:</b> (крылышки, креветки, колбаски, кольца кальмара, жареный сыр)\n"
-        "3. 🍕 <b>Сытные блюда:</b> (пицца, бургеры, стейк, шашлык)\n"
-        "4. 💡 <b>Необычный совет от шефа:</b> секретный вкусовой акцент.\n\n"
-        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
-    )
-    
-    resp = await ask_gemini(user_id, prompt)
-    
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🍺 Разбор вкуса сомелье", callback_data="act_somm_eval"),
-                InlineKeyboardButton(text="⭐ Рейтинг & Отзывы", callback_data="act_somm_rate")
-            ],
-            [
-                InlineKeyboardButton(text="🥗 Записать в КБЖУ", callback_data="act_somm_kbju"),
-                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-            ]
-        ]
-    )
-    
-    await safe_reply(callback.message, resp, reply_markup=kb)
-
-
-@router.callback_query(F.data == "act_somm_rate")
-async def cb_somm_rate(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    sess = get_pending_photo_session(user_id)
-    if not sess:
-        await callback.message.answer("⚠️ Сессия фото истекла. Пожалуйста, отправьте фото заново.")
-        return
-        
-    data = sess.get("data", {})
-    title = data.get("title", "Напиток")
-    
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    prompt = (
-        f"Расскажи о репутации, оценках и отзывах о напитке «{title}»:\n"
-        "1. ⭐️ <b>Рейтинг ценителей:</b> (Untappd / RateBeer / Vivino / Отзовик).\n"
-        "2. 🏭 <b>Производитель и история:</b> Где и кем производится, традиции завода.\n"
-        "3. 💰 <b>Честность цены:</b> Оправдана ли стоимость на полке, есть ли более интересные аналоги за те же деньги.\n\n"
-        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
-    )
-    
-    resp = await ask_gemini(user_id, prompt)
-    
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🍺 Разбор сомелье", callback_data="act_somm_eval"),
-                InlineKeyboardButton(text="🥨 Закуски & Снеки", callback_data="act_somm_pair")
-            ],
-            [
-                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-            ]
-        ]
-    )
-    await safe_reply(callback.message, resp, reply_markup=kb)
-
-
-@router.callback_query(F.data.in_(["act_somm_kbju", "act_food_do_log"]))
-async def cb_food_log(callback: types.CallbackQuery):
-    await callback.answer("✅ Записываю в рацион...")
-    user_id = callback.from_user.id
-    sess = get_pending_photo_session(user_id)
-    if not sess:
-        await callback.message.answer("⚠️ Срок сессии истек. Отправьте фото заново.")
-        return
-        
-    data = sess.get("data", {})
-    food = data.get("food_kbju", {})
-    title = food.get("dish_name") or data.get("title", "Блюдо")
-    kcal = food.get("calories", 150)
-    p = food.get("protein", 1.5)
-    f = food.get("fat", 0.0)
-    c = food.get("carbs", 14.0)
-    weight = food.get("estimated_weight_g", 450)
-    ingredients = food.get("ingredients", [])
-    verdict = food.get("healthy_verdict", "")
-
-    breakdown_lines = []
-    for ing in ingredients[:5]:
-        breakdown_lines.append(f"• {ing.get('name')} ({ing.get('weight', '')}): {ing.get('kcal', '')} ккал (Б:{ing.get('p')} Ж:{ing.get('f')} У:{ing.get('c')})")
-    breakdown_str = "\n".join(breakdown_lines)
-
-    entry = log_meal(user_id, title, kcal, p, f, c, weight_g=weight, breakdown_text=breakdown_str)
-    summary = get_daily_summary(user_id)
-
-    weight_info = f"⚖️ <i>Примерный вес: ~{weight} г</i>\n" if weight else ""
-    ing_info = f"📋 <b>Состав:</b>\n{breakdown_str}\n\n" if breakdown_str else ""
-    verdict_info = f"💡 <i>{verdict}</i>\n\n" if verdict else ""
-
-    card_text = (
-        f"✅ <b>Записано в дневник питания!</b>\n\n"
-        f"🥗 <b>{title}</b>\n"
-        f"{weight_info}\n"
-        f"🔥 <b>Калории:</b> <code>{kcal} ккал</code>\n"
-        f"🥩 <b>Белки:</b> <code>{p} г</code>\n"
-        f"🧈 <b>Жиры:</b> <code>{f} г</code>\n"
-        f"🍞 <b>Углеводы:</b> <code>{c} г</code>\n\n"
-        f"{ing_info}"
-        f"{verdict_info}"
-        f"➖➖➖➖➖➖➖➖➖➖\n"
-        f"📊 <b>Итого за сегодня ({summary['date']}):</b>\n"
-        f"🔥 <code>{summary['total_calories']} / {summary['goal_calories']} ккал</code> (осталось {summary['remaining_calories']} ккал)\n"
-        f"🥩 Б: <code>{summary['total_protein']}г</code> | 🧈 Ж: <code>{summary['total_fat']}г</code> | 🍞 У: <code>{summary['total_carbs']}г</code>"
-    )
-
-    await safe_reply(callback.message, card_text, reply_markup=get_food_meal_keyboard(entry["id"]))
-
-
-@router.callback_query(F.data == "act_food_recipe")
-async def cb_food_recipe(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    sess = get_pending_photo_session(user_id)
-    if not sess:
-        await callback.message.answer("⚠️ Сессия истекла. Отправьте фото заново.")
-        return
-        
-    title = sess.get("data", {}).get("title", "Блюдо")
-    
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    prompt = (
-        f"Ты — шеф-повар ресторана. Составь идеальный авторский рецепт приготовления блюда «{title}»:\n"
-        "1. 🛒 Список ингредиентов и точные пропорции.\n"
-        "2. 👨‍🍳 Пошаговый процесс приготовления (температура, время, текстура).\n"
-        "3. 🌟 Секретный соус или фишка от шефа, делающая вкус незабываемым.\n\n"
-        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
-    )
-    resp = await ask_gemini(user_id, prompt)
-    
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🍷 Подобрать напиток к блюду", callback_data="act_food_pairing"),
-                InlineKeyboardButton(text="📊 Записать в КБЖУ", callback_data="act_food_do_log")
-            ],
-            [
-                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
-            ]
-        ]
-    )
-    await safe_reply(callback.message, resp, reply_markup=kb)
-
-
-@router.callback_query(F.data == "act_food_pairing")
-async def cb_food_pairing_btn(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    sess = get_pending_photo_session(user_id)
-    if not sess:
-        await callback.message.answer("⚠️ Сессия истекла. Отправьте фото заново.")
-        return
-        
-    title = sess.get("data", {}).get("title", "Блюдо")
-    
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    prompt = (
-        f"Ты — сомелье по ресторанному фудпейрингу. Подбери 3 идеальных напитка под блюдо «{title}»:\n"
-        "1. 🍷 Идеальное вино (сорт, регион, почему подходит)\n"
-        "2. 🍺 Идеальное пиво или сидр (стиль, горечь/сладость)\n"
-        "3. 🍹 Безалкогольная пара (авторский лимонад / чай / моктейль)\n\n"
-        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
-    )
-    resp = await ask_gemini(user_id, prompt)
-    await safe_reply(callback.message, resp, reply_markup=get_main_menu())
-
-
-@router.callback_query(F.data == "act_fridge_chef")
-async def cb_fridge_chef(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
-    user_id = callback.from_user.id
-    sess = get_pending_photo_session(user_id)
-    if not sess:
-        await callback.message.answer("⚠️ Сессия истекла. Отправьте фото заново.")
-        return
-        
-    title = sess.get("data", {}).get("title", "Продукты")
-    
-    await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
-    
-    prompt = (
-        f"Ты — шеф-повар Dark Kitchen. Пользователь сфотографировал продукты ({title}). "
-        "Придумай ресторанный ужин за 15 минут строго из того, что есть в списке, с пошаговыми инструкциями!\n\n"
-        "ВАЖНО ДЛЯ РАЗМЕТКИ TELEGRAM: используй ТОЛЬКО <b>, <i>, <code>. Запрещено использовать <ul>, <ol>, <li>, <p> — для списков используй символ • и перенос строки!"
-    )
-    resp = await ask_gemini(user_id, prompt)
-    await safe_reply(callback.message, resp, reply_markup=get_main_menu())
-
-

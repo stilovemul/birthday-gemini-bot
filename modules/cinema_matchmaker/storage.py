@@ -5,6 +5,7 @@ import logging
 import base64
 import threading
 import urllib.request
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -24,6 +25,15 @@ FILE_PATH = "data/cinema_memory.json"
 
 _lock = threading.RLock()
 _synced_on_startup = False
+
+
+def clean_title_str(title: str) -> str:
+    """Normalizes title string by removing quotes, trailing year brackets, and extra spaces."""
+    if not title:
+        return ""
+    t = re.sub(r"\(.*?\)", "", title)
+    t = re.sub(r"[«»\"'“”„]", "", t)
+    return t.strip()
 
 
 def pull_cinema_memory_from_github() -> Optional[Dict[str, Any]]:
@@ -75,7 +85,7 @@ def push_cinema_memory_to_github(memory_data: Dict[str, Any]) -> bool:
         content_b64 = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
         payload = {
-            "message": "🎬 Auto-sync cinema taste memory and feedback",
+            "message": "🎬 Auto-sync cinema taste memory, exclusion lists and dialog context",
             "content": content_b64,
             "branch": "main"
         }
@@ -146,9 +156,20 @@ def get_user_cinema_memory(user_id: int) -> Dict[str, Any]:
                 "favorite_directors": [],
                 "disliked_tropes": [],
                 "last_recommended_movies": [],
+                "shown_history_titles": [],
+                "active_search_context": {},
+                "dialog_history": [],
                 "updated_at": datetime.now(MSK_TZ).isoformat()
             }
-        return all_data[uid]
+        # Ensure default keys
+        u_data = all_data[uid]
+        if "shown_history_titles" not in u_data:
+            u_data["shown_history_titles"] = []
+        if "active_search_context" not in u_data:
+            u_data["active_search_context"] = {}
+        if "dialog_history" not in u_data:
+            u_data["dialog_history"] = []
+        return u_data
 
 
 def save_user_cinema_memory(user_id: int, user_memory: Dict[str, Any]) -> None:
@@ -172,10 +193,13 @@ def add_or_update_movie_feedback(
         user_mem = get_user_cinema_memory(user_id)
         watched: List[Dict[str, Any]] = user_mem.get("watched_movies", [])
         
-        clean_title = movie_title.strip()
+        clean_title = clean_title_str(movie_title)
+        if not clean_title:
+            return {}
+
         existing = None
         for item in watched:
-            if item.get("title", "").strip().lower() == clean_title.lower():
+            if clean_title_str(item.get("title", "")).lower() == clean_title.lower():
                 existing = item
                 break
 
@@ -205,8 +229,76 @@ def add_or_update_movie_feedback(
             watched.append(saved_entry)
 
         user_mem["watched_movies"] = watched
+        # Also ensure it's in shown history
+        shown = user_mem.get("shown_history_titles", [])
+        if clean_title not in shown:
+            shown.append(clean_title)
+            user_mem["shown_history_titles"] = shown[-400:]
+
         save_user_cinema_memory(user_id, user_mem)
         return saved_entry
+
+
+def mark_all_last_recommended_as_watched(user_id: int) -> List[str]:
+    """
+    Marks all titles in last_recommended_movies as watched (if not already liked/disliked),
+    adds them to shown_history_titles, and returns the list of marked titles.
+    """
+    with _lock:
+        user_mem = get_user_cinema_memory(user_id)
+        last_movies = user_mem.get("last_recommended_movies", [])
+        marked_titles = []
+        
+        for m in last_movies:
+            title = m.get("title_ru") or m.get("title_orig") or ""
+            clean_t = clean_title_str(title)
+            if clean_t:
+                add_or_update_movie_feedback(
+                    user_id=user_id,
+                    movie_title=clean_t,
+                    status="watched",
+                    note="Отмечено как просмотренное (все смотрел)",
+                    director=m.get("director", ""),
+                    genres=m.get("genres", "")
+                )
+                marked_titles.append(clean_t)
+        
+        return marked_titles
+
+
+def add_shown_movies(user_id: int, movies: List[Dict[str, Any]]) -> None:
+    """Records recommended movies in shown history so they are never repeated."""
+    with _lock:
+        user_mem = get_user_cinema_memory(user_id)
+        shown: List[str] = user_mem.get("shown_history_titles", [])
+        for m in movies:
+            for key in ["title_ru", "title_orig", "title"]:
+                val = m.get(key)
+                if val:
+                    clean_t = clean_title_str(val)
+                    if clean_t and clean_t not in shown:
+                        shown.append(clean_t)
+        user_mem["shown_history_titles"] = shown[-400:]
+        save_user_cinema_memory(user_id, user_mem)
+
+
+def get_all_excluded_titles(user_id: int) -> List[str]:
+    """Returns a unique list of all watched and previously shown movie/series titles."""
+    with _lock:
+        user_mem = get_user_cinema_memory(user_id)
+        watched = user_mem.get("watched_movies", [])
+        shown = user_mem.get("shown_history_titles", [])
+        
+        excluded = set()
+        for w in watched:
+            t = clean_title_str(w.get("title", ""))
+            if t:
+                excluded.add(t)
+        for s in shown:
+            t = clean_title_str(s)
+            if t:
+                excluded.add(t)
+        return sorted(list(excluded))
 
 
 def set_last_recommended_movies(user_id: int, movies: List[Dict[str, Any]]) -> None:
@@ -214,12 +306,41 @@ def set_last_recommended_movies(user_id: int, movies: List[Dict[str, Any]]) -> N
         user_mem = get_user_cinema_memory(user_id)
         user_mem["last_recommended_movies"] = movies
         save_user_cinema_memory(user_id, user_mem)
+        add_shown_movies(user_id, movies)
 
 
 def get_last_recommended_movies(user_id: int) -> List[Dict[str, Any]]:
     with _lock:
         user_mem = get_user_cinema_memory(user_id)
         return user_mem.get("last_recommended_movies", [])
+
+
+def get_active_search_context(user_id: int) -> Dict[str, Any]:
+    with _lock:
+        user_mem = get_user_cinema_memory(user_id)
+        return user_mem.get("active_search_context", {})
+
+
+def set_active_search_context(user_id: int, context: Dict[str, Any]) -> None:
+    with _lock:
+        user_mem = get_user_cinema_memory(user_id)
+        user_mem["active_search_context"] = context
+        save_user_cinema_memory(user_id, user_mem)
+
+
+def get_dialog_history(user_id: int) -> List[Dict[str, str]]:
+    with _lock:
+        user_mem = get_user_cinema_memory(user_id)
+        return user_mem.get("dialog_history", [])
+
+
+def append_dialog_turn(user_id: int, role: str, text: str) -> None:
+    with _lock:
+        user_mem = get_user_cinema_memory(user_id)
+        hist = user_mem.get("dialog_history", [])
+        hist.append({"role": role, "text": text[:500], "time": datetime.now(MSK_TZ).strftime("%H:%M:%S")})
+        user_mem["dialog_history"] = hist[-10:]
+        save_user_cinema_memory(user_id, user_mem)
 
 
 def update_user_taste_profile(
@@ -251,6 +372,9 @@ def clear_user_cinema_memory(user_id: int) -> None:
             "favorite_directors": [],
             "disliked_tropes": [],
             "last_recommended_movies": [],
+            "shown_history_titles": [],
+            "active_search_context": {},
+            "dialog_history": [],
             "updated_at": datetime.now(MSK_TZ).isoformat()
         }
         save_user_cinema_memory(user_id, user_mem)

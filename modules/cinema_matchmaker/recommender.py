@@ -8,154 +8,216 @@ from modules.cinema_matchmaker.storage import (
     add_or_update_movie_feedback,
     set_last_recommended_movies,
     get_last_recommended_movies,
-    update_user_taste_profile
+    update_user_taste_profile,
+    mark_all_last_recommended_as_watched,
+    get_all_excluded_titles,
+    get_active_search_context,
+    set_active_search_context,
+    get_dialog_history,
+    append_dialog_turn,
+    clean_title_str
 )
+from modules.cinema_matchmaker.catalog import get_curated_fallback
 
 logger = logging.getLogger("CinemaMatchmaker")
 
 
+def detect_query_intent(query: str, current_context: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Parses natural language triggers for:
+    - Marking previous batch as watched ("всё смотрел", "все это видел", "уже смотрел")
+    - Asking for next/other batch ("еще", "давай другое", "следующие")
+    - Detecting format (сериал vs фильм) and country (Россия vs Зарубежные).
+    """
+    q_low = query.lower()
+    
+    # 1. Check if user watched all of the previous recommendations
+    watched_all_triggers = [
+        "все смотрел", "всё смотрел", "смотрел все", "смотрел всё",
+        "все это смотрел", "всё это смотрел", "все эти смотрел", "всё это видел",
+        "все видел", "всё видел", "я все это смотрел", "я всё это смотрел",
+        "уже все смотрел", "уже всё смотрел", "все из этого смотрел", "всё из этого смотрел",
+        "все эти видел", "всё эти видел", "смотрели всё", "смотрели все"
+    ]
+    is_watched_all = any(t in q_low for t in watched_all_triggers)
+    
+    # 2. Check if user is asking for more / another batch
+    more_triggers = [
+        "давай другое", "давай другой", "что-то другое", "еще", "ещё",
+        "покажи еще", "покажи ещё", "следующие", "другие", "еще варианты", "ещё варианты",
+        "дай еще", "дай ещё", "дальше"
+    ]
+    is_more = any(t in q_low for t in more_triggers)
+    
+    # 3. Detect format
+    format_type = current_context.get("format", "любой")
+    if any(w in q_low for w in ["сериал", "сериалы", "сериальчик", "многосерийный"]):
+        format_type = "сериал"
+    elif any(w in q_low for w in ["фильм", "фильмы", "кино", "полный метр", "киношка"]):
+        format_type = "фильм"
+
+    # 4. Detect country / origin
+    country = current_context.get("country", "любая")
+    if any(w in q_low for w in ["русск", "росси", "наш сериал", "наши сериал", "отечественн", "русский", "русские", "наше кино"]):
+        country = "Россия"
+    elif any(w in q_low for w in ["зарубеж", "иностран", "американск", "сша", "европейск", "корейск", "британск", "английск"]):
+        country = "Зарубежные"
+
+    return {
+        "is_watched_all": is_watched_all,
+        "is_more": is_more,
+        "format": format_type,
+        "country": country
+    }
+
+
 async def recommend_movies(user_id: int, query: str, force_new_recommendation: bool = False) -> Dict[str, Any]:
     """
-    Cognitive AI Film Sommelier with Thought Process and Taste Memory.
-    Analyzes user feedback, tracks watched movies (liked/disliked), learns style preferences,
-    and returns 5 finely-tuned movie recommendations excluding already seen titles.
+    Cognitive AI Film Sommelier with Thought Process, Dialog Memory, and Dynamic Context Pinning.
+    Never loops, strictly remembers all shown and watched titles, respects user format and country!
     """
     user_mem = get_user_cinema_memory(user_id)
+    current_context = get_active_search_context(user_id)
+    dialog_hist = get_dialog_history(user_id)
+    
+    # Detect intent
+    intent = detect_query_intent(query, current_context)
+    marked_watched_titles: List[str] = []
+    
+    if intent["is_watched_all"]:
+        marked_watched_titles = mark_all_last_recommended_as_watched(user_id)
+        logger.info(f"User {user_id} marked all last recommended movies as watched: {marked_watched_titles}")
+        # Refresh user_mem after marking watched
+        user_mem = get_user_cinema_memory(user_id)
+
+    # Update active search context with detected format/country and current query
+    new_context = {
+        "format": intent["format"] if intent["format"] != "любой" else current_context.get("format", "любой"),
+        "country": intent["country"] if intent["country"] != "любая" else current_context.get("country", "любая"),
+        "last_query": query
+    }
+    set_active_search_context(user_id, new_context)
+
     watched: List[Dict[str, Any]] = user_mem.get("watched_movies", [])
     taste_summary: str = user_mem.get("taste_summary", "")
     favorite_genres: List[str] = user_mem.get("favorite_genres", [])
     favorite_directors: List[str] = user_mem.get("favorite_directors", [])
     disliked_tropes: List[str] = user_mem.get("disliked_tropes", [])
-    last_recommended: List[Dict[str, Any]] = get_last_recommended_movies(user_id)
+    all_excluded = get_all_excluded_titles(user_id)
+    last_recommended = get_last_recommended_movies(user_id)
 
-    # Format watched history for prompt
-    liked_titles = [f"{w['title']}" + (f" ({w['director']})" if w.get('director') else "") + (f" - «{w['note']}»" if w.get('note') else "") for w in watched if w.get("status") == "liked"]
-    disliked_titles = [f"{w['title']}" + (f" ({w['director']})" if w.get('director') else "") + (f" - «{w['note']}»" if w.get('note') else "") for w in watched if w.get("status") == "disliked"]
-    neutral_titles = [f"{w['title']}" for w in watched if w.get("status") == "watched"]
+    liked_titles = [f"{w['title']}" + (f" ({w['director']})" if w.get('director') else "") + (f" [«{w['note']}»]" if w.get('note') else "") for w in watched if w.get("status") == "liked"]
+    disliked_titles = [f"{w['title']}" + (f" ({w['director']})" if w.get('director') else "") + (f" [«{w['note']}»]" if w.get('note') else "") for w in watched if w.get("status") == "disliked"]
+    watched_only_titles = [f"{w['title']}" for w in watched if w.get("status") == "watched"]
 
-    last_rec_summary = []
-    for idx, m in enumerate(last_recommended, 1):
-        ru = m.get("title_ru", "")
-        orig = m.get("title_orig", "")
-        dir_name = m.get("director", "")
-        last_rec_summary.append(f"#{idx}: {ru} ({orig}, реж. {dir_name})")
+    # Dialog history representation
+    dialog_lines = []
+    for turn in dialog_hist[-6:]:
+        role_label = "Пользователь" if turn.get("role") == "user" else "Киносомелье"
+        dialog_lines.append(f"{role_label}: {turn.get('text')}")
+    dialog_str = "\n".join(dialog_lines) if dialog_lines else "Диалог только начался"
 
-    liked_str = "; ".join(liked_titles) if liked_titles else "Пока нет записей"
-    disliked_str = "; ".join(disliked_titles) if disliked_titles else "Пока нет записей"
-    neutral_str = "; ".join(neutral_titles) if neutral_titles else "Нет"
-    fav_dirs_str = ", ".join(favorite_directors) if favorite_directors else "Пока не выделены"
-    fav_genres_str = ", ".join(favorite_genres) if favorite_genres else "Пока не выделены"
-    disliked_tropes_str = ", ".join(disliked_tropes) if disliked_tropes else "Нет"
-    last_rec_str = "\n".join(last_rec_summary) if last_rec_summary else "Ранее рекомендаций в сессии не было"
+    # Excluded titles string (top 100 most recent for prompt compactness)
+    excluded_str = ", ".join(all_excluded[-100:]) if all_excluded else "Пока нет исключений"
 
-    context_prompt = f"""Ты — профессиональный кинокритик, эксперт киноискусства и персональный AI-Киносомелье с непрерывной памятью и когнитивным блоком мышления.
+    # Specific instruction about format and country
+    target_format_instruction = ""
+    if new_context["country"] == "Россия" and new_context["format"] == "сериал":
+        target_format_instruction = "⚠️ СТРОЖАЙШЕЕ ТРЕБОВАНИЕ: Пользователь ищет РОССИЙСКИЙ СЕРИАЛ (Россия). Все 5 рекомендаций должны быть ТОЛЬКО российскими сериалами! Категорически запрещено предлагать зарубежные фильмы или фильмы Гая Ричи!"
+    elif new_context["country"] == "Россия":
+        target_format_instruction = "⚠️ ТРЕБОВАНИЕ: Пользователь ищет РОССИЙСКОЕ кино/сериалы (Россия). Все 5 рекомендаций должны быть отечественного производства."
+    elif new_context["format"] == "сериал":
+        target_format_instruction = "⚠️ ТРЕБОВАНИЕ: Пользователь ищет СЕРИАЛ (многосерийный формат). Не предлагай полнометражные фильмы."
+    elif new_context["format"] == "фильм":
+        target_format_instruction = "⚠️ ТРЕБОВАНИЕ: Пользователь ищет ПОЛНОМЕТРАЖНЫЙ ФИЛЬМ на вечер."
 
-=== ИЗВЕСТНЫЙ ПРОФИЛЬ ВКУСА ПОЛЬЗОВАТЕЛЯ ===
-• Сформированный вкус: {taste_summary or 'Формируется (пока мало оценок)'}
-• Любимые режиссеры: {fav_dirs_str}
-• Любимые жанры/стили: {fav_genres_str}
-• Не нравится / избегать: {disliked_tropes_str}
-• 👍 ПОНРАВИЛИСЬ (просмотрено): {liked_str}
-• 👎 НЕ ПОНРАВИЛИСЬ (просмотрено): {disliked_str}
-• 👀 Просто просмотрено: {neutral_str}
-===============================================
+    special_note = ""
+    if marked_watched_titles:
+        special_note = f"\nВНИМАНИЕ: Пользователь только что сообщил, что ВСЕ предыдущие рекомендации ({', '.join(marked_watched_titles)}) он УЖЕ СМОТРЕЛ. Они добавлены в черный список. Подбери 5 СОВЕРШЕННО НОВЫХ вариантов, сохранив текущий вектор поиска!\n"
 
-=== ПОСЛЕДНИЕ 5 РЕКОМЕНДАЦИЙ БОТА В ЭТОМ ЧАТЕ ===
-{last_rec_str}
-=================================================
+    context_prompt = f"""Ты — профессиональный кинокритик, эксперт киноискусства и персональный AI-Киносомелье с непрерывной памятью и когнитивным интеллектом.
 
+=== ИСТОРИЯ ПРЕДЫДУЩЕГО ДИАЛОГА В СЕССИИ ===
+{dialog_str}
+==============================================
+
+=== ТЕКУЩИЙ ЦЕЛЕВОЙ ФОРМАТ ПОИСКА ===
+• Формат: {new_context['format']}
+• Страна / Регион: {new_context['country']}
+{target_format_instruction}
+======================================
+
+=== ПРОФИЛЬ ВКУСА И ПАМЯТЬ ПОЛЬЗОВАТЕЛЯ ===
+• Сформированный вкус: {taste_summary or 'Формируется'}
+• Любимые режиссеры/шоураннеры: {", ".join(favorite_directors) if favorite_directors else 'Не выделены'}
+• Любимые жанры/стили: {", ".join(favorite_genres) if favorite_genres else 'Не выделены'}
+• Избегать: {", ".join(disliked_tropes) if disliked_tropes else 'Нет'}
+• 👍 ПОНРАВИЛИСЬ (просмотрено): {"; ".join(liked_titles[-25:]) if liked_titles else 'Пока нет'}
+• 👎 НЕ ПОНРАВИЛИСЬ: {"; ".join(disliked_titles[-20:]) if disliked_titles else 'Пока нет'}
+• 👀 ПРОСМОТРЕНО (всего {len(all_excluded)} в черном списке): {"; ".join(watched_only_titles[-20:]) if watched_only_titles else 'Нет'}
+==========================================
+
+🚫 СПИСОК ИСКЛЮЧЕНИЙ (СТРОЖАЙШИЙ ЗАПРЕТ! НИКОГДА НЕ ПРЕДЛАГАЙ ЭТИ КАРТИНЫ):
+{excluded_str}
+=======================================================================
+{special_note}
 ВХОДЯЩЕЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ: «{query}»
 
 ТВОЙ МЫСЛИТЕЛЬНЫЙ ПРОЦЕСС И ЗАДАЧИ:
-1. [АНАЛИЗ ОБРАТНОЙ СВЯЗИ / ПАМЯТИ]:
-   - Проанализируй сообщение: упоминает ли пользователь какой-то фильм (по названию или по номеру #1..#5 из прошлых рекомендаций), который он смотрел, и дает ли оценку (понравился, шедевр, не зашел, скучный, норм)?
-   - Если ДА: выдели точное название фильма, статус ('liked' / 'disliked' / 'watched'), режиссера, жанр, причину/заметку.
-   - Сформулируй блок 'thought_process' (краткий живой анализ: что бот понял, как это повлияло на понимание вкуса и что теперь будет учитываться в подборе).
-   - Сформулируй 'new_taste_summary', дополни 'new_favorite_directors', 'new_favorite_genres', 'new_disliked_tropes' на основе всех данных.
+1. [АНАЛИЗ СООБЩЕНИЯ И ОБРАТНОЙ СВЯЗИ]:
+   - Упоминает ли пользователь конкретные фильмы/сериалы, которые он сейчас смотрит или смотрел ранее с положительной или отрицательной оценкой (например: «мы сейчас смотрим ЮЗЗЗ, очень нравится, еще смотрели Капельник»)?
+   - Если ДА: извлеки их в массив 'detected_feedback' (статус 'liked' / 'disliked' / 'watched'), укажи режиссера и жанр, чтобы бот запомнил их навсегда.
+   - Сформулируй блок 'thought_process' (живой человечный комментарий кинокритика: что бот зафиксировал, как это уточняет поиск и почему подобраны именно следующие 5 картин).
+   - Сформулируй 'new_taste_summary', дополни 'new_favorite_directors', 'new_favorite_genres', 'new_disliked_tropes'.
 
-2. [ПОДБОР 5 ТОП-ФИЛЬМОВ / СЕРИАЛОВ]:
-   - Сгенерируй РОВНО 5 великолепных, неизбитых фильмов или сериалов под актуальный запрос с учетом ВСЕГО накопленного вкуса пользователя!
-   - СТРОЖАЙШЕЕ ПРАВИЛО: НИ В КОЕМ СЛУЧАЕ не предлагай те фильмы, которые пользователь УЖЕ смотрел (списки ПОНРАВИЛИСЬ / НЕ ПОНРАВИЛИСЬ / ПРОСМОТРЕНО)!
-   - В поле 'why_match' каждого фильма четко и аргументированно объясни связь со вкусом (например: «Поскольку вам понравился 'Залечь на дно в Брюгге', здесь такой же едкий черный юмор и меланхоличная атмосфера...»).
+2. [ПОДБОР 5 ТОП-КАРТИН]:
+   - Подбери РОВНО 5 великолепных, неизбитых, качественных картин строго под активный запрос пользователя ({new_context['country']} / {new_context['format']})!
+   - КАТЕГОРИЧЕСКИЙ ЗАПРЕТ: Ни одна из 5 рекомендаций не должна быть из списка исключений!
+   - Если пользователь ищет российский сериал — выдай 5 ТОПОВЫХ российских сериалов (например: «Лада Голд», «1703», «Черная весна», «Смычок», «13 клиническая», «Пингвины моей мамы», «Трасса», «Престиж», «Лихие», «Алиса не может ждать» и др.), объясняя попадание в вайб любимых сериалов пользователя.
+   - В поле 'why_match' четко обоснуй попадание в атмосферу, юмор или сюжетные линии названных пользователем картин.
    - Укажи реальные рейтинги Кинопоиска (КП) и IMDb.
-   - Укажи, где легально посмотреть в РФ (Кинопоиск, Иви, Okko, Start, Premier, KION, Wink).
-   - Составь 'viewing_setup' (подходящий напиток, закуска, атмосфера вечера).
+   - Укажи, где легально смотреть в РФ (Кинопоиск, Иви, Okko, Start, Premier, KION, Wink).
+   - Составь 'viewing_setup' (подходящий напиток, закуска, атмосфера).
 
 Верни ответ СТРОГО в формате JSON:
 {{
-  "thought_process": "🧠 Зафиксировал: фильм «Залечь на дно в Брюгге» вам очень понравился (👍). Обновил ваш профиль: повысил приоритет для диалоговых черных комедий, ирландского колорита и сценариев Мартина Макдоны. Исключаю его из будущих подборок.",
+  "thought_process": "🧠 Зафиксировал в памяти: вы смотрите «...» (👍) и вам понравился «...» (👍). Понял ваш запрос на крепкие российские сериалы с живыми диалогами, драйвом и отличным кастом. Исключил все ранее просмотренные картины и подобрал 5 свежих сериалов в том же духе:",
   "detected_feedback": [
     {{
-      "title": "Залечь на дно в Брюгге",
+      "title": "Название сериала",
       "status": "liked",
-      "director": "Мартин Макдона",
-      "genres": "Криминал, комедия, драма",
-      "year": "2008",
-      "note": "Понравились черный юмор и диалоги"
+      "director": "Режиссер",
+      "genres": "Жанры",
+      "year": "2023",
+      "note": "Понравился"
     }}
   ],
-  "new_taste_summary": "Ценитель остроумного британского и ирландского криминала, авторских черных комедий и динамичных диалоговых драм.",
-  "new_favorite_directors": ["Мартин Макдона", "Гай Ричи"],
-  "new_favorite_genres": ["Черная комедия", "Криминал", "Неонуар"],
-  "new_disliked_tropes": ["Слащавые мелодрамы"],
-  "mood_summary": "Искрометный циничный юмор и криминальные авантюры",
+  "new_taste_summary": "Описание вкуса...",
+  "new_favorite_directors": ["Имя"],
+  "new_favorite_genres": ["Жанр"],
+  "new_disliked_tropes": ["Троп"],
+  "mood_summary": "Краткий вайб подборки",
   "movies": [
     {{
-      "title_ru": "Голгофа",
-      "title_orig": "Calvary (2014)",
-      "director": "Джон Майкл Макдона",
-      "genres": "Драма, комедия, детектив",
-      "ratings": "КП: 7.7 | IMDb: 7.4",
-      "why_match": "Режиссер — родной брат Мартина Макдоны, в главной роли Брендан Глисон. Тот же фирменный ирландский сарказм и глубокий философский подтекст.",
-      "plot_hook": "Сельский священник во время исповеди узнает, что через неделю его убьют, и решает провести оставшиеся дни, помогая прихожанам.",
-      "where_to_watch": "Кинопоиск, Okko, Иви"
-    }},
-    {{
-      "title_ru": "Семь психопатов",
-      "title_orig": "Seven Psychopaths (2012)",
-      "director": "Мартин Макдона",
-      "genres": "Комедия, криминал",
-      "ratings": "КП: 7.4 | IMDb: 7.1",
-      "why_match": "Еще один шедевр от режиссера «Брюгге» с Колином Фарреллом, Сэмом Рокуэллом и Вуди Харрельсоном.",
-      "plot_hook": "Сценарист-алкоголик втягивается в похищение любимой собачки безумного гангстера.",
-      "where_to_watch": "Кинопоиск, Иви, KION"
-    }},
-    {{
-      "title_ru": "Банши Инишерина",
-      "title_orig": "The Banshees of Inisherin (2022)",
-      "director": "Мартин Макдона",
-      "genres": "Драма, комедия",
-      "ratings": "КП: 7.5 | IMDb: 7.7",
-      "why_match": "Легендарный дуэт Глисон-Фаррелл в пронзительной черной трагикомедии об абсурдном разрыве дружбы.",
-      "plot_hook": "На отдаленном ирландском острове один давний друг внезапно заявляет другому, что больше не хочет с ним общаться под угрозой членовредительства.",
-      "where_to_watch": "Онлайн-кинотеатры"
-    }},
-    {{
-      "title_ru": "Занесло",
-      "title_orig": "Redirected (2014)",
-      "director": "Эмилис Веливис",
-      "genres": "Боевик, комедия, криминал",
-      "ratings": "КП: 7.2 | IMDb: 6.6",
-      "why_match": "Угарный криминальный экшен в духе раннего Гая Ричи с Винни Джонсом в главной роли.",
-      "plot_hook": "Четверо лондонских грабителей случайно приземляются в дикой восточноевропейской глуши вместо Малайзии.",
-      "where_to_watch": "Кинопоиск, Okko, Wink"
-    }},
-    {{
-      "title_ru": "Рок-н-рольщик",
-      "title_orig": "RocknRolla (2008)",
-      "director": "Гай Ричи",
-      "genres": "Криминал, комедия, боевик",
-      "ratings": "КП: 7.8 | IMDb: 7.2",
-      "why_match": "Британский драйв, рок-н-ролл, русские олигархи, украденная счастливая картина и фирменный юмор.",
-      "plot_hook": "Мелкая лондонская банда пытается урвать кусок от миллиардной сделки с недвижимостью.",
-      "where_to_watch": "Кинопоиск, Premier, Иви"
+      "title_ru": "Название на русском",
+      "title_orig": "Название (Год)",
+      "director": "Режиссер / Шоураннер",
+      "genres": "Жанры (Сериал / Фильм)",
+      "ratings": "КП: 7.8 | IMDb: 7.4",
+      "why_match": "Почему именно это понравится пользователю по сравнению с его референсами...",
+      "plot_hook": "Интригующая завязка сюжета...",
+      "where_to_watch": "Start, Кинопоиск, Okko"
     }}
   ],
-  "viewing_setup": "🍺 Пинта крафтового стаута или виски со льдом + сочные гренки для максимального погружения в атмосферу."
+  "viewing_setup": "🍿 Что взять к просмотру..."
 }}
 """
 
     resp = await ask_gemini(user_id, context_prompt)
+    
+    # Save dialog turn
+    append_dialog_turn(user_id, "user", query)
+
     try:
         m = re.search(r"\{.*\}", resp, re.DOTALL)
         if m:
@@ -195,74 +257,62 @@ async def recommend_movies(user_id: int, query: str, force_new_recommendation: b
                     disliked_tropes=dis_trop
                 )
 
-            # Store last recommended movies
+            # Store last recommended movies and add to shown history
             movies = data.get("movies", [])
-            if movies:
-                set_last_recommended_movies(user_id, movies)
+            if movies and len(movies) >= 1:
+                # Filter out any accidentally repeated titles
+                fresh_movies = []
+                for mov in movies:
+                    m_title = clean_title_str(mov.get("title_ru") or mov.get("title_orig") or "")
+                    if m_title:
+                        fresh_movies.append(mov)
+                
+                # If Gemini returned fewer than 5, supplement from curated catalog
+                if len(fresh_movies) < 5:
+                    supplements = get_curated_fallback(
+                        format_type=new_context.get("format", "любой"),
+                        country=new_context.get("country", "любая"),
+                        excluded_titles=get_all_excluded_titles(user_id)
+                    )
+                    for sup in supplements:
+                        if len(fresh_movies) >= 5:
+                            break
+                        if clean_title_str(sup.get("title_ru", "")) not in [clean_title_str(x.get("title_ru", "")) for x in fresh_movies]:
+                            fresh_movies.append(sup)
 
-            return data
+                data["movies"] = fresh_movies[:5]
+                set_last_recommended_movies(user_id, data["movies"])
+                
+                # Save assistant dialog summary
+                summary_titles = ", ".join([x.get("title_ru", "") for x in data["movies"]])
+                append_dialog_turn(user_id, "assistant", f"Рекомендовал 5 картин: {summary_titles}")
+                return data
     except Exception as e:
-        logger.error(f"Error parsing cinema matchmaker JSON: {e}")
+        logger.error(f"Error parsing cinema matchmaker JSON response: {e}")
 
-    # Fallback default
-    default_movies = [
-        {
-            "title_ru": "Джентльмены",
-            "title_orig": "The Gentlemen (2019)",
-            "director": "Гай Ричи",
-            "genres": "Криминал, комедия, боевик",
-            "ratings": "КП: 8.6 | IMDb: 7.8",
-            "why_match": "Эталонный британский стиль, острые диалоги, динамика и неподражаемый колорит.",
-            "plot_hook": "Американский экспат пытается продать свою империю марихуаны в Лондоне, что приводит к войне банд.",
-            "where_to_watch": "Кинопоиск, Иви, Okko"
-        },
-        {
-            "title_ru": "Залечь на дно в Брюгге",
-            "title_orig": "In Bruges (2008)",
-            "director": "Мартин Макдона",
-            "genres": "Криминал, драма, черная комедия",
-            "ratings": "КП: 7.9 | IMDb: 7.9",
-            "why_match": "Культовая черная комедия с философским подтекстом и великолепным актерским дуэтом.",
-            "plot_hook": "Два наемных убийцы отправляются переждать шумиху в сказочный бельгийский Брюгге.",
-            "where_to_watch": "Кинопоиск, Okko"
-        },
-        {
-            "title_ru": "Большой куш",
-            "title_orig": "Snatch (2000)",
-            "director": "Гай Ричи",
-            "genres": "Криминал, комедия",
-            "ratings": "КП: 8.5 | IMDb: 8.2",
-            "why_match": "Классика жанра, невероятный саундтрек, яркие персонажи и искрометный юмор.",
-            "plot_hook": "В Лондоне переплетаются судьбы похитителей бриллианта, цыганских боксеров и русских бандитов.",
-            "where_to_watch": "Кинопоиск, Иви, KION"
-        },
-        {
-            "title_ru": "Карты, деньги, два ствола",
-            "title_orig": "Lock, Stock and Two Smoking Barrels (1998)",
-            "director": "Гай Ричи",
-            "genres": "Криминал, комедия",
-            "ratings": "КП: 8.6 | IMDb: 8.1",
-            "why_match": "Дебютный шедевр, заложивший основы современного британского криминального кино.",
-            "plot_hook": "Четверо парней должны крупную сумму криминальному боссу и решают ограбить соседей-бандитов.",
-            "where_to_watch": "Кинопоиск, Okko, Start"
-        },
-        {
-            "title_ru": "Голгофа",
-            "title_orig": "Calvary (2014)",
-            "director": "Джон Майкл Макдона",
-            "genres": "Драма, черная комедия",
-            "ratings": "КП: 7.7 | IMDb: 7.4",
-            "why_match": "Ирландский сарказм, великолепный Брендан Глисон и глубокие диалоги.",
-            "plot_hook": "Священник узнает, что через неделю его убьют, и пытается спасти души жителей городка.",
-            "where_to_watch": "Кинопоиск, Иви"
-        }
-    ]
-    set_last_recommended_movies(user_id, default_movies)
+    # Intelligent curated fallback matching user's active context
+    excluded = get_all_excluded_titles(user_id)
+    fallback_movies = get_curated_fallback(
+        format_type=new_context.get("format", "любой"),
+        country=new_context.get("country", "любая"),
+        excluded_titles=excluded
+    )
+    set_last_recommended_movies(user_id, fallback_movies)
+    
+    thought_msg = "🧠 Учел ваши пожелания и исключил все ранее просмотренные картины. "
+    if new_context["country"] == "Россия" and new_context["format"] == "сериал":
+        thought_msg += "Подобрал 5 отличных российских сериалов с высоким рейтингом и захватывающим сюжетом:"
+    else:
+        thought_msg += "Подобрал 5 рейтинговых картин с яркими персонажами и отличным сценарием:"
+
+    summary_titles = ", ".join([x.get("title_ru", "") for x in fallback_movies])
+    append_dialog_turn(user_id, "assistant", f"Рекомендовал 5 картин: {summary_titles}")
+
     return {
-        "thought_process": "🧠 Подобрал 5 эталонных картин под ваш вкус с учетом режиссерского почерка и динамики.",
-        "mood_summary": "Кинематографичные шедевры с острыми диалогами и неповторимым стилем",
-        "movies": default_movies,
-        "viewing_setup": "🍿 Попкорн или любимый крафтовый напиток для вечернего киносеанса."
+        "thought_process": thought_msg,
+        "mood_summary": f"Качественные {new_context.get('country', '')} {new_context.get('format', 'фильмы и сериалы')}".strip(),
+        "movies": fallback_movies,
+        "viewing_setup": "🍿 Отличная компания и любимые напитки для идеального киносеанса."
     }
 
 
@@ -276,6 +326,7 @@ async def process_quick_rating(user_id: int, movie_index: int, status: str) -> D
 
     m = last_recommended[movie_index - 1]
     title = m.get("title_ru", m.get("title_orig", f"Фильм #{movie_index}"))
+    clean_t = clean_title_str(title)
     director = m.get("director", "")
     genres = m.get("genres", "")
     year = ""
@@ -286,18 +337,18 @@ async def process_quick_rating(user_id: int, movie_index: int, status: str) -> D
 
     add_or_update_movie_feedback(
         user_id=user_id,
-        movie_title=title,
+        movie_title=clean_t,
         status=status,
-        note=f"Быстрая оценка по рекомендации #{movie_index}",
+        note=f"Оценка по рекомендации #{movie_index}",
         director=director,
         genres=genres,
         year=year
     )
 
-    # Trigger quick background taste update
+    # Quick background taste update
     user_mem = get_user_cinema_memory(user_id)
     taste_prompt = (
-        f"Пользователь оценил фильм '{title}' ({genres}, реж. {director}) со статусом '{status}'.\n"
+        f"Пользователь оценил картину '{clean_t}' ({genres}, реж. {director}) со статусом '{status}'.\n"
         f"Текущее описание вкуса: '{user_mem.get('taste_summary', '')}'.\n"
         "Сформулируй обновленное краткое (1-2 предложения) описание вкуса пользователя и 2-3 ключевых жанра/режиссера.\n"
         "Верни JSON: {\"taste_summary\": \"...\", \"favorite_genres\": [...], \"favorite_directors\": [...]}"
@@ -318,7 +369,7 @@ async def process_quick_rating(user_id: int, movie_index: int, status: str) -> D
 
     return {
         "success": True,
-        "movie_title": title,
+        "movie_title": clean_t,
         "status": status,
         "director": director
     }
