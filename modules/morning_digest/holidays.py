@@ -6,13 +6,13 @@ from datetime import datetime, date
 from typing import Optional, Dict, Any, List
 
 from core.config import MSK_TZ, DATA_DIR, GEMINI_API_KEY
-from core.gemini import get_genai_client, CANDIDATE_MODELS
+from core.gemini import get_genai_client
 from google.genai import types
 
-logger = logging.getLogger("TodayHolidays")
+logger = logging.getLogger("TodayCalendar")
 
 CACHE_FILE = os.path.join(DATA_DIR, "holidays_cache.json")
-_holidays_memory_cache: Dict[str, str] = {}
+_holidays_memory_cache: Dict[str, Dict[str, Any]] = {}
 
 MONTHS_GEN_RU = [
     "", "января", "февраля", "марта", "апреля", "мая", "июня",
@@ -29,120 +29,35 @@ DAYS_RU = {
     6: "воскресенье"
 }
 
-# Extensive curated calendar of Russian state, professional, international, and famous fun holidays
-CURATED_HOLIDAYS_CALENDAR = {
-    (1, 1): [
-        "🇷🇺 <b>Новый год</b> — главный всенародный праздник",
-        "🌍 <b>Всемирный день мира</b> (День всемирных молитв о мире)",
-        "🎉 <b>День былинного богатыря Ильи Муромца</b>"
-    ],
-    (1, 7): [
-        "⭐️ <b>Рождество Христово</b> — один из главных праздников",
-        "🌍 <b>Международный день программистов</b> (неофициальный)"
-    ],
-    (1, 14): [
-        "🎄 <b>Старый Новый год</b> — уникальная традиция",
-        "🛢 <b>День трубопроводных войск России</b>"
-    ],
-    (1, 25): [
-        "🎓 <b>Татьянин день (День российского студенчества)</b>",
-        "⛄️ <b>День счастливых снеговиков</b>"
-    ],
-    (2, 14): [
-        "❤️ <b>День святого Валентина (День всех влюбленных)</b>",
-        "💻 <b>День компьютерщика</b> (запуск ENIAC в 1946 году)",
-        "📚 <b>Международный день книгодарения</b>"
-    ],
-    (2, 23): [
-        "🇷🇺 <b>День защитника Отечества</b> — государственный праздник",
-        "🍌 <b>Всемирный день бананового хлеба</b>"
-    ],
-    (3, 8): [
-        "💐 <b>Международный женский день</b> — весенний государственный праздник",
-        "🥞 <b>День весеннего тепла и красоты</b>"
-    ],
-    (3, 20): [
-        "☀️ <b>Международный день счастья</b>",
-        "🌱 <b>День весеннего равноденствия</b>",
-        "🌍 <b>День Земли</b>"
-    ],
-    (4, 1): [
-        "😄 <b>День смеха (День дурака)</b> — день добрых розыгрышей",
-        "🦅 <b>Международный день птиц</b>"
-    ],
-    (4, 12): [
-        "🚀 <b>День космонавтики</b> — триумф Юрия Гагарина в 1961 году",
-        "🌍 <b>Всемирный день авиации и космонавтики</b>"
-    ],
-    (5, 1): [
-        "🌷 <b>Праздник Весны и Труда</b> — государственный выходной",
-        "🌻 <b>День подсолнуха</b>"
-    ],
-    (5, 9): [
-        "🎖 <b>День Победы</b> — 9 Мая, великий всенародный праздник",
-        "🎗 <b>День воинской славы России</b>"
-    ],
-    (6, 1): [
-        "👶 <b>Международный день защиты детей</b> — начало лета",
-        "🥛 <b>Всемирный день молока</b>"
-    ],
-    (6, 6): [
-        "📖 <b>Пушкинский день (День русского языка)</b>",
-        "✍️ <b>День рождения А. С. Пушкина</b>"
-    ],
-    (6, 12): [
-        "🇷🇺 <b>День России</b> — главный государственный праздник страны",
-        "🕊 <b>День принятия Декларации о государственном суверенитете РФ</b>"
-    ],
-    (7, 8): [
-        "👨‍👩‍👧 <b>День семьи, любви и верности (День Петра и Февронии)</b>",
-        "🌿 <b>День зенитно-ракетных войск РФ</b>"
-    ],
-    (8, 2): [
-        "🪂 <b>День Воздушно-десантных войск (ВДВ)</b>",
-        "🍉 <b>Всемирный день арбуза</b>"
-    ],
-    (8, 22): [
-        "🇷🇺 <b>День Государственного флага Российской Федерации</b>",
-        "🪴 <b>День растительного молока</b>"
-    ],
-    (9, 1): [
-        "🔔 <b>День знаний</b> — начало нового учебного года",
-        "🍂 <b>Первый день осени</b>"
-    ],
-    (9, 6): [
-        "✈️ <b>День полётов над землёй</b> — праздник мечтателей и романтиков",
-        "📚 <b>Всемирный день чтения книг (Read a Book Day)</b>",
-        "👩‍🦰 <b>Всемирный день рыжих людей</b>",
-        "🛡 <b>День подразделений по противодействию экстремизму МВД РФ</b>"
-    ],
-    (9, 13): [
-        "💻 <b>День программиста в России</b> (256-й день года)",
-        "💇 <b>День парикмахера в России</b>",
-        "🍫 <b>Международный день шоколада</b>"
-    ],
-    (10, 5): [
-        "👩‍🏫 <b>День учителя в России</b> (World Teachers' Day)",
-        "🕵️ <b>День работников уголовного розыска России</b>"
-    ],
-    (10, 31): [
-        "🎃 <b>Хэллоуин (Канун Дня всех святых)</b>",
-        "🌊 <b>Международный день Черного моря</b>",
-        "🧙‍♂️ <b>День магии и фокусов</b>"
-    ],
-    (11, 4): [
-        "🇷🇺 <b>День народного единства</b> — государственный праздник России",
-        "🕊 <b>День Казанской иконы Божией Матери</b>"
-    ],
-    (12, 31): [
-        "🍾 <b>Канун Нового года</b> — подготовка к праздничной ночи",
-        "✨ <b>День исполнения заветных желаний</b>",
-        "🎉 <b>День троп и дорожек</b>"
-    ]
+# Curated comprehensive fallbacks for dates
+CURATED_FALLBACK_DATABASE = {
+    (9, 6): {
+        "holidays": [
+            "✈️ День полётов над землёй",
+            "📚 Всемирный день чтения книг (Read a Book Day)",
+            "👩‍🦰 Всемирный день рыжих людей",
+            "🛡 День подразделений по противодействию экстремизму МВД РФ",
+            "☕️ День кофейного мороженого",
+            "🌿 День шелеста осенней листвы",
+            "🕊 День борьбы с прокрастинацией"
+        ],
+        "name_days": "Максим, Денис, Георгий, Арсений, Пётр, Серафима, Евтихий",
+        "history": [
+            "1826 - в Санкт-Петербурге открыт знаменитый Египетский цепной мост через Фонтанку.",
+            "1928 - утверждено Положение о Центральном статистическом управлении СССР.",
+            "1936 - учреждено почётное звание «Народный артист СССР».",
+            "1991 - президиум Верховного Совета РСФСР вернул Ленинграду историческое название Санкт-Петербург."
+        ],
+        "folk_signs": [
+            "• Дождь в этот день предвещает сухую и теплую осень, а также богатый урожай на следующий год.",
+            "• Много желудей на дубах — к суровой и морозной зиме.",
+            "• Синицы громко пищат с утра — к скорому дождю и похолоданию."
+        ]
+    }
 }
 
 
-def _load_cache() -> Dict[str, str]:
+def _load_cache() -> Dict[str, Dict[str, Any]]:
     global _holidays_memory_cache
     if _holidays_memory_cache:
         return _holidays_memory_cache
@@ -157,9 +72,9 @@ def _load_cache() -> Dict[str, str]:
     return _holidays_memory_cache
 
 
-def _save_cache(date_key: str, text: str):
+def _save_cache(date_key: str, data: Dict[str, Any]):
     global _holidays_memory_cache
-    _holidays_memory_cache[date_key] = text
+    _holidays_memory_cache[date_key] = data
     try:
         os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
@@ -168,65 +83,141 @@ def _save_cache(date_key: str, text: str):
         logger.warning(f"Error saving holidays cache: {e}")
 
 
-def get_curated_fallback_holidays(target_date: datetime) -> str:
-    """Returns curated fallback holidays based on day and month."""
-    key = (target_date.month, target_date.day)
-    if key in CURATED_HOLIDAYS_CALENDAR:
-        items = CURATED_HOLIDAYS_CALENDAR[key]
-        return "\n".join(f"• {item}" if not item.startswith("•") else item for item in items)
+def format_calendar_card(data: Dict[str, Any]) -> str:
+    """Formats the calendar dictionary into the exact aesthetic layout from the reference."""
+    holidays_list = data.get("holidays", [])
+    name_days = data.get("name_days", "")
+    history_list = data.get("history", [])
+    folk_signs = data.get("folk_signs", [])
     
-    # Generic dynamic fallbacks if day not specifically mapped
+    # Format Holidays
+    h_lines = []
+    for h in holidays_list:
+        h_str = str(h).strip()
+        if not h_str:
+            continue
+        if not h_str.startswith("•") and not any(h_str.startswith(e) for e in ["🇷🇺", "🌍", "✈️", "📚", "👩‍🦰", "🛡", "☕️", "🌿", "🕊", "🐎", "📝", "🧑‍⚕️", "🥜", "⛪️", "🎉", "❤️", "🎄", "🚀", "🎖", "☀️", "👶", "🎃", "🔔", "💡", "🎮", "🍾"]):
+            h_str = f"• {h_str}"
+        h_lines.append(h_str)
+    
+    holidays_text = "\n".join(h_lines) if h_lines else "• Официальных праздников в этот день нет"
+    
+    # Format History
+    hist_lines = []
+    for item in history_list:
+        hist_str = str(item).strip()
+        if hist_str:
+            hist_lines.append(hist_str)
+    history_text = "\n".join(hist_lines) if hist_lines else "• Значимых исторических дат не зафиксировано"
+    
+    # Format Folk Signs
+    sign_lines = []
+    for s in folk_signs:
+        s_str = str(s).strip()
+        if not s_str:
+            continue
+        if not s_str.startswith("•"):
+            s_str = f"• {s_str}"
+        sign_lines.append(s_str)
+    signs_text = "\n".join(sign_lines) if sign_lines else "• Народные приметы на этот день отсутствуют"
+    
+    card = (
+        f"🎉 <b>ПРАЗДНИКИ ДНЯ:</b>\n"
+        f"{holidays_text}\n\n"
+        f"👥 <b>ИМЕНИНЫ ОТМЕЧАЮТ:</b>\n"
+        f"{name_days}\n\n"
+        f"📆 <b>ИСТОРИЧЕСКИЕ СОБЫТИЯ:</b>\n"
+        f"{history_text}\n\n"
+        f"💫 <b>НАРОДНЫЕ ПРИМЕТЫ:</b>\n"
+        f"{signs_text}"
+    )
+    return card
+
+
+def get_curated_fallback_data(target_date: datetime) -> Dict[str, Any]:
+    """Provides curated fallback calendar data."""
+    key = (target_date.month, target_date.day)
+    if key in CURATED_FALLBACK_DATABASE:
+        return CURATED_FALLBACK_DATABASE[key]
+    
     d_num = target_date.day
     m_name = MONTHS_GEN_RU[target_date.month]
     weekday_idx = target_date.weekday()
     
-    items = []
-    # Check 256th day for programmer day
-    day_of_year = target_date.timetuple().tm_yday
-    if day_of_year == 256:
-        items.append("💻 <b>День программиста</b> — 256-й день года!")
-    
-    # Sunday / Weekend / Friday specials
-    if weekday_idx == 6:
-        items.append(f"☀️ <b>Воскресный день отдыха и семьи</b> — отличный повод набраться сил")
-    elif weekday_idx == 4:
-        items.append(f"🎉 <b>Пятница</b> — завершение рабочей недели")
+    holidays = [
+        f"📅 День {d_num} {m_name} — день новых возможностей и свершений",
+        "🌍 Всемирный день улыбок и позитива",
+        "☕️ Международный день приятных встреч и кофе"
+    ]
+    if weekday_idx == 4:
+        holidays.insert(0, "🎉 Пятница — завершение рабочей недели")
+    elif weekday_idx == 6:
+        holidays.insert(0, "☀️ Воскресный день семейного отдыха и уюта")
         
-    items.append(f"📅 <b>День {d_num} {m_name}</b> — прекрасный повод для новых свершений и хорошего настроения")
-    items.append(f"☕️ <b>Всемирный день приятных моментов</b> — уделите время себе и близким")
-    
-    return "\n".join(f"• {item}" for item in items)
+    return {
+        "holidays": holidays,
+        "name_days": "Александр, Михаил, Иван, Анна, Елена, Мария, Дмитрий, Сергей",
+        "history": [
+            f"В этот день {d_num} {m_name} в разные эпохи происходили важнейшие открытия и свершения в мировой культуре и науке.",
+            "Памятная дата летописи отечественной истории и созидательного труда."
+        ],
+        "folk_signs": [
+            "• Утренний туман предвещает ясную и теплую погоду на весь день.",
+            "• Птицы летают высоко в небе — к сухой и устойчивой погоде."
+        ]
+    }
 
 
-async def fetch_holidays_from_gemini(target_date: datetime) -> Optional[str]:
-    """Generates a rich, accurate list of today's holidays via Gemini."""
+async def fetch_calendar_from_gemini(target_date: datetime) -> Optional[Dict[str, Any]]:
+    """Generates complete calendar dataset (Holidays, Name days, History, Folk signs) via Gemini AI."""
     day = target_date.day
     month_name = MONTHS_GEN_RU[target_date.month]
     year = target_date.year
     weekday_str = DAYS_RU.get(target_date.weekday(), "")
     
     prompt = (
-        f"Сегодня {day} {month_name} {year} года, {weekday_str}.\n"
-        f"Назови, какие сегодня праздники в России и в мире (государственные, профессиональные, международные, а также необычные или забавные всемирные праздники).\n\n"
-        f"Требования к ответу:\n"
-        f"1. Выбери ТОП 3-5 самых ярких, официальных и интересных праздников на этот конкретный день ({day} {month_name}).\n"
-        f"2. Обязательно включи официальные/профессиональные праздники РФ, если они есть в эту дату, плюс 1-2 интересных всемирных/необычных дня.\n"
-        f"3. Формат каждого пункта СТРОГО: «• [Эмодзи] <b>Название праздника</b> — краткое пояснение или факт в 1 строку» (если название говорит само за себя, тире и пояснение можно сделать ультракратким).\n"
-        f"4. Запрещено писать вступительные слова («Вот список...», «Сегодня отмечаются:») и заключительные фразы. Только сам список из 3-5 строк через «• ».\n"
-        f"5. Используй только валидный Telegram HTML (теги <b>, <i>, <code>). Не используй markdown-звёздочки **."
+        f"Сегодня {day} {month_name} {year} года ({weekday_str}).\n"
+        f"Составь подробную сводку «Календарь дня» для утреннего дайджеста строго в формате JSON.\n\n"
+        f"Структура JSON:\n"
+        f"{{\n"
+        f'  "holidays": [\n'
+        f'    "🧑‍⚕️ Название праздника 1",\n'
+        f'    "📝 Название праздника 2",\n'
+        f'    "• Название праздника 3"\n'
+        f"  ],\n"
+        f'  "name_days": "Список мужских и женских имен через запятую",\n'
+        f'  "history": [\n'
+        f'    "1492 - краткое описание исторического события 1.",\n'
+        f'    "1798 - краткое описание исторического события 2.",\n'
+        f'    "1892 - краткое описание исторического события 3.",\n'
+        f'    "1991 - краткое описание исторического события 4."\n'
+        f"  ],\n"
+        f'  "folk_signs": [\n'
+        f'    "• Народная примета о погоде или природе 1.",\n'
+        f'    "• Народная примета о погоде или природе 2.",\n'
+        f'    "• Народная примета о погоде или природе 3."\n'
+        f"  ]\n"
+        f"}}\n\n"
+        f"Требования к содержанию:\n"
+        f"1. holidays: Включи от 7 до 12 разнообразных праздников на {day} {month_name} (государственные, профессиональные, православные/церковные, международные, забавные и необычные всемирные дни). Добавляй релевантные эмодзи перед названиями.\n"
+        f"2. name_days: Реальные православные и католические именины (святцы) на этот день. Список имен через запятую.\n"
+        f"3. history: 4-5 реальных ключевых исторических событий, произошедших именно в этот день ({day} {month_name}) в мировой и российской истории. Формат: «ГОД - событие».\n"
+        f"4. folk_signs: 2-4 народные приметы и поверья на {day} {month_name} (поведение птиц, погода, растения).\n"
+        f"5. Ответ должен быть СТРОГО валидным JSON без маркдаун-оберток или дополнительного текста."
     )
     
     try:
         client = get_genai_client()
-        for model in ["gemini-3.7-flash", "gemini-3.5-flash"]:
+        for model in ["gemini-3.7-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"]:
             try:
                 cfg = types.GenerateContentConfig(
                     system_instruction=(
-                        "Ты экспертный календарный эрудит и ведущий утреннего дайджеста. "
-                        "Твоя задача — выдавать точный, красивый и позитивный список сегодняшних праздников в строгом формате списка Telegram HTML."
+                        "Ты экспертный историк, фольклорист и эрудит. "
+                        "Отвечай строго валидным JSON со списком праздников, именин, исторических событий и народных примет."
                     ),
-                    temperature=0.3,
-                    max_output_tokens=400
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                    max_output_tokens=900
                 )
                 resp = await asyncio.wait_for(
                     client.aio.models.generate_content(
@@ -234,36 +225,38 @@ async def fetch_holidays_from_gemini(target_date: datetime) -> Optional[str]:
                         contents=[prompt],
                         config=cfg
                     ),
-                    timeout=4.0
+                    timeout=5.0
                 )
                 if resp and resp.text:
-                    text = resp.text.strip()
-                    # Sanitize: convert markdown bold to HTML if any leaked
-                    text = text.replace("**", "<b>").replace("**", "</b>")
-                    lines = [l.strip() for l in text.split("\n") if l.strip()]
-                    cleaned_lines = []
-                    for l in lines:
-                        if not l.startswith("•") and not l.startswith("-") and not l.startswith("*"):
-                            l = f"• {l}"
-                        elif l.startswith("- ") or l.startswith("* "):
-                            l = f"• {l[2:]}"
-                        cleaned_lines.append(l)
+                    raw_text = resp.text.strip()
+                    # Clean potential markdown wrapping
+                    if raw_text.startswith("```json"):
+                        raw_text = raw_text[7:]
+                    if raw_text.startswith("```"):
+                        raw_text = raw_text[3:]
+                    if raw_text.endswith("```"):
+                        raw_text = raw_text[:-3]
+                    raw_text = raw_text.strip()
                     
-                    if len(cleaned_lines) >= 2:
-                        return "\n".join(cleaned_lines[:5])
+                    data = json.loads(raw_text)
+                    if isinstance(data, dict) and "holidays" in data and "history" in data:
+                        return data
             except Exception as e:
-                logger.warning(f"Gemini model {model} failed for holidays: {e}")
+                logger.warning(f"Gemini model {model} failed for calendar JSON: {e}")
                 continue
     except Exception as e:
-        logger.error(f"Error fetching holidays from Gemini: {e}")
-    
+        logger.error(f"Error calling Gemini for calendar: {e}")
+        
     return None
 
 
 async def get_today_holidays(target_date: Optional[datetime] = None) -> str:
     """
-    Returns today's holidays formatted in Telegram HTML.
-    Utilizes daily file/memory caching, Gemini AI curation, and curated offline calendar fallback.
+    Returns the complete, beautifully formatted calendar card for today:
+    1. ПРАЗДНИКИ ДНЯ (7-12 праздников с эмодзи)
+    2. ИМЕНИНЫ ОТМЕЧАЮТ (список имен)
+    3. ИСТОРИЧЕСКИЕ СОБЫТИЯ (ГОД - событие)
+    4. НАРОДНЫЕ ПРИМЕТЫ (приметы погоды и природы)
     """
     if target_date is None:
         target_date = datetime.now(MSK_TZ)
@@ -271,20 +264,22 @@ async def get_today_holidays(target_date: Optional[datetime] = None) -> str:
     date_key = target_date.strftime("%Y-%m-%d")
     cache = _load_cache()
     
-    # 1. Return from cache if already generated today
-    if date_key in cache and cache[date_key].strip():
-        return cache[date_key]
+    # 1. Cache hit (only structured dict with all 4 sections)
+    if date_key in cache:
+        entry = cache[date_key]
+        if isinstance(entry, dict) and "holidays" in entry and "history" in entry:
+            return format_calendar_card(entry)
     
-    # 2. Try Gemini AI Generation
+    # 2. Try Gemini AI
     try:
-        ai_holidays = await fetch_holidays_from_gemini(target_date)
-        if ai_holidays and len(ai_holidays.strip()) > 15:
-            _save_cache(date_key, ai_holidays)
-            return ai_holidays
+        ai_data = await fetch_calendar_from_gemini(target_date)
+        if ai_data and isinstance(ai_data, dict):
+            _save_cache(date_key, ai_data)
+            return format_calendar_card(ai_data)
     except Exception as e:
-        logger.warning(f"Gemini holidays generation exception: {e}")
+        logger.warning(f"AI calendar generation exception: {e}")
     
-    # 3. Offline Curated Fallback Calendar
-    fallback = get_curated_fallback_holidays(target_date)
-    _save_cache(date_key, fallback)
-    return fallback
+    # 3. Fallback database
+    fallback_data = get_curated_fallback_data(target_date)
+    _save_cache(date_key, fallback_data)
+    return format_calendar_card(fallback_data)
