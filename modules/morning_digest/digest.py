@@ -16,6 +16,7 @@ from modules.max_tracker.storage import get_user_max_config
 from modules.food_tracker.storage import get_daily_summary, get_user_calorie_goal
 from modules.smart_home.client import build_smart_home_card
 from modules.smart_home.storage import get_user_smart_home_config
+from modules.morning_digest.holidays import get_today_holidays
 
 logger = logging.getLogger("MorningDigest")
 
@@ -51,7 +52,14 @@ async def generate_morning_digest(user_id: int = 157236577) -> str:
     d_str = f"{now.day} {MONTHS_GEN_RU[now.month]} {now.year} г., {weekday}"
     today_iso = now.strftime("%Y-%m-%d")
 
-    # 1. Weather
+    # 1. Today's Holidays
+    holidays_text = "🎉 <i>Список праздников формируется...</i>"
+    try:
+        holidays_text = await get_today_holidays(now)
+    except Exception as e:
+        logger.warning(f"Holidays in digest warning: {e}")
+
+    # 2. Weather
     w_cfg = get_user_weather_config(user_id)
     w_city = w_cfg.get("city", "Санкт-Петербург")
     w_dist = w_cfg.get("district", "Приморский р-н")
@@ -71,7 +79,7 @@ async def generate_morning_digest(user_id: int = 157236577) -> str:
     except Exception as e:
         logger.warning(f"Weather in digest warning: {e}")
 
-    # 2. Today's Reminders
+    # 3. Today's Reminders
     reminders = get_active_reminders(user_id)
     rem_today = []
     for r in reminders:
@@ -84,7 +92,7 @@ async def generate_morning_digest(user_id: int = 157236577) -> str:
     else:
         rem_text = "✨ <i>На сегодня запланированных дел нет. Свободный график!</i>"
 
-    # 3. Birthdays (Today + Next 3 days)
+    # 4. Birthdays (Today + Next 3 days)
     birthdays = get_sorted_birthdays()
     b_urgent = []
     for b in birthdays:
@@ -107,7 +115,7 @@ async def generate_morning_digest(user_id: int = 157236577) -> str:
         else:
             b_text = "В ближайшие дни дней рождения нет."
 
-    # 4. Message Inboxes (Drive2, VK, MAX)
+    # 5. Message Inboxes (Drive2, VK, MAX)
     inbox_items = []
 
     # Drive2
@@ -141,7 +149,7 @@ async def generate_morning_digest(user_id: int = 157236577) -> str:
 
     inbox_text = "\n".join(inbox_items) if inbox_items else "Все входящие каналы проверены и чисты."
 
-    # 5. Smart Home Climate & Safety
+    # 6. Smart Home Climate & Safety
     sh_cfg = get_user_smart_home_config(user_id)
     sh_token = sh_cfg.get("token") if sh_cfg else None
     sh_text = "🏠 <i>Умный дом в норме.</i>"
@@ -153,7 +161,7 @@ async def generate_morning_digest(user_id: int = 157236577) -> str:
         except Exception:
             pass
 
-    # 6. Nutrition & Calorie Target
+    # 7. Nutrition & Calorie Target
     daily_goal = get_user_calorie_goal(user_id)
     food_text = f"🎯 Дневная норма: <b>{daily_goal} ккал</b>. <i>Не забывайте пить воду и фотографировать приёмы пищи!</i>"
 
@@ -162,6 +170,8 @@ async def generate_morning_digest(user_id: int = 157236577) -> str:
         f"🌅 <b>Доброе утро, Олег! Персональный дайджест на день</b> 🚀\n"
         f"📅 <i>{d_str}</i>\n"
         f"➖➖➖➖➖➖➖➖➖➖➖➖\n\n"
+        f"🎉 <b>КАКИЕ СЕГОДНЯ ПРАЗДНИКИ:</b>\n"
+        f"{holidays_text}\n\n"
         f"🌤 <b>ПОГОДА В ВАШЕМ РАЙОНЕ:</b>\n"
         f"{weather_text}\n\n"
         f"⏰ <b>ЗАДАЧИ И НАПОМИНАНИЯ:</b>\n"
