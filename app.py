@@ -75,17 +75,31 @@ dp = Dispatcher(storage=JsonFsmStorage())
 from core.middlewares import MenuNavigationMiddleware
 dp.message.outer_middleware(MenuNavigationMiddleware())
 
-# Register modular routers in logical order:
+# Register modular routers in prioritized logical order:
+# 1. State-filtered specialized interactive mode routers (highest priority)
+dp.include_router(career_interview_router)
+dp.include_router(gourmet_router)
+dp.include_router(geo_gastro_router)
+dp.include_router(mystic_spb_router)
+dp.include_router(country_relax_router)
+dp.include_router(photo_spots_router)
+dp.include_router(cinema_router)
+dp.include_router(humanizer_router)
+dp.include_router(prompt_studio_router)
+dp.include_router(shield_router)
+dp.include_router(icebreakers_router)
+dp.include_router(biases_router)
+dp.include_router(weekend_trips_router)
+dp.include_router(gift_generator_router)
+dp.include_router(book_sommelier_router)
+dp.include_router(music_sommelier_router)
+dp.include_router(auto_scam_shield_router)
+dp.include_router(dark_kitchen_router)
+
+# 2. System and specific feature routers
 dp.include_router(digest_router)
 dp.include_router(smart_home_router)
-dp.include_router(career_interview_router)  # State-filtered voice & text handlers
-dp.include_router(gourmet_router)           # Hands-free kitchen voice handlers
-dp.include_router(geo_gastro_router)        # State-filtered GPS & restaurant handlers
-dp.include_router(mystic_spb_router)        # State-filtered GPS & mystic story handlers
-dp.include_router(country_relax_router)     # State-filtered country & spa handlers
-dp.include_router(photo_spots_router)       # State-filtered photo spots handlers
-dp.include_router(cinema_router)            # State-filtered cinema & series matchmaker handlers
-dp.include_router(voice_router)             # General voice assistant
+dp.include_router(voice_router)
 dp.include_router(unified_monitor_router)
 dp.include_router(drive2_router)
 dp.include_router(vk_router)
@@ -105,19 +119,10 @@ dp.include_router(freebies_router)
 dp.include_router(auto_legal_router)
 dp.include_router(research_router)
 dp.include_router(antispam_router)
-dp.include_router(prompt_studio_router)
-dp.include_router(humanizer_router)
-dp.include_router(shield_router)
-dp.include_router(icebreakers_router)
-dp.include_router(biases_router)
-dp.include_router(weekend_trips_router)
-dp.include_router(gift_generator_router)
-dp.include_router(book_sommelier_router)
-dp.include_router(music_sommelier_router)
-dp.include_router(auto_scam_shield_router)
-dp.include_router(dark_kitchen_router)
 dp.include_router(webapp_bot_router)
-dp.include_router(ai_router)  # Catch-all AI router last
+
+# 3. Catch-all general AI router
+dp.include_router(ai_router)
 
 
 async def keep_alive_task():

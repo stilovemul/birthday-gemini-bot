@@ -591,33 +591,41 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         await render_movie_recommendations(message, result)
         return
 
-    # 9. Custom Rules & Periodic Tasks Natural NLP (with Date Range support)
+    # 9. Custom Rules & Periodic Tasks Natural NLP (with Date Range support & Strict Intent Verification)
+    rule_explicit_triggers = [
+        "создай правило", "добавь правило", "новое правило", "периодическое правило",
+        "напоминай каждый", "напоминай каждое", "напоминай каждую", "напоминай по",
+        "каждый месяц с ", "каждый месяц ", "каждое число ", "каждую пятницу ",
+        "каждый понедельник ", "каждый вторник ", "каждую среду ", "каждый четверг ",
+        "каждую субботу ", "каждое воскресенье "
+    ]
     is_rule_candidate = (
-        any(k in t_lower for k in ["создай правило", "добавь правило", "новое правило", "каждое ", "каждый ", "каждую ", "ежемесячно", "еженедельно"]) or
-        ("показания" in t_lower and ("числа" in t_lower or "по" in t_lower or "счетчик" in t_lower)) or
-        bool(re.search(r"с\s+\d{1,2}\s+(?:числа\s+)?по\s+\d{1,2}", t_lower))
+        any(k in t_lower for k in rule_explicit_triggers) or
+        (re.match(r"^(?:каждый|каждое|каждую|ежемесячно|еженедельно)\s+", t_lower) and len(text) < 250) or
+        ("показания" in t_lower and ("числа" in t_lower or "счетчик" in t_lower or "по" in t_lower)) or
+        (bool(re.search(r"\bс\s+\d{1,2}\s+(?:числа\s+)?по\s+\d{1,2}\s+(?:число|числа)\b", t_lower)) and len(text) < 200)
     )
 
-    if is_rule_candidate and not any(k in t_lower for k in ["подписк", "кредит", "ипотек", "погода"]):
+    if is_rule_candidate and not any(k in t_lower for k in ["подписк", "кредит", "ипотек", "погода", "поздравляю", "поздравление"]):
         from modules.custom_rules.storage import add_custom_rule
         prompt = (
-            f"Пользователь хочет создать персональное периодическое правило / повторяющуюся задачу:\n'{text}'\n\n"
-            "Определи параметры правила: "
-            "1. title: Короткий заголовок с понятным эмодзи (до 30 символов, например '💧 Передать показания счетчиков'). "
-            "2. trigger_type: "
-            "   - 'monthly_range' (если указан диапазон дат каждого месяца, например 'с 20 по 24 число') "
-            "   - 'monthly_day' (если точный один день месяца, например '20-е число') "
-            "   - 'weekly_day' (если определенный день недели, например 'каждую пятницу') "
-            "   - 'daily_time' (если каждый день) "
-            "3. start_day: начальное число диапазона от 1 до 31 (число, например 20, если monthly_range, иначе 0). "
-            "4. end_day: конечное число диапазона от 1 до 31 (число, например 24, если monthly_range, иначе 0). "
-            "5. day_of_month: число месяца (если monthly_day или start_day). "
-            "6. days_of_week: массив чисел от 0 до 6, где 0=Пн, 4=Пт, 6=Вс (если weekly_day). "
-            "7. hour: час напоминания от 0 до 23 (по умолчанию 12). "
-            "8. minute: минуты от 0 до 59 (по умолчанию 0). "
-            "9. action_text: Понятный текст напоминания / инструкции. "
-            "Верни ТОЛЬКО валидный JSON в формате:\n"
-            '{"title": "💧 Передать показания счетчиков", "trigger_type": "monthly_range", "start_day": 20, "end_day": 24, "day_of_month": 20, "days_of_week": [], "hour": 12, "minute": 0, "action_text": "Пора передать показания счетчиков воды и света!"}'
+            f"Пользователь отправил сообщение:\n'{text}'\n\n"
+            "Твоя задача — определить, хочет ли пользователь настроить повторяющееся правило / периодическую задачу (например передавать показания, принимать витамины, проверять отчеты в определенные дни/время).\n"
+            "Если текст является обычным поздравлением, письмом, статьей, вопросом или НЕ содержит четкого намерения создать повторяющееся напоминание/правило, верни СТРОГО JSON:\n"
+            '{"is_rule": false}\n\n'
+            "Если это ДЕЙСТВИТЕЛЬНО запрос на периодическое правило, верни JSON:\n"
+            "{\n"
+            '  "is_rule": true,\n'
+            '  "title": "💧 Короткий заголовок с эмодзи (до 30 симв)",\n'
+            '  "trigger_type": "monthly_range" | "monthly_day" | "weekly_day" | "daily_time",\n'
+            '  "start_day": 20,\n'
+            '  "end_day": 24,\n'
+            '  "day_of_month": 20,\n'
+            '  "days_of_week": [4],\n'
+            '  "hour": 12,\n'
+            '  "minute": 0,\n'
+            '  "action_text": "Понятный текст действия"\n'
+            "}"
         )
         ai_resp = await ask_gemini(user_id, prompt)
         try:
@@ -625,9 +633,10 @@ async def handle_generic_text(message: types.Message, bot: Bot):
             m = re.search(r"\{.*\}", ai_resp, re.DOTALL)
             if m:
                 data = json.loads(m.group(0))
-                item = add_custom_rule(
-                    user_id=user_id,
-                    title=data.get("title", "Персональное правило"),
+                if data.get("is_rule") is not False and data.get("title"):
+                    item = add_custom_rule(
+                        user_id=user_id,
+                        title=data.get("title", "Персональное правило"),
                     trigger_type=data.get("trigger_type", "daily_time"),
                     action_text=data.get("action_text", text),
                     hour=int(data.get("hour", 12)),
