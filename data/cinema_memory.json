@@ -301,7 +301,14 @@
         "where_to_watch": "Start, Кинопоиск"
       }
     ],
-    "updated_at": "2026-09-02T17:17:59.877931+03:00"
+    "updated_at": "2026-09-07T21:29:47.179201+03:00",
+    "shown_history_titles": [],
+    "active_search_context": {
+      "format": "сериал",
+      "country": "Россия",
+      "last_query": "Хочу что-то наподобие сериала холод, русский"
+    },
+    "dialog_history": []
   },
   "999999999": {
     "watched_movies": [],
