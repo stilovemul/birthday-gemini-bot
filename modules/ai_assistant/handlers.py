@@ -573,6 +573,24 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         except Exception as e:
             logger.warning(f"Error in multi-sub NLP parser: {e}")
 
+    # 8.5. Cinema & Series Smart Auto-Recovery Interceptor
+    cinema_triggers = [
+        "сериал", "сериалы", "сериальчик", "фильм", "фильмы", "кино", "посмотрел", "посмотрели",
+        "смотрел", "смотрели", "советуй", "посоветуй еще", "посоветуй ещё", "что посмотреть",
+        "где советы", "какой сериал", "какой фильм", "лада голд", "1703", "юззз", "капельник",
+        "мир дружба жвачка", "черная весна", "смычок", "трасса"
+    ]
+    is_cinema_intent = any(k in t_lower for k in cinema_triggers) and not any(k in t_lower for k in ["подписк", "напомни", "погода", "свет", "выключи", "включи", "кбжу"])
+    if is_cinema_intent:
+        from modules.cinema_matchmaker.recommender import recommend_movies
+        from modules.cinema_matchmaker.handlers import render_movie_recommendations
+        from core.states import ActiveModeStates
+        await state.set_state(ActiveModeStates.cinema_matchmaker_mode)
+        await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        result = await recommend_movies(user_id, text)
+        await render_movie_recommendations(message, result)
+        return
+
     # 9. Custom Rules & Periodic Tasks Natural NLP (with Date Range support)
     is_rule_candidate = (
         any(k in t_lower for k in ["создай правило", "добавь правило", "новое правило", "каждое ", "каждый ", "каждую ", "ежемесячно", "еженедельно"]) or

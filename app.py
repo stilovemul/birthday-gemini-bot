@@ -63,13 +63,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("SuperBotApp")
 
-from aiogram.fsm.storage.memory import MemoryStorage
+from core.fsm_storage import JsonFsmStorage
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-# Telegram Bot & Dispatcher with global HTML parse mode
+# Telegram Bot & Dispatcher with global HTML parse mode and persistent disk-backed FSM storage
 bot = Bot(token=TELEGRAM_BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-dp = Dispatcher(storage=MemoryStorage())
+dp = Dispatcher(storage=JsonFsmStorage())
 
 # Register global MenuNavigationMiddleware to seamlessly clear previous FSM states when switching modules
 from core.middlewares import MenuNavigationMiddleware

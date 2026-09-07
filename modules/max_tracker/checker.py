@@ -2,7 +2,9 @@ import asyncio
 import logging
 import json
 import struct
-from typing import Dict, Any, Optional, Tuple, List
+import time
+import hashlib
+from typing import Dict, Any, Optional, Tuple, List, Set
 from aiogram import Bot
 from aiogram.enums import ParseMode
 
@@ -16,6 +18,9 @@ logger = logging.getLogger("MAXChecker")
 
 WS_URL = "wss://api.oneme.ru/websocket"
 APP_VERSION = "26.8.10"
+
+_STARTUP_TIME = time.time()
+_GLOBAL_SEEN_MAX_IDS: Dict[int, Set[str]] = {}
 
 
 def lz4_decompress_block(src: bytes, uncompressed_size: int) -> bytes:
@@ -104,6 +109,8 @@ def decode_max_packet(data: bytes) -> Optional[Dict[str, Any]]:
 
 
 def ext_to_hex(val: Any) -> str:
+    if val is None:
+        return ""
     if hasattr(val, "data"):
         return val.data.hex()
     if isinstance(val, bytes):
@@ -201,10 +208,17 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                 if isinstance(last_msg, dict):
                     sender_raw = last_msg.get("sender")
                     sender_hex = ext_to_hex(sender_raw)
-                    msg_id_raw = last_msg.get("id")
+                    msg_id_raw = last_msg.get("id") or last_msg.get("mid")
                     msg_id_hex = ext_to_hex(msg_id_raw)
-                    msg_text = last_msg.get("text", "")
+                    msg_text = str(last_msg.get("text", ""))
                     
+                    # Timestamp handling
+                    msg_time_val = last_msg.get("time") or last_msg.get("timestamp") or 0
+                    if msg_time_val > 100000000000:
+                        msg_time_sec = float(msg_time_val) / 1000.0
+                    else:
+                        msg_time_sec = float(msg_time_val) if msg_time_val else 0.0
+
                     is_incoming = (sender_hex != my_id_hex)
                     sender_display = contact_names.get(sender_hex, "Собеседник") if is_incoming else "Вы"
 
@@ -216,10 +230,16 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                         else:
                             c_title = "Личный диалог"
 
+                    # Generate robust unique fingerprint
+                    text_hash = hashlib.md5(msg_text.encode("utf-8")).hexdigest()[:8]
+                    unique_fingerprint = f"{c_id_hex}_{msg_id_hex}_{text_hash}_{int(msg_time_sec)}"
+
                     recent_messages.append({
                         "chat_id": c_id_hex,
                         "title": c_title,
                         "msg_id": msg_id_hex,
+                        "unique_key": unique_fingerprint,
+                        "msg_time_sec": msg_time_sec,
                         "is_incoming": is_incoming,
                         "sender_name": sender_display,
                         "text": msg_text[:80]
@@ -239,7 +259,9 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
 
 
 async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = True) -> Optional[str]:
-    """Checks MAX messenger events for a specific user and sends instant notifications for new incoming messages."""
+    """Checks MAX messenger events for a specific user and sends instant notifications strictly for NEW fresh incoming messages."""
+    global _GLOBAL_SEEN_MAX_IDS, _STARTUP_TIME
+    
     config = get_user_max_config(user_id)
     if not config or not config.get("enabled", True):
         return None
@@ -249,8 +271,13 @@ async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = Tru
     if not token:
         return None
 
-    seen_ids = set(config.get("last_event_ids", []))
-    is_initial_run = (len(seen_ids) == 0)
+    if user_id not in _GLOBAL_SEEN_MAX_IDS:
+        _GLOBAL_SEEN_MAX_IDS[user_id] = set(config.get("last_event_ids", []))
+
+    seen_ids = _GLOBAL_SEEN_MAX_IDS[user_id]
+    uptime_sec = time.time() - _STARTUP_TIME
+    # Protect against notification bursts during first 90 seconds after boot/deploy
+    is_warmup_period = (uptime_sec < 90) or (len(seen_ids) == 0)
 
     success, data, err_info = await fetch_max_updates(token, viewer_id)
     if not success:
@@ -262,23 +289,29 @@ async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = Tru
     recent_msgs = data.get("recent_messages", [])
 
     new_incoming = []
-    current_all_ids = []
+    current_keys = []
+    now_ts = time.time()
 
     for m in recent_msgs:
-        m_id = m.get("msg_id")
-        if m_id:
-            current_all_ids.append(m_id)
+        ukey = m.get("unique_key") or m.get("msg_id")
+        if ukey:
+            current_keys.append(ukey)
             if m.get("is_incoming"):
-                if m_id not in seen_ids and not is_initial_run:
+                msg_ts = m.get("msg_time_sec", 0)
+                # Freshness check: message must not be seen AND must be received recently (last 5 min)
+                is_fresh = (msg_ts == 0) or (now_ts - msg_ts < 300)
+                if ukey not in seen_ids and not is_warmup_period and is_fresh:
                     new_incoming.append(m)
 
-    # Update seen message IDs (keep up to 100 recent)
-    updated_seen = list(set(current_all_ids + list(seen_ids)))[-100:]
+    # Update in-memory and disk seen IDs
+    seen_ids.update(current_keys)
+    _GLOBAL_SEEN_MAX_IDS[user_id] = set(list(seen_ids)[-300:])
+    
     update_max_state(
         user_id=user_id,
         messages_count=len(new_incoming),
         unread_chats_count=len(new_incoming),
-        event_ids=updated_seen
+        event_ids=list(_GLOBAL_SEEN_MAX_IDS[user_id])
     )
 
     import html

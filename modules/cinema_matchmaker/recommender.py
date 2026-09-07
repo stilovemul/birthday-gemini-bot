@@ -24,43 +24,41 @@ logger = logging.getLogger("CinemaMatchmaker")
 
 def detect_query_intent(query: str, current_context: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Parses natural language triggers for:
-    - Marking previous batch as watched ("всё смотрел", "все это видел", "уже смотрел")
-    - Asking for next/other batch ("еще", "давай другое", "следующие")
+    Parses natural language triggers using regex and punctuation stripping for:
+    - Marking previous batch as watched ("всё, смотрели", "уже посмотрели", "все это видели")
+    - Asking for next/other batch ("советуй еще", "давай другое", "что-то свежее")
     - Detecting format (сериал vs фильм) and country (Россия vs Зарубежные).
     """
     q_low = query.lower()
+    q_clean = re.sub(r"[^\w\s]", " ", q_low)
+    q_clean = re.sub(r"\s+", " ", q_clean).strip()
     
     # 1. Check if user watched all of the previous recommendations
-    watched_all_triggers = [
-        "все смотрел", "всё смотрел", "смотрел все", "смотрел всё",
-        "все это смотрел", "всё это смотрел", "все эти смотрел", "всё это видел",
-        "все видел", "всё видел", "я все это смотрел", "я всё это смотрел",
-        "уже все смотрел", "уже всё смотрел", "все из этого смотрел", "всё из этого смотрел",
-        "все эти видел", "всё эти видел", "смотрели всё", "смотрели все"
+    watched_all_patterns = [
+        r"\b(?:вс[её]|уже|все эти|вс[её] из этого|всех)\b.*\b(?:смотрел[иао]?|видели?|посмотрел[иао]?)\b",
+        r"\b(?:смотрел[иао]?|видели?|посмотрел[иао]?)\b.*\b(?:вс[её]|уже|все эти)\b"
     ]
-    is_watched_all = any(t in q_low for t in watched_all_triggers)
+    is_watched_all = any(bool(re.search(p, q_clean)) for p in watched_all_patterns)
     
     # 2. Check if user is asking for more / another batch
-    more_triggers = [
-        "давай другое", "давай другой", "что-то другое", "еще", "ещё",
-        "покажи еще", "покажи ещё", "следующие", "другие", "еще варианты", "ещё варианты",
-        "дай еще", "дай ещё", "дальше"
+    more_patterns = [
+        r"\b(?:давай|покажи|дай|советуй|посоветуй|хочу|есть)\b.*\b(?:друго[ееяй]|ещ[её]|следующ[ие]|друг[ие]|нова[яе]|новеньк|свеж|вариант)\b",
+        r"\b(?:ещ[её]|другое|другой|другие|следующие|дальше)\b"
     ]
-    is_more = any(t in q_low for t in more_triggers)
+    is_more = any(bool(re.search(p, q_clean)) for p in more_patterns)
     
     # 3. Detect format
     format_type = current_context.get("format", "любой")
-    if any(w in q_low for w in ["сериал", "сериалы", "сериальчик", "многосерийный"]):
+    if any(w in q_clean for w in ["сериал", "сериалы", "сериальчик", "многосерийный"]):
         format_type = "сериал"
-    elif any(w in q_low for w in ["фильм", "фильмы", "кино", "полный метр", "киношка"]):
+    elif any(w in q_clean for w in ["фильм", "фильмы", "кино", "полный метр", "киношка"]):
         format_type = "фильм"
 
     # 4. Detect country / origin
     country = current_context.get("country", "любая")
-    if any(w in q_low for w in ["русск", "росси", "наш сериал", "наши сериал", "отечественн", "русский", "русские", "наше кино"]):
+    if any(w in q_clean for w in ["русск", "росси", "наш сериал", "наши сериал", "отечественн", "русский", "русские", "наше кино"]):
         country = "Россия"
-    elif any(w in q_low for w in ["зарубеж", "иностран", "американск", "сша", "европейск", "корейск", "британск", "английск"]):
+    elif any(w in q_clean for w in ["зарубеж", "иностран", "американск", "сша", "европейск", "корейск", "британск", "английск"]):
         country = "Зарубежные"
 
     return {
@@ -213,7 +211,11 @@ async def recommend_movies(user_id: int, query: str, force_new_recommendation: b
 }}
 """
 
-    resp = await ask_gemini(user_id, context_prompt)
+    resp = await ask_gemini(
+        user_id=user_id,
+        prompt=context_prompt,
+        system_instruction="Ты — специализированный сервис подбора фильмов и сериалов. Твой ответ ВСЕГДА должен быть СТРОГО валидным JSON-объектом по схеме из промпта, без вводных слов и без Markdown блоков."
+    )
     
     # Save dialog turn
     append_dialog_turn(user_id, "user", query)
