@@ -1,38 +1,26 @@
 #EXTM3U url-tvg="http://epg.it999.ru/epg.xml.gz" x-tvg-url="http://epg.it999.ru/epg.xml.gz"
 
 # ----------------- САНКТ-ПЕТЕРБУРГ -----------------
-#EXTINF:-1 group-title="Санкт-Петербург: Камеры и ТВ" tvg-name="Санкт-Петербург",Санкт-Петербург HD (Городской телеканал)
+#EXTINF:-1 group-title="Санкт-Петербург" tvg-name="Санкт-Петербург",Санкт-Петербург HD (Городской эфир)
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/715/index.m3u8
 
-#EXTINF:-1 group-title="Санкт-Петербург: Камеры и ТВ" tvg-name="Теледом ТВ",Теледом ТВ HD (Санкт-Петербург)
+#EXTINF:-1 group-title="Санкт-Петербург" tvg-name="Теледом ТВ",Теледом ТВ HD (Санкт-Петербург)
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/19383/index.m3u8
 
-#EXTINF:-1 group-title="Санкт-Петербург: Камеры и ТВ",Камера: Дворцовая площадь и Эрмитаж
-https://rtsp.me/embed/d3H4r7kK/
-
-#EXTINF:-1 group-title="Санкт-Петербург: Камеры и ТВ",Камера: Невский проспект и Гостиный двор
-https://rtsp.me/embed/NevskyLive/
-
-#EXTINF:-1 group-title="Санкт-Петербург: Камеры и ТВ",Камера: Лахта Центр и Финский залив
-https://rtsp.me/embed/LahtaCenter/
-
-#EXTINF:-1 group-title="Санкт-Петербург: Камеры и ТВ",Камера: Дворцовый мост и Нева
-https://rtsp.me/embed/DvortsovyBridge/
-
 # ----------------- БЕЛГОРОД -----------------
-#EXTINF:-1 group-title="Белгород: Городские эфиры" tvg-name="Мир Белогорья",Мир Белогорья HD (Белгород)
+#EXTINF:-1 group-title="Белгород" tvg-name="Мир Белогорья",Мир Белогорья HD (Белгород)
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/20126/index.m3u8
 
-#EXTINF:-1 group-title="Белгород: Городские эфиры" tvg-name="ТНТ Белгород",ТНТ (Белгород)
+#EXTINF:-1 group-title="Белгород" tvg-name="ТНТ Белгород",ТНТ (Белгород)
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/15428/index.m3u8
 
-#EXTINF:-1 group-title="Белгород: Городские эфиры" tvg-name="Матч ТВ Белгород",Матч ТВ (Белгород)
+#EXTINF:-1 group-title="Белгород" tvg-name="Матч ТВ Белгород",Матч ТВ (Белгород)
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/15409/index.m3u8
 
-#EXTINF:-1 group-title="Белгород: Городские эфиры" tvg-name="СТС Белгород",СТС (Белгород)
+#EXTINF:-1 group-title="Белгород" tvg-name="СТС Белгород",СТС (Белгород)
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/15479/index.m3u8
 
-#EXTINF:-1 group-title="Белгород: Городские эфиры" tvg-name="РЕН ТВ Белгород",РЕН ТВ (Белгород)
+#EXTINF:-1 group-title="Белгород" tvg-name="РЕН ТВ Белгород",РЕН ТВ (Белгород)
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/15480/index.m3u8
 
 # ----------------- НЕРЮНГРИ И ЯКУТИЯ -----------------
@@ -44,10 +32,3 @@ http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/20125/ind
 
 #EXTINF:-1 group-title="Нерюнгри / Якутия" tvg-name="Тооку",Тооку (Якутия)
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/9172/index.m3u8
-
-# ----------------- ПАНОРАМЫ РОССИИ И КУРОРТЫ -----------------
-#EXTINF:-1 group-title="Панорамы и Природа",Камера: Красная Поляна / Роза Хутор (Сочи)
-https://rtsp.me/embed/RosaKhutor/
-
-#EXTINF:-1 group-title="Панорамы и Природа",Камера: Озеро Байкал (Панорама)
-https://rtsp.me/embed/BaikalLive/
