@@ -125,7 +125,7 @@ def load_max_configs() -> Dict[str, Dict[str, Any]]:
         return data
 
 
-def save_max_configs(data: Dict[str, Dict[str, Any]]) -> None:
+def save_max_configs(data: Dict[str, Dict[str, Any]], sync_cloud: bool = False) -> None:
     with _lock:
         MAX_FILE.parent.mkdir(parents=True, exist_ok=True)
         try:
@@ -134,13 +134,14 @@ def save_max_configs(data: Dict[str, Dict[str, Any]]) -> None:
         except Exception as e:
             logger.error(f"Error saving max configs: {e}")
 
-    def _bg():
-        try:
-            push_max_config_to_github(data)
-        except Exception as e:
-            logger.warning(f"MAX config cloud sync bg warning: {e}")
+    if sync_cloud:
+        def _bg():
+            try:
+                push_max_config_to_github(data)
+            except Exception as e:
+                logger.warning(f"MAX config cloud sync bg warning: {e}")
 
-    threading.Thread(target=_bg, daemon=True).start()
+        threading.Thread(target=_bg, daemon=True).start()
 
 
 def get_user_max_config(user_id: int) -> Optional[Dict[str, Any]]:
@@ -177,7 +178,7 @@ def set_user_max_config(
     curr["enabled"] = enabled
 
     configs[uid] = curr
-    save_max_configs(configs)
+    save_max_configs(configs, sync_cloud=True)
     logger.info(f"Updated MAX config for user {user_id}")
     return curr
 
@@ -199,4 +200,4 @@ def update_max_state(
         e_ids = event_ids if event_ids is not None else new_event_ids
         if e_ids is not None:
             configs[uid]["last_event_ids"] = [str(x) for x in e_ids[-300:]]
-        save_max_configs(configs)
+        save_max_configs(configs, sync_cloud=False)
