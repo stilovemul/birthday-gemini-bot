@@ -109,18 +109,86 @@ def decode_max_packet(data: bytes) -> Optional[Dict[str, Any]]:
 
 
 def ext_to_hex(val: Any) -> str:
+    """Converts binary / MsgPack ExtType values to hex string safely."""
     if val is None:
         return ""
     if hasattr(val, "data"):
         return val.data.hex()
-    if isinstance(val, bytes):
+    if isinstance(val, (bytes, bytearray)):
         return val.hex()
     return str(val)
 
 
+def parse_max_timestamp(val: Any) -> float:
+    """Converts int / ExtType / raw bytes timestamp from MAX protocol to float timestamp in seconds."""
+    if val is None:
+        return 0.0
+    if isinstance(val, (int, float)):
+        return float(val) / 1000.0 if val > 100000000000 else float(val)
+    if hasattr(val, "data") or isinstance(val, (bytes, bytearray)):
+        raw_bytes = val.data if hasattr(val, "data") else val
+        if len(raw_bytes) == 9 and raw_bytes[0] == 0xd3:
+            ms = struct.unpack(">q", raw_bytes[1:])[0]
+            return float(ms) / 1000.0
+        elif len(raw_bytes) == 8:
+            ms = struct.unpack(">q", raw_bytes)[0]
+            return float(ms) / 1000.0
+        elif len(raw_bytes) == 5 and raw_bytes[0] == 0xd2:
+            ms = struct.unpack(">i", raw_bytes[1:])[0]
+            return float(ms)
+        elif len(raw_bytes) == 4:
+            ms = struct.unpack(">i", raw_bytes)[0]
+            return float(ms)
+        try:
+            import msgpack
+            unp = msgpack.unpackb(raw_bytes)
+            return parse_max_timestamp(unp)
+        except Exception:
+            pass
+    return 0.0
+
+
+def extract_message_snippet(msg_dict: Any) -> str:
+    """Extracts informative text or attachment preview from MAX message structure."""
+    if not isinstance(msg_dict, dict):
+        return ""
+    text = str(msg_dict.get("text", "")).strip()
+    if text:
+        return text
+
+    link = msg_dict.get("link")
+    if isinstance(link, dict):
+        fwd_msg = link.get("message")
+        if isinstance(fwd_msg, dict):
+            fwd_text = extract_message_snippet(fwd_msg)
+            if fwd_text:
+                return f"Переслано: {fwd_text}"
+
+    attaches = msg_dict.get("attaches", [])
+    if attaches and isinstance(attaches, list):
+        att_types = []
+        for a in attaches:
+            if isinstance(a, dict):
+                t = a.get("_type") or a.get("type") or "Файл"
+                if t == "PHOTO":
+                    att_types.append("📷 [Фото]")
+                elif t == "VIDEO":
+                    att_types.append("🎥 [Видео]")
+                elif t in ["AUDIO", "VOICE"]:
+                    att_types.append("🎤 [Голосовое]")
+                elif t in ["FILE", "DOCUMENT"]:
+                    att_types.append("📎 [Документ]")
+                else:
+                    att_types.append(f"📎 [{t}]")
+        if att_types:
+            return ", ".join(att_types)
+
+    return "📷 [Вложение / Медиа]"
+
+
 async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict[str, Any], str]:
     """
-    Connects to MAX via WebSocket, authenticates with token, and fetches chats and latest incoming messages.
+    Connects to MAX via WebSocket, authenticates with token, and fetches chats, read states, and latest incoming messages.
     """
     if not token:
         return False, {}, "Токен MAX не указан."
@@ -139,7 +207,7 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
             WS_URL,
             origin="https://web.max.ru",
             additional_headers={"User-Agent": "Mozilla/5.0 Chrome/124.0.0.0 Safari/537.36"},
-            open_timeout=8,
+            open_timeout=10,
             close_timeout=4
         ) as ws:
             # 1. Handshake Init (opcode 6)
@@ -156,13 +224,13 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                 "deviceId": "d41d8cd98f00b204e9800998ecf8427e"
             })
             await ws.send(init_pkt)
-            await asyncio.wait_for(ws.recv(), timeout=5)
+            await asyncio.wait_for(ws.recv(), timeout=6)
 
             # 2. Login (opcode 19)
             login_pkt = encode_max_packet(0, 1, 19, {"token": clean_token})
             await ws.send(login_pkt)
 
-            resp_raw = await asyncio.wait_for(ws.recv(), timeout=6)
+            resp_raw = await asyncio.wait_for(ws.recv(), timeout=8)
             decoded = decode_max_packet(resp_raw)
             if not decoded or not decoded.get("payload"):
                 return False, {}, "Некорректный ответ от сервера MAX."
@@ -189,14 +257,14 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
             first_name = names[0].get("name", "Олег") if names else "Олег"
 
             recent_messages = []
-            unread_chats = 0
-            unread_messages = 0
+            unread_chats_count = 0
 
             for c in chats:
                 c_title = c.get("title") or c.get("name")
                 c_id_hex = ext_to_hex(c.get("id"))
                 last_msg = c.get("lastMessage")
-                
+                participants = c.get("participants")
+
                 # Resolve partner name from participants/members
                 recipients = [ext_to_hex(x) for x in c.get("participants", []) or c.get("members", []) or []]
                 partner_name = ""
@@ -210,14 +278,10 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                     sender_hex = ext_to_hex(sender_raw)
                     msg_id_raw = last_msg.get("id") or last_msg.get("mid")
                     msg_id_hex = ext_to_hex(msg_id_raw)
-                    msg_text = str(last_msg.get("text", ""))
-                    
-                    # Timestamp handling
-                    msg_time_val = last_msg.get("time") or last_msg.get("timestamp") or 0
-                    if msg_time_val > 100000000000:
-                        msg_time_sec = float(msg_time_val) / 1000.0
-                    else:
-                        msg_time_sec = float(msg_time_val) if msg_time_val else 0.0
+                    msg_text = extract_message_snippet(last_msg)
+
+                    # Timestamp handling using robust parser
+                    msg_time_sec = parse_max_timestamp(last_msg.get("time") or last_msg.get("timestamp"))
 
                     is_incoming = (sender_hex != my_id_hex)
                     sender_display = contact_names.get(sender_hex, "Собеседник") if is_incoming else "Вы"
@@ -230,8 +294,24 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                         else:
                             c_title = "Личный диалог"
 
+                    # Check unread state of this chat
+                    is_chat_unread = False
+                    if is_incoming:
+                        if isinstance(participants, dict):
+                            for p_k, p_v in participants.items():
+                                if ext_to_hex(p_k) == my_id_hex:
+                                    my_read_time = parse_max_timestamp(p_v)
+                                    if msg_time_sec > (my_read_time + 0.5):
+                                        is_chat_unread = True
+                                    break
+                        elif c.get("unread") or c.get("unreadCount") or c.get("unreadMessages"):
+                            is_chat_unread = True
+
+                    if is_chat_unread:
+                        unread_chats_count += 1
+
                     # Generate robust unique fingerprint
-                    text_hash = hashlib.md5(msg_text.encode("utf-8")).hexdigest()[:8]
+                    text_hash = hashlib.md5(msg_text.encode("utf-8", errors="ignore")).hexdigest()[:8]
                     unique_fingerprint = f"{c_id_hex}_{msg_id_hex}_{text_hash}_{int(msg_time_sec)}"
 
                     recent_messages.append({
@@ -241,14 +321,14 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
                         "unique_key": unique_fingerprint,
                         "msg_time_sec": msg_time_sec,
                         "is_incoming": is_incoming,
+                        "is_unread": is_chat_unread,
                         "sender_name": sender_display,
-                        "text": msg_text[:80]
+                        "text": msg_text[:90]
                     })
 
             return True, {
                 "user_name": first_name,
-                "unread_messages": unread_messages,
-                "unread_chats": unread_chats,
+                "unread_chats": unread_chats_count,
                 "total_chats": len(chats),
                 "recent_messages": recent_messages
             }, "OK"
@@ -261,7 +341,7 @@ async def fetch_max_updates(token: str, viewer_id: str = "") -> Tuple[bool, Dict
 async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = True) -> Optional[str]:
     """Checks MAX messenger events for a specific user and sends instant notifications strictly for NEW fresh incoming messages."""
     global _GLOBAL_SEEN_MAX_IDS, _STARTUP_TIME
-    
+
     config = get_user_max_config(user_id)
     if not config or not config.get("enabled", True):
         return None
@@ -276,8 +356,8 @@ async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = Tru
 
     seen_ids = _GLOBAL_SEEN_MAX_IDS[user_id]
     uptime_sec = time.time() - _STARTUP_TIME
-    # Protect against notification bursts during first 90 seconds after boot/deploy
-    is_warmup_period = (uptime_sec < 90) or (len(seen_ids) == 0)
+    # Protect against notification bursts on cold boot if cache is completely empty
+    is_warmup_period = (uptime_sec < 45) and (len(seen_ids) == 0)
 
     success, data, err_info = await fetch_max_updates(token, viewer_id)
     if not success:
@@ -286,6 +366,7 @@ async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = Tru
 
     user_name = data.get("user_name", "Олег")
     total_chats = data.get("total_chats", 0)
+    unread_chats_count = data.get("unread_chats", 0)
     recent_msgs = data.get("recent_messages", [])
 
     new_incoming = []
@@ -298,19 +379,19 @@ async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = Tru
             current_keys.append(ukey)
             if m.get("is_incoming"):
                 msg_ts = m.get("msg_time_sec", 0)
-                # Freshness check: message must not be seen AND must be received recently (last 5 min)
-                is_fresh = (msg_ts == 0) or (now_ts - msg_ts < 300)
+                # Freshness check: message must not be seen AND must be received recently (last 15 min)
+                is_fresh = (msg_ts == 0) or (now_ts - msg_ts < 900)
                 if ukey not in seen_ids and not is_warmup_period and is_fresh:
                     new_incoming.append(m)
 
     # Update in-memory and disk seen IDs
     seen_ids.update(current_keys)
     _GLOBAL_SEEN_MAX_IDS[user_id] = set(list(seen_ids)[-300:])
-    
+
     update_max_state(
         user_id=user_id,
-        messages_count=len(new_incoming),
-        unread_chats_count=len(new_incoming),
+        messages_count=unread_chats_count,
+        unread_chats_count=unread_chats_count,
         event_ids=list(_GLOBAL_SEEN_MAX_IDS[user_id])
     )
 
@@ -336,16 +417,18 @@ async def check_max_for_user(user_id: int, bot: Bot, notify_only_new: bool = Tru
             logger.error(f"Failed to send MAX push to user {user_id}: {e}")
 
     recent_display = []
-    for m in recent_msgs[:4]:
+    for m in recent_msgs[:5]:
         ic = "📥" if m.get("is_incoming") else "📤"
+        unread_badge = " 🔴" if m.get("is_unread") else ""
         t_raw = m.get("text") or "📷 [Вложение]"
         title_esc = html.escape(str(m.get("title", "Диалог")))
-        text_esc = html.escape(str(t_raw[:50]))
-        recent_display.append(f"{ic} <b>{title_esc}:</b> <i>{text_esc}</i>")
+        text_esc = html.escape(str(t_raw[:55]))
+        recent_display.append(f"{ic}{unread_badge} <b>{title_esc}:</b> <i>{text_esc}</i>")
 
     status_report = (
         f"💬 <b>Центр мониторинга MAX ({html.escape(str(user_name))})</b>\n\n"
         "📊 <b>Состояние:</b> 🟢 Активен (проверка каждые 60с)\n"
+        f"📩 <b>Непрочитанных чатов:</b> {unread_chats_count}\n"
         f"💬 <b>Всего активных чатов:</b> {total_chats}\n\n"
         "📬 <b>Последние диалоги:</b>\n"
         + ("\n".join(recent_display) if recent_display else "• <i>Диалогов нет</i>")
@@ -364,3 +447,4 @@ async def check_all_max_users(bot: Bot) -> None:
             except Exception as e:
                 logger.warning(f"Error checking MAX for user {uid_str}: {e}")
             await asyncio.sleep(1.5)
+

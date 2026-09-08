@@ -78,7 +78,7 @@ async def build_unified_status_card(user_id: int, bot: Bot) -> Tuple[str, Inline
         "   🔗 <a href='https://vk.com/im'>Открыть диалоги</a>",
         "",
         f"💬 <b>Мессенджер MAX ({html.escape(max_name)})</b> — {max_status}",
-        f"   • Непрочитанных сообщений: <b>{max_cfg.get('last_messages', 0)}</b>",
+        f"   • Непрочитанных диалогов: <b>{max_cfg.get('last_messages', 0)}</b>",
         "   🔗 <a href='https://web.max.ru/'>Открыть web.max.ru</a>",
         "",
         "➖➖➖➖➖➖➖➖➖➖",
