@@ -1,4 +1,4 @@
-#EXTM3U url-tvg="http://epg.it999.ru/epg.xml.gz,https://iptvx.one/epg/epg.xml.gz,http://epg.one/epg.xml.gz" x-tvg-url="http://epg.it999.ru/epg.xml.gz,https://iptvx.one/epg/epg.xml.gz,http://epg.one/epg.xml.gz"
+#EXTM3U url-tvg="http://epg.it999.ru/epg.xml.gz,https://iptvx.one/epg/epg.xml.gz,http://epg.one/epg.xml.gz" x-tvg-url="http://epg.it999.ru/epg.xml.gz,https://iptvx.one/epg/epg.xml.gz,http://epg.one/epg.xml.gz" catchup="flussonic" catchup-days="7" catchup-source="?utc={utc}&lutc={lutc}"
 #EXTINF: tvg-name="Первый канал" 0 group-title="Общие" tvg-id="146" tvg-logo="http://epg.one/img/146.png" tvg-rec="0",Первый канал UHD
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/19241/index.m3u8
 #EXTINF: tvg-name="НТВ" 0 group-title="Общие" tvg-id="162" tvg-logo="http://epg.one/img/162.png" tvg-rec="0",НТВ UHD
