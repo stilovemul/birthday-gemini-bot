@@ -5145,3 +5145,1569 @@ http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/32020/ind
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/18000/index.m3u8
 #EXTINF: tvg-name="Go3 Sport 2 EE" 0 group-title="Спорт" tvg-id="3381" tvg-logo="http://epg.one/img/3381.png" tvg-rec="0",Go3 Sport 2 HD EE
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/18001/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="2x2 (576i)",2x2 (576i)
+https://bl.rutube.ru/livestream/392b4686b770bae2da6bf5ac4574add5/index.m3u8?e=2068731801&s=tenr-yHXUv1wibfka78s2A&scheme=https
+#EXTINF:-1 group-title="Общие" tvg-name="Apsua TV",Apsua TV
+https://gcmx3v3owcj.a.trbcdn.net/livemaster/ba7pu_fgej0zelpw.smil/playlist.m3u8?blstid=null
+#EXTINF:-1 group-title="Развлекательные" tvg-name=".black (576p)",.black (576p)
+http://stream.mcquack.net/263/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Amedia Hit (1080p)",Amedia Hit (1080p)
+http://stream.mcquack.net/162/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="100% News (576p)",100% News (576p)
+http://85.238.112.40:8810/hls_sec/239.33.16.32-.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name=".sci-fi (576p)",.sci-fi (576p)
+http://stream.mcquack.net/180/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="365 days TV (576p)",365 days TV (576p)
+http://stream.mcquack.net/70/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="ATR (1080p)",ATR (1080p)
+http://stream.mcquack.net/244/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Avto24 (576p)",Avto24 (576p)
+http://stream.mcquack.net/78/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name=".red HD (1080p)",.red HD (1080p)
+http://178.134.1.158:8081/red/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name=".red (576p)",.red (576p)
+http://5.188.159.128:8070/RED/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="312 ТВ (406p)",312 ТВ (406p)
+http://176.126.166.43:1935/live/312musik/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="ART (576p)",ART (576p)
+http://89.104.114.24:8080/art/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="312 Кино (406p)",312 Кино (406p)
+http://176.126.166.43:1935/live/312kino/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="12 канал (1080p)",12 канал (1080p)
+https://12channel.bonus-tv.ru/cdn/12channel/playlist.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Atameken Business (576p)",Atameken Business (576p)
+https://fs.uplink.kz/atameken/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Новостные" tvg-name="360° Новости (1080p)",360° Новости (1080p)
+https://live-vgtrksmotrim.cdnvideo.ru/vgtrksmotrim/smotrim-live-03-srt.smil/playlist.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Aqlvoy",Aqlvoy
+https://stream8.cinerama.uz/1205/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Arsenal (576p)",Arsenal (576p)
+https://stream8.cinerama.uz/1414/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Baby Time (576p)",Baby Time (576p)
+http://178.134.1.158:8081/babytime/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Angel TV Russian (720p)",Angel TV Russian (720p)
+https://janya-digimix.akamaized.net/vglive-sk-955415/russia/ngrp:angelrussia_all/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Belarus-1 HD (1080p)",Belarus-1 HD (1080p)
+https://ngtrk.dc.beltelecom.by/ngtrk/smil:belarus1.smil/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Belarus-5 HD (1080p)",Belarus-5 HD (1080p)
+http://178.124.179.122:8080/BT5/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Belarus-1 (1080p)",Belarus-1 (1080p)
+https://ngtrk.dc.beltelecom.by/ngtrk/_definst_/smil:belarus1.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Belarus-3 HD (1080p) [Not 24/7]",Belarus-3 HD (1080p) [Not 24/7]
+https://ngtrk.dc.beltelecom.by/ngtrk/smil:belarus3.smil/playlist.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Belarus-2 HD (1080p)",Belarus-2 HD (1080p)
+https://ngtrk.dc.beltelecom.by/ngtrk/smil:belarus2.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Armenia TV Satellite (576p)",Armenia TV Satellite (576p)
+http://stream.mcquack.net/175/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Belarus-24 (576p)",Belarus-24 (576p)
+http://ott-7.sevstar.net/belarus24/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Balabol (1080p)",Balabol (1080p)
+https://cdn-dvr.ntv.ru/Balabol/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Belarus-4 Gomel",Belarus-4 Gomel
+https://live.dc.beltelecom.by/trkgomel/trkgomel.stream/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Belarus-5 (1080p) [Not 24/7]",Belarus-5 (1080p) [Not 24/7]
+https://ngtrk.dc.beltelecom.by/ngtrk/smil:belarus5.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Belarus-4 Vitebsk (1080p)",Belarus-4 Vitebsk (1080p)
+https://ngtrk.dc.beltelecom.by/vtv/bt4.stream/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Bolt (576p)",Bolt (576p)
+http://hls127.freeott.top:8080/Bolt/video.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Belarus-24 HD (1080p)",Belarus-24 HD (1080p)
+https://ngtrk.dc.beltelecom.by/ngtrk/smil:belarus24.smil/playlist.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="BabyFirst (720p)",BabyFirst (720p)
+https://cdn.fast.jwp.services/v1/channel/1_jB6940Ei_TvhvIHDL/manifest.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="24KZ (576p)",24KZ (576p)
+https://fs.uplink.kz/24KZ/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Кино" tvg-name="Bollywood HD Russia (576p)",Bollywood HD Russia (576p)
+https://xykt-fix.github.io/cinerama_edge01/hls/BOLLYWOOD_RU/Movie009.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="BRIDGE (576p)",BRIDGE (576p)
+http://stream.mcquack.net/318/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Almaty TV (576p)",Almaty TV (576p)
+https://fs.uplink.kz/almaty/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="360° (1080p)",360° (1080p)
+https://cdn-evacoder-tv.facecast.io/evacoder_hls_hi/CkxfR1xNUAJwTgtXTBZTAJli/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="5 minut tishiny (1080p)",5 minut tishiny (1080p)
+https://cdn-dvr.ntv.ru/5_minut_tishiny/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Channel 10 (576i)",Channel 10 (576i)
+https://bl.rutube.ru/livestream/c9e26bf5c003fd8d477200065ca1a05f/index.m3u8?e=2072611029&s=eqlTXebDP9wSWTZgre6BwQ&scheme=https
+#EXTINF:-1 group-title="Музыка" tvg-name="BRIDGE Classic (576p)",BRIDGE Classic (576p)
+http://stream.mcquack.net/272/index.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="BRIDGE Deluxe HD (576p)",BRIDGE Deluxe HD (576p)
+http://stream.mcquack.net/92/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Belsat TV (576p)",Belsat TV (576p)
+https://iptv.prosto.tv/ch171/index.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="BRIDGE Hits (576p)",BRIDGE Hits (576p)
+http://stream.mcquack.net/320/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Carousel (720p)",Carousel (720p)
+http://185.37.150.46/Karusel/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Bober (576p)",Bober (576p)
+https://fs.uplink.kz/bober/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Музыка" tvg-name="BRIDGE Rock (576p)",BRIDGE Rock (576p)
+http://178.134.1.158:8081/BRIDGEROCK/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Big Planet (576p)",Big Planet (576p)
+https://fs.uplink.kz/big_planet/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Da Vinci (576p)",Da Vinci (576p)
+http://hls127.freeott.top:8080/Da_Vinci_Learning/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Channel 5 International (576p)",Channel 5 International (576p)
+http://178.134.1.158:8081/5channel/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Channel 8 (576p)",Channel 8 (576p)
+http://45.11.139.43:8555/8kanal/index.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Classic Music (1080p)",Classic Music (1080p)
+http://stream.mcquack.net/312/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Channel 9 (1080p)",Channel 9 (1080p)
+https://contact.gostreaming.tv/Con-11/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Carousel International (576p)",Carousel International (576p)
+https://fs.uplink.kz/karusel/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Channel 7 (576p)",Channel 7 (576p)
+https://fs.uplink.kz/7_kanal/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Кино" tvg-name="Cinema (576p)",Cinema (576p)
+http://flussonic.linkintel.ru/cinema/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Che! (576p)",Che! (576p)
+http://flussonic.linkintel.ru/che/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Dikaya okhota HD (1080p)",Dikaya okhota HD (1080p)
+http://stream.mcquack.net/274/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Dikaya rybalka HD (1080p)",Dikaya rybalka HD (1080p)
+http://stream.mcquack.net/275/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Channel 8 Krasnoyarsk HD (1080p)",Channel 8 Krasnoyarsk HD (1080p)
+https://tshift-1.telecoma.tv/8channel/tracks-v1a1/mono.ts.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Blokbaster HD (1080p)",Blokbaster HD (1080p)
+http://stream.mcquack.net/364/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="DocuBox Russia",DocuBox Russia
+http://dtv.vol.net.ua/DOCUBOX-HD/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Dikij (576p)",Dikij (576p)
+http://hls127.freeott.top:8080/Dikiy/video.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="DanceHits80",DanceHits80
+http://dancehits80.denvs.ru:8080/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Dom kino (576p)",Dom kino (576p)
+http://stream.mcquack.net/236/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Channel 8 Novosibirsk (480i)",Channel 8 Novosibirsk (480i)
+https://live-8knsk.cdnvideo.ru/8knsk/stream1/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Dom kino Premium HD (1080p)",Dom kino Premium HD (1080p)
+http://stream.mcquack.net/108/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Domashniy SD (576p)",Domashniy SD (576p)
+http://stream.mcquack.net/227/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Dorama HD (1080p)",Dorama HD (1080p)
+http://stream.mcquack.net/412/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Dasturxon TV (576p)",Dasturxon TV (576p)
+https://stream8.cinerama.uz/1206/tracks-v1a1/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Dushevnoe HD (1080p)",Dushevnoe HD (1080p)
+http://stream.mcquack.net/213/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Dom kino International (576p)",Dom kino International (576p)
+https://fs.uplink.kz/dom_kino/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Новостные" tvg-name="DW Russian (1080p)",DW Russian (1080p)
+https://dwamdstream110.akamaized.net/hls/live/2017971/dwstream110/master.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Duma TV (720p)",Duma TV (720p)
+http://185.23.80.23:8080/DumaTV/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Euronews Russian (720p)",Euronews Russian (720p)
+https://cdn-euronews.akamaized.net/live/eds/euronews-ru/25071/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Domashnie Zhivotnye (576p)",Domashnie Zhivotnye (576p)
+https://stream8.cinerama.uz/1426/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Dorama (576p)",Dorama (576p)
+https://fs.uplink.kz/dorama/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Enisey (576p)",Enisey (576p)
+http://tshift-1.telecoma.tv/enisei/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Evrokino HD (1080p)",Evrokino HD (1080p)
+http://stream.mcquack.net/385/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Fauna (576p)",Fauna (576p)
+http://stream.mcquack.net/401/index.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="First Music Channel Russia (1080p)",First Music Channel Russia (1080p)
+http://hls127.freeott.top:8080/1muz_HD/video.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Fox (576p)",Fox (576p)
+http://stream.mcquack.net/182/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Channel One HD (720p)",Channel One HD (720p)
+https://edge1.1internet.tv/dash-live2/streams/1tv-dvr/1tvdash.mpd
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Gagsnetwork (576p)",Gagsnetwork (576p)
+http://hls127.freeott.top:8080/Gagsnetwork/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Dacha (1080p)",Dacha (1080p)
+https://dash2.antik.sk/live/test_dacha_tv_atktv/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Fox Life (576p)",Fox Life (576p)
+http://stream.mcquack.net/129/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Friday! (576p)",Friday! (576p)
+http://stream.mcquack.net/181/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Hit HD (1080p)",Hit HD (1080p)
+http://hls127.freeott.top:8080/XitHD/video.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Evrokino (576p)",Evrokino (576p)
+https://fs.uplink.kz/eurokino/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Музыка" tvg-name="Hit FM",Hit FM
+https://hitfm.nfthost.net/hls/hitfm/live_all/playlist.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Istoriya (576p)",Istoriya (576p)
+http://hls127.freeott.top:8080/Istoriya/video.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="FilmUADrama (1080p)",FilmUADrama (1080p)
+http://88.99.215.227/FilmUADrama/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Detvora+ (1080p)",Detvora+ (1080p)
+https://cdn.rostelekom-tv.xyz/live/WAYU4PTJ_VVz4wAQ.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="FON Music (576p)",FON Music (576p)
+https://stream8.cinerama.uz/1272/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Kentron TV (1080p)",Kentron TV (1080p)
+http://stream.mcquack.net/39/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Kapitan Fantastika (1080p)",Kapitan Fantastika (1080p)
+http://stream.mcquack.net/144/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Gulli Girl (720p)",Gulli Girl (720p)
+https://stream8.cinerama.uz/1445/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Glazami Turista (576i)",Glazami Turista (576i)
+https://stream8.cinerama.uz/1423/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="India (576p)",India (576p)
+https://fs.uplink.kz/india/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Кино" tvg-name="Kino 1 (1080p)",Kino 1 (1080p)
+http://stream.mcquack.net/395/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Istoki (1080p)",Istoki (1080p)
+https://istoki.tv/live/stream1/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Indiyskoye Kino (576p)",Indiyskoye Kino (576p)
+http://188.113.190.12/329/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Horoshee Kino (720p)",Horoshee Kino (720p)
+https://live-rian.cdnvideo.ru/rian/rus-radio/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="KinoHit (576p)",KinoHit (576p)
+http://stream.mcquack.net/126/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Kinokomedija (576p)",Kinokomedija (576p)
+http://stream.mcquack.net/265/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kino 2 (1080p)",Kino 2 (1080p)
+http://stream.mcquack.net/465/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Jibek Joly HD (1080p)",Jibek Joly HD (1080p)
+https://stream.qazcdn.net/ex6r514/jjtv/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Khabar (576p)",Khabar (576p)
+https://fs.uplink.kz/habar/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Кино" tvg-name="Kinopokaz (576p)",Kinopokaz (576p)
+http://stream.mcquack.net/64/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="ETV+ (720p)",ETV+ (720p)
+https://sb.err.ee/live/etvpluss.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Drive (576i)",Drive (576i)
+https://stream8.cinerama.uz/1421/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kinopokaz HD (1080p)",Kinopokaz HD (1080p)
+http://hls127.freeott.top:8080/Kinopokaz_HD/video.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kino TV HD (1080p)",Kino TV HD (1080p)
+http://176.118.197.101/KinoTvHD/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kinomix (576p)",Kinomix (576p)
+http://93.170.254.17/Kinomiks/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kinosemja (576p)",Kinosemja (576p)
+http://stream.mcquack.net/170/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kinouzhas (576p)",Kinouzhas (576p)
+http://stream.mcquack.net/278/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kinopremyera (1080p)",Kinopremyera (1080p)
+http://5.188.159.128:8070/KINOPREMIERA/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kinosvidanie (576p)",Kinosvidanie (576p)
+http://5.188.159.128:8070/kinosvidanie/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="FREEDOM (1080p)",FREEDOM (1080p)
+https://dash4.antik.sk/live/test_uatv/playlist.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Komedia (576p)",Komedia (576p)
+http://stream.mcquack.net/68/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Komediynoe HD (1080p)",Komediynoe HD (1080p)
+http://stream.mcquack.net/74/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="KTK (576p)",KTK (576p)
+http://stream.mcquack.net/26/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Kluch (576p)",Kluch (576p)
+http://hls127.freeott.top:8080/Kluch/video.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kinopremyera HD (1080p)",Kinopremyera HD (1080p)
+https://fs.uplink.kz/kinopremiera_hd/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Kuhnya (576p)",Kuhnya (576p)
+http://stream.mcquack.net/179/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="KVN TV (576p)",KVN TV (576p)
+http://178.124.179.122:8080/KVN-TV/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Law TV (1080p)",Law TV (1080p)
+http://stream.mcquack.net/406/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Kulinar TV (576p)",Kulinar TV (576p)
+https://api.alpaca.t62a.com/hls/9110/stream0.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Love Nature (1080p)",Love Nature (1080p)
+https://aegis-cloudfront-1.tubi.video/6d6d0f24-8445-4b4c-bdf6-44f9e38beaa4/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="KTK HD (720p) [Not 24/7]",KTK HD (720p) [Not 24/7]
+http://89.218.30.37/ktklive/live.hq/playlist.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Mama (576p)",Mama (576p)
+http://stream.mcquack.net/79/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Kongress TV (1080p)",Kongress TV (1080p)
+https://live-3.otcnet.ru/congresstv/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Match! Boets (576p)",Match! Boets (576p)
+http://stream.mcquack.net/112/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Match! Ultra (720p)",Match! Ultra (720p)
+http://stream.mcquack.net/169/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Kinoseriya (1080p)",Kinoseriya (1080p)
+http://hls127.freeott.top:8080/Kinoseriya_HD/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Mir Kazakhstan (576p)",Mir Kazakhstan (576p)
+http://tvcdn01.esilnet.kz/tv/mir/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Leomax 24 (1080p)",Leomax 24 (1080p)
+https://tvshops.bonus-tv.ru/cdn/shop24/playlist.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Makon TV (576i)",Makon TV (576i)
+https://stream8.cinerama.uz/1497/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Groznyj",Groznyj
+https://balancer.facecast.io/evacoder_hls_hi/UUMLQVAYVlZyH14GRENQVV0G/2/720-3.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="MMA TV.com (1080p)",MMA TV.com (1080p)
+https://streams2.sofast.tv/vglive-sk-462904/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Mir HD (1080p) [Not 24/7]",Mir HD (1080p) [Not 24/7]
+http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mirtv_2500/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Moldova 1 (1080p)",Moldova 1 (1080p)
+https://v0.trm.md/static/streaming-playlists/hls/9b79338b-1870-4cd7-91d4-0f6ce5cac7ca/master.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Maidan (720p)",Maidan (720p)
+https://live-maidantv.cdnvideo.ru/maidantv/maidantv.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Moldova 2 (1080p)",Moldova 2 (1080p)
+https://v0.trm.md/static/streaming-playlists/hls/d5fafab0-9c37-4746-9e7a-b2d6c0427015/master.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Moya stikhiya HD (1080p)",Moya stikhiya HD (1080p)
+http://stream.mcquack.net/141/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Mult i muzyka (576p)",Mult i muzyka (576p)
+http://hls127.freeott.top:8080/Mult_Muzika/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Maná Tserkov' Onlayn (1080p) [Not 24/7]",Maná Tserkov' Onlayn (1080p) [Not 24/7]
+https://w2.manasat.com/tserkov-online/smil:tserkov-online.smil/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Match! Planeta (576p)",Match! Planeta (576p)
+https://fs.uplink.kz/match_planeta/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Life TV (432p) [Not 24/7]",Life TV (432p) [Not 24/7]
+http://lifetv.bitflip.ee/live/stream1_1/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Moya Planeta (1080p)",Moya Planeta (1080p)
+http://91.226.120.120/chid210/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Muzyka Pervogo (576p)",Muzyka Pervogo (576p)
+http://stream.mcquack.net/153/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Muzhskoe kino (576p)",Muzhskoe kino (576p)
+http://stream.mcquack.net/107/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Moskva 24 (1080p)",Moskva 24 (1080p)
+https://stream.smotrim.ru/hls/givc8/playlist.m3u8?entity=channel&id=798&sign=37881ef2e289f062ceff0dca6c24dc58
+#EXTINF:-1 group-title="Общие" tvg-name="Moskva. Doveriye (576p)",Moskva. Doveriye (576p)
+https://stream.smotrim.ru/hls2/doverie/playlist_3.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Muzyka Live (576p)",Muzyka Live (576p)
+http://stream.mcquack.net/303/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Nano (576p)",Nano (576p)
+http://stream.mcquack.net/419/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Nash Kinomir (576p)",Nash Kinomir (576p)
+http://hls127.freeott.top:8080/Nash_kinomir/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="NTV HD (1080p)",NTV HD (1080p)
+https://bl.rutube.ru/livestream/c37cd74192c6bc3d6cd6077c0c4fd686/index.m3u8?e=2077050299&s=HSWg81JrQ3OqmwuWkEIDAQ&scheme=https
+#EXTINF:-1 group-title="Детские" tvg-name="Mult International (576p)",Mult International (576p)
+https://fs.uplink.kz/mult/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Кино" tvg-name="Nashe Novoe Kino (1080p)",Nashe Novoe Kino (1080p)
+http://hls127.freeott.top:8080/Nashe_Novoe_Kino_HD/video.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Nashe HD (576p)",Nashe HD (576p)
+http://stream.mcquack.net/217/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Nashe Lubimoe Kino Ukraine (1080p)",Nashe Lubimoe Kino Ukraine (1080p)
+http://stream.mcquack.net/456/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Nashe muzhskoe HD (1080p)",Nashe muzhskoe HD (1080p)
+http://stream.mcquack.net/362/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Nashe Lubimoe Kino (576p)",Nashe Lubimoe Kino (576p)
+http://hls127.freeott.top:8080/Lubimoe_Kino/video.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Multilandia (576p)",Multilandia (576p)
+https://fs.uplink.kz/multilandia/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Познавательные" tvg-name="National Geographic (1080p)",National Geographic (1080p)
+http://dtv.vol.net.ua/National_Geographic-HD/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="National Geographic Wild (1080p)",National Geographic Wild (1080p)
+http://hls127.freeott.top:8080/Nat_Geo_Wild_SD/video.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Nick Jr. (576p)",Nick Jr. (576p)
+http://stream.mcquack.net/220/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Nickelodeon (576p)",Nickelodeon (576p)
+http://stream.mcquack.net/443/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Nauka (576p)",Nauka (576p)
+http://stream.mcquack.net/403/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Nostalgia (576p)",Nostalgia (576p)
+http://hls127.freeott.top:8080/Nostalgiya/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="NST (576p)",NST (576p)
+http://hls127.freeott.top:8080/HCTV/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="NTV Law (576p)",NTV Law (576p)
+http://hls127.freeott.top:8080/NTV_PRAVO_TV/video.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Novyi Channel (1080p)",Novyi Channel (1080p)
+http://stream.mcquack.net/157/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="MyZen TV (1080p)",MyZen TV (1080p)
+https://cdn-ue1-prod.tsv2.amagi.tv/linear/amg01255-secomcofites-my-myzen-en-plex/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="NTK (576p)",NTK (576p)
+http://stream.mcquack.net/389/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="NTV Style (576p)",NTV Style (576p)
+http://hls127.freeott.top:8080/NTV_STIL_TV/video.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="NTV Series (576p)",NTV Series (576p)
+http://stream.mcquack.net/301/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="NTV SD (576p)",NTV SD (576p)
+http://45.153.24.78/NTV/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Nevskiy (1080p)",Nevskiy (1080p)
+https://cdn-dvr.ntv.ru/Nevskiy/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="NTV Mir (576p)",NTV Mir (576p)
+http://5.188.159.128:8070/ntvmir_TV/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="NTV-Hit (576p)",NTV-Hit (576p)
+http://178.134.1.158:8081/ntvhit/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Nicktoons CIS (1080p)",Nicktoons CIS (1080p)
+https://stream8.cinerama.uz/1502/playlist.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Nickelodeon CIS (1080p)",Nickelodeon CIS (1080p)
+https://stream8.cinerama.uz/1500/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Ohotnik i rybolov HD (1080p)",Ohotnik i rybolov HD (1080p)
+http://stream.mcquack.net/194/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Okhota i rybalka (576p)",Okhota i rybalka (576p)
+http://stream.mcquack.net/155/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Okko Prajm Sport (1080p)",Okko Prajm Sport (1080p)
+http://stream.mcquack.net/493/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Okko Futbol (1080p)",Okko Futbol (1080p)
+http://stream.mcquack.net/491/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Ost West 24 (1080p)",Ost West 24 (1080p)
+http://stream.mcquack.net/455/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Ost West (576p)",Ost West (576p)
+http://hls127.freeott.top:8080/OstWest/video.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Ostrosyuzhetnoye HD (1080p)",Ostrosyuzhetnoye HD (1080p)
+http://stream.mcquack.net/214/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="O! International (576p)",O! International (576p)
+https://fs.uplink.kz/o/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Peretz International (576p)",Peretz International (576p)
+http://stream.mcquack.net/121/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="O'zbekiston (576p)",O'zbekiston (576p)
+https://stream8.cinerama.uz/1001/tracks-v1a1/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Ohotnik i rybolov (576i)",Ohotnik i rybolov (576i)
+https://stream8.cinerama.uz/1413/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Nano HD (1080p)",Nano HD (1080p)
+http://185.23.80.23:8080/NANO_HD/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="OTR (576p)",OTR (576p)
+http://flussonic.linkintel.ru/otr/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Premialnoe HD (1080p)",Premialnoe HD (1080p)
+http://stream.mcquack.net/421/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Oruzhie (576p)",Oruzhie (576p)
+https://fs.uplink.kz/oruzhie/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Priklyucheniya HD (1080p)",Priklyucheniya HD (1080p)
+http://stream.mcquack.net/198/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Perviy Informationniy HD (1080p)",Perviy Informationniy HD (1080p)
+https://ngtrk.dc.beltelecom.by/ngtrk/smil:informacionnyy.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Pro Lyubov (1080p)",Pro Lyubov (1080p)
+http://hls127.freeott.top:8080/ProLubovHD/video.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Quiz TV (1080p)",Quiz TV (1080p)
+http://stream.mcquack.net/397/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Perviy otdel (1080p)",Perviy otdel (1080p)
+https://cdn-dvr.ntv.ru/Perviy_otdel/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Pes (1080p)",Pes (1080p)
+https://cdn-dvr.ntv.ru/Pes/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Rada TV (1080p)",Rada TV (1080p)
+https://lowa8026-cmyk.github.io/Ukraine/Edyni_Novyny/RADA.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Patriot (720p)",Patriot (720p)
+https://stream.smotrim.ru/hls2/static/playlist_4.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="O! (576p)",O! (576p)
+http://stream.mcquack.net/60/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Prosveshchenie (576p)",Prosveshchenie (576p)
+http://cdn-01.bonus-tv.ru/prosveschenie_edge/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="RBK-TV SD (576p)",RBK-TV SD (576p)
+http://hls127.freeott.top:8080/RBK/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Priklyucheniya (576p)",Priklyucheniya (576p)
+https://stream8.cinerama.uz/1420/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="RAZ 2 (1080p)",RAZ 2 (1080p)
+http://stream.mcquack.net/464/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="RAZ 1 (1080p)",RAZ 1 (1080p)
+http://stream.mcquack.net/463/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Pobeda (1080p)",Pobeda (1080p)
+http://94.155.93.182/POBEDA_HD/index.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="RU.TV (1080p)",RU.TV (1080p)
+https://bl.rutube.ru/livestream/b1eb8e90d7e636677b3eb73b4fcbb717/index.m3u8?e=2069285076&s=d-E-bxKy2v3EEJ94RQX9CA&scheme=https
+#EXTINF:-1 group-title="Новостные" tvg-name="Pro Business (720p)",Pro Business (720p)
+https://tv-streaming.bsh.ru:21938/probusiness/probusiness.stream/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Okko Sport (1080p)",Okko Sport (1080p)
+http://stream.mcquack.net/492/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Qazaqstan International",Qazaqstan International
+https://stream8.cinerama.uz/1431/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Retro (576p)",Retro (576p)
+http://stream.mcquack.net/191/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Prodvizhenie (1080p)",Prodvizhenie (1080p)
+https://streaming.astrakhan.ru/proastrakhanhd/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="RAZ 3 International",RAZ 3 International
+https://dash2.antik.sk/live/kvartal_tv/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="NTV Vitrina (720p)",NTV Vitrina (720p)
+https://cdn.ntv.ru/vitrina/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="REN TV International (576p)",REN TV International (576p)
+http://178.134.1.158:8081/RENTV/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Radio 1 (720p) [Geo-blocked]",Radio 1 (720p) [Geo-blocked]
+https://stream.radio1.ru/memfs/49dee7fe-77ba-4e6b-8cdc-fa840535b242.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Rodnoe Kino (576p)",Rodnoe Kino (576p)
+http://stream.mcquack.net/242/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Radio Rossii (720p)",Radio Rossii (720p)
+https://stream.smotrim.ru/hls2/radio_rus/playlist_4.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="RTG TV HD (1080p)",RTG TV HD (1080p)
+http://stream.mcquack.net/164/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Radio Mir (720p)",Radio Mir (720p)
+https://stream1.dc.beltelecom.by/radiomir/studio.stream/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="RTVi US (1080p)",RTVi US (1080p)
+https://amg17233-amg17233c1-wisptv-us-6409.playouts.now.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Rika TV (480p)",Rika TV (480p)
+https://live-rikatv.cdnvideo.ru/rikatv/rikatv_tcode.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="RTN",RTN
+http://4.59.210.197:8815/udp/127.0.0.1:6002
+#EXTINF:-1 group-title="Общие" tvg-name="Russia-K (576p)",Russia-K (576p)
+http://stream.mcquack.net/229/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="RT Balkan (1080p)",RT Balkan (1080p)
+https://rt-srb.rttv.com/dvr/rtbalkan/playlist.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Russian MusicBox (576p)",Russian MusicBox (576p)
+http://stream.mcquack.net/319/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Russia-24 HD (1080p)",Russia-24 HD (1080p)
+http://77.232.131.211/Rossiya24/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Russkiy Bestseller (576p)",Russkiy Bestseller (576p)
+http://stream.mcquack.net/208/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Rossiya 1 Vainah (576i)",Rossiya 1 Vainah (576i)
+https://live.chechensoft.ru/vainahtv/ngrp:vaynahtv_all/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Russkiy Detektiv (576p)",Russkiy Detektiv (576p)
+http://stream.mcquack.net/204/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="RT Documentary Russian (1080p)",RT Documentary Russian (1080p)
+https://rt-doc.rttv.com/dvr/rtdru/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="RTR-Planeta (576p)",RTR-Planeta (576p)
+https://fs.uplink.kz/rtr_planeta/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Детские" tvg-name="RU.TV Kids (720p)",RU.TV Kids (720p)
+https://rutvkids.ru/live/efir/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="RTVi (576p)",RTVi (576p)
+https://shift03.isp.bg/RTVi/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Rybolov (576p)",Rybolov (576p)
+http://stream.mcquack.net/264/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Russia-1 HD (1080p)",Russia-1 HD (1080p)
+https://stream.smotrim.ru/hls2/russia_hd/playlist_6.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Russia-K HD (1080p)",Russia-K HD (1080p)
+https://stream.smotrim.ru/hls2/russia_k/playlist_5.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Russkiy Illusion (576p)",Russkiy Illusion (576p)
+https://fs.uplink.kz/russkiy_illusion/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Sarafan (576p)",Sarafan (576p)
+http://stream.mcquack.net/81/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Shopping Live (720p)",Shopping Live (720p)
+https://nonmirya7cc.a.trbcdn.net/livemaster/tzrz5_sazlypl5ot.smil/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Saphire (1080p)",Saphire (1080p)
+http://77.232.131.211/Sapfir/manifest.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Setanta Sports 2 Eurasia (1080p)",Setanta Sports 2 Eurasia (1080p)
+http://stream.mcquack.net/235/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Setanta Sports 1 Eurasia (1080p)",Setanta Sports 1 Eurasia (1080p)
+http://stream.mcquack.net/234/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Setanta Sports+ Ukraine (1080p)",Setanta Sports+ Ukraine (1080p)
+http://stream.mcquack.net/390/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Ryzhiy (576i)",Ryzhiy (576i)
+https://stream8.cinerama.uz/1407/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Shot TV (576p)",Shot TV (576p)
+http://hls127.freeott.top:8080/SHOT_TV/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Sankt-Peterburg HD (720p)",Sankt-Peterburg HD (720p)
+https://stream.smotrim.ru/hls2/ext_spbtv/playlist_5.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Shokiruyushchee HD (1080p)",Shokiruyushchee HD (1080p)
+http://stream.mcquack.net/75/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="RTR Planeta Europe (720p) [Geo-blocked]",RTR Planeta Europe (720p) [Geo-blocked]
+https://stream.smotrim.ru/hls/planeta_rtr_euro/playlist.m3u8?entity=channel&id=510&sign=5c0ac65d75140fac2fd938d77c92138d
+#EXTINF:-1 group-title="Кино" tvg-name="Shef (1080p)",Shef (1080p)
+https://cdn-dvr.ntv.ru/Shef/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Sevimli TV (1080p)",Sevimli TV (1080p)
+https://stream8.cinerama.uz/1017/tracks-v1a1/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Silk Way (1080p)",Silk Way (1080p)
+https://hlspackager.akamaized.net/live/DB/SILKWAY/SILKWAY/SILKWAY.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Spas (576p)",Spas (576p)
+http://hls127.freeott.top:8080/Spas/video.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Shanson TV (576p)",Shanson TV (576p)
+http://catchup.videoline.ru/shanson/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Silk Way Cinema (1080p) [Geo-blocked]",Silk Way Cinema (1080p) [Geo-blocked]
+https://stream.qazcdn.net/ex6r514/silkwaycinema/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Skoraya pomoshch (1080p)",Skoraya pomoshch (1080p)
+https://cdn-dvr.ntv.ru/Skoraja_pomosh/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Smotrim 100% Fakty (720p)",Smotrim 100% Fakty (720p)
+https://stream.smotrim.ru/hls/fasttv06/playlist_3.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Smotrim 100% Detskoe (720p)",Smotrim 100% Detskoe (720p)
+https://stream.smotrim.ru/hls/fasttv05/playlist_3.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport 1 Baltic (1080p)",Sport 1 Baltic (1080p)
+http://stream.mcquack.net/461/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Smotrim 100% Klassika (720p)",Smotrim 100% Klassika (720p)
+https://stream.smotrim.ru/hls/fasttv03/playlist_3.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Smotrim 100% Lyubov (720p)",Smotrim 100% Lyubov (720p)
+https://stream.smotrim.ru/hls/fasttv01/playlist_2.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Smotrim 100% Muzhskoe (720p)",Smotrim 100% Muzhskoe (720p)
+https://stream.smotrim.ru/hls/fasttv02/playlist_3.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="START Air (576p)",START Air (576p)
+http://stream.mcquack.net/128/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Solovyov Live (1080p)",Solovyov Live (1080p)
+https://stream.smotrim.ru/hls2/solovievlive/playlist_6.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Smotrim 100% Prazdnik (720p)",Smotrim 100% Prazdnik (720p)
+https://stream.smotrim.ru/hls/fasttv04/playlist_3.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="STS HD (1080p)",STS HD (1080p)
+http://stream.mcquack.net/138/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Star Cinema",Star Cinema
+https://dash2.antik.sk/live/test_star_cinema_atktv/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Star Family (1080p)",Star Family (1080p)
+https://dash2.antik.sk/live/test_star_family_atktv/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="STS International (576p)",STS International (576p)
+http://178.134.1.158:8081/CTC/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="STS (576p)",STS (576p)
+http://tshift-1.telecoma.tv/sts/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Subbota! HD (1080p)",Subbota! HD (1080p)
+http://stream.mcquack.net/269/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="START World (576p)",START World (576p)
+https://fs.uplink.kz/start_world/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Спорт" tvg-name="Sportivnyy (1080p)",Sportivnyy (1080p)
+https://live-3.otcnet.ru/sportivny/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="STS kids International (576p)",STS kids International (576p)
+https://fs.uplink.kz/sts_kids/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Svoboda",Svoboda
+http://88.212.15.19/live/svoboda/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Terra (576p)",Terra (576p)
+http://stream.mcquack.net/402/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="TiJi (576p)",TiJi (576p)
+http://stream.mcquack.net/111/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Teatr (576p)",Teatr (576p)
+http://hls127.freeott.top:8080/Teatr/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="T24 (576p)",T24 (576p)
+http://178.134.1.158:8081/t24/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="TNT4 (576p)",TNT4 (576p)
+http://flussonic.linkintel.ru/tnt4/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="TNT SD (576p)",TNT SD (576p)
+http://stream.mcquack.net/135/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Simon (720p) [Geo-blocked]",Simon (720p) [Geo-blocked]
+https://hls.simon.ua/live-HD/live/playlist.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Top Secret (576p)",Top Secret (576p)
+http://hls127.freeott.top:8080/Sovershenno_Sekretno/video.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Sochi Live HD (720p) [Not 24/7]",Sochi Live HD (720p) [Not 24/7]
+http://serv30.vintera.tv:8081/sochi/sochi_stream/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="STS Love (576i)",STS Love (576i)
+https://cdn4.skygo.mn/live/disk1/Fashion_TV/HLSv3-FTA/Fashion_TV.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="STV HD (720p)",STV HD (720p)
+https://ctv.dc.beltelecom.by/ctv/ctv.stream/playlist.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="TNT4 International (576p)",TNT4 International (576p)
+https://fs.uplink.kz/tnt4/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Subbota! (1080p)",Subbota! (1080p)
+https://bl.rutube.ru/livestream/310744c10a5809da38aa445c952976da/index.m3u8?e=2066519758&s=dmUf6BUQzDBTwtQOseAfog&scheme=https
+#EXTINF:-1 group-title="Познавательные" tvg-name="Travel+Adventure HD (1080p)",Travel+Adventure HD (1080p)
+http://stream.mcquack.net/206/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Tsargrad TV (1080p) [Geo-blocked]",Tsargrad TV (1080p) [Geo-blocked]
+https://bl.rutube.ru/livestream/91815da4edb167b5bd617bae490e57da/index.m3u8?e=2070278263&s=is_mLq_kjPYLsOJ4qj85tw&scheme=https
+#EXTINF:-1 group-title="Общие" tvg-name="TNV-Planet (576p)",TNV-Planet (576p)
+https://fs.uplink.kz/tnv/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Tonus (576p)",Tonus (576p)
+http://194.143.148.28:8080/Mir24/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Trofei (1080p)",Trofei (1080p)
+http://stream.mcquack.net/357/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Travelxp Russia (1080p)",Travelxp Russia (1080p)
+http://stream.mcquack.net/451/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Tochka otryva (576p)",Tochka otryva (576p)
+https://stream8.cinerama.uz/1031/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="TDK 42",TDK 42
+https://live-tdk42kz.cdnvideo.ru/tdk42kz/tdk42kz_720.smil/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Trace Sport Stars Russia (720p)",Trace Sport Stars Russia (720p)
+https://stream8.cinerama.uz/1274/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="TBN Baltia (1080p)",TBN Baltia (1080p)
+http://dc.tbnbaltia.eu:8088/dvr/rewind-21600.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="TV 21 International (576p)",TV 21 International (576p)
+http://stream.mcquack.net/152/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="TV 21 (576p)",TV 21 (576p)
+http://178.134.1.158:8081/TVXXI/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="TV Centr (576p)",TV Centr (576p)
+http://hls127.freeott.top:8080/Tv_Center/video.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="U (720p)",U (720p)
+https://bl.rutube.ru/livestream/5c9327074e25ca86f3111d4085cbbb65/index.m3u8?e=2066519758&s=9cPc1rCGu6M932eqrifRhQ&scheme=https
+#EXTINF:-1 group-title="Развлекательные" tvg-name="TV-3 HD (1080p)",TV-3 HD (1080p)
+http://stream.mcquack.net/136/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="Tooku (1080p)",Tooku (1080p)
+http://live-saha.cdnvideo.ru/saha/tooky/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="TNV-Tatarstan (720p)",TNV-Tatarstan (720p)
+https://user91229.clients-cdnnow.ru/hls/user91229_1.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="TV BRICS Russian (1080p)",TV BRICS Russian (1080p)
+http://185.23.80.23:8080/TVBRICS/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Soyuzny (576p)",Soyuzny (576p)
+https://souzny.mediacdn.ru/cdn/souzny/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Taraqqiyot TV",Taraqqiyot TV
+https://stream8.cinerama.uz/1204/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Unikum (576p)",Unikum (576p)
+http://45.145.32.13:20440/nauka/index.m3u8?token=test
+#EXTINF:-1 group-title="Спорт" tvg-name="UDAR (1080p)",UDAR (1080p)
+http://5.188.159.128:8070/udar/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="TV-3 (576p)",TV-3 (576p)
+http://flussonic.linkintel.ru/tv-3/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Usadba (576p)",Usadba (576p)
+http://stream.mcquack.net/211/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="TeleDom",TeleDom
+https://iam-profi.ru/hls-live/livepkgr/_definst_/liveevent/td720.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="V mire zhivotnykh (1080p)",V mire zhivotnykh (1080p)
+http://stream.mcquack.net/241/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Unknown Russia HD (1080p)",Unknown Russia HD (1080p)
+http://185.23.80.23:8080/NeizvestnayaRossia/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="UzReport TV (1080p)",UzReport TV (1080p)
+https://stream8.cinerama.uz/1015/tracks-v1a1/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="TSV (1080p)",TSV (1080p)
+https://tsv.md/stream/hls/tsv-online/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="TV Maná Russkiy (1080p)",TV Maná Russkiy (1080p)
+https://w1.manasat.com/tvmana-leste/smil:tvmana-leste.smil/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Viasat Kino (576p)",Viasat Kino (576p)
+http://dtv.vol.net.ua/Viasat_Kino/index.m3u8
+#EXTINF:-1 group-title="Детские" tvg-name="V gostyakh u skazki (1080p)",V gostyakh u skazki (1080p)
+https://stream8.cinerama.uz/1270/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Viasat Kino Action (576p)",Viasat Kino Action (576p)
+http://dtv.vol.net.ua/Viasat_Kino_Action_HD/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="TV-3 (576p)",TV-3 (576p)
+http://178.124.179.122:8080/TB-3/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="TV PRO",TV PRO
+http://rtmp.tvpro-online.ru/hls/ch1.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="viju Explore (576p)",viju Explore (576p)
+http://stream.mcquack.net/239/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="viju History (576p)",viju History (576p)
+http://178.124.179.122:8080/HistoryHD/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="TVRUS+",TVRUS+
+http://83.228.75.166:8000/play/a0aq
+#EXTINF:-1 group-title="Новостные" tvg-name="Vesti FM (720p)",Vesti FM (720p)
+https://stream.smotrim.ru/hls2/vesti_fm/playlist_4.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="viju TV1000 (576p)",viju TV1000 (576p)
+http://stream.mcquack.net/110/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Ulytau",Ulytau
+https://ulytau.tv/hls/master.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Türkmenistan (406p) [Not 24/7]",Türkmenistan (406p) [Not 24/7]
+https://alpha.tv.online.tm/hls/ch007.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="viju TV1000 action (576p)",viju TV1000 action (576p)
+http://stream.mcquack.net/100/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="viju+ Megahit HD (1080p)",viju+ Megahit HD (1080p)
+http://stream.mcquack.net/200/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="viju+ Comedy HD (1080p)",viju+ Comedy HD (1080p)
+http://stream.mcquack.net/201/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="viju+ Planet HD (1080p)",viju+ Planet HD (1080p)
+http://stream.mcquack.net/240/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="viju Nature (576p)",viju Nature (576p)
+https://fs.uplink.kz/viju_nature/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Кино" tvg-name="viju+ Premiere HD (1080p)",viju+ Premiere HD (1080p)
+http://stream.mcquack.net/202/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="viju+ Serial HD (1080p)",viju+ Serial HD (1080p)
+http://stream.mcquack.net/311/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="viju+ Sport (576p)",viju+ Sport (576p)
+http://stream.mcquack.net/333/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Voprosy i Otvety (576p)",Voprosy i Otvety (576p)
+http://stream.mcquack.net/76/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="viju TV1000 russkoe (576p)",viju TV1000 russkoe (576p)
+https://fs.uplink.kz/viju_tv1000_russkoe/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Общие" tvg-name="Zagorodnaya Zhizn (576p)",Zagorodnaya Zhizn (576p)
+http://185.57.68.33/40/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Viasat Kino Comedy",Viasat Kino Comedy
+http://777905.live.tvstitch.com/playlist.m3u8?source=aHR0cDovLzE3Ni4xMjIuMTAzLjI0MTo3MDAwL2NoNDQvdHJhY2tzLXYxYTEvbW9uby5tM3U4P2xpdmU9MSZpcD0xNzguMTM2LjQyLjIyMCZpZD05NDg4NjUmc2VjcmV0PW4xdTd1aTA2JnNzbD0xJjIxeW89MCZlPTE3OTA1OTk4Mzcmc3Q9UzRPS1VZemNocmREQWhnSTJkTDJ5QQ%3D%3D&master=249
+#EXTINF:-1 group-title="Кино" tvg-name="Viasat Kino World",Viasat Kino World
+http://777905.live.tvstitch.com/playlist.m3u8?source=aHR0cDovLzE3Ni4xMjIuMTAzLjI0MTo3MDAwL2NoNDgvdHJhY2tzLXYxYTEvbW9uby5tM3U4P2xpdmU9MSZpcD0xNzguMTM2LjQyLjIyMCZpZD05NDg4NjUmc2VjcmV0PW4xdTd1aTA2JnNzbD0xJjIxeW89MCZlPTE3OTA1OTk5NDcmc3Q9N3ROblpCZy02WTBka1RuekRIZjU0QQ%3D%3D&master=102
+#EXTINF:-1 group-title="Кино" tvg-name="Velvet. World Series (1080p)",Velvet. World Series (1080p)
+https://cdn.rostelekom-tv.xyz/live/2RR44py-yGlIWQIp.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Vitebsk",Vitebsk
+https://live.dc.beltelecom.by/vtv/vitebsk.stream/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Velvet. Sovetskoe Kino (1080p)",Velvet. Sovetskoe Kino (1080p)
+https://cdn.rostelekom-tv.xyz/live/nF4sFCa49nFPHSF_.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Velvet. European Movies (1080p)",Velvet. European Movies (1080p)
+https://cdn.rostelekom-tv.xyz/live/LQ3j0n7j0Kq4OQm8.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Zhivaya priroda (1080p)",Zhivaya priroda (1080p)
+http://stream.mcquack.net/83/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Velvet. Mentovskiye Serialy (1080p)",Velvet. Mentovskiye Serialy (1080p)
+https://cdn.rostelekom-tv.xyz/live/tWQ0ge9rspBQhRst.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Velvet. Svaty (1080p)",Velvet. Svaty (1080p)
+https://cdn.rostelekom-tv.xyz/live/HSxyMqDlSVR54UTN.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Univer TV (1080p)",Univer TV (1080p)
+https://cdn.universmotri.ru/live/smil:univer.smil/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Velvet. Scary (1080p)",Velvet. Scary (1080p)
+https://cdn.rostelekom-tv.xyz/live/NImhIFLevxCbtcP-.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Zvezda (1080p)",Zvezda (1080p)
+http://51.158.144.33:2021/zvezda/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Zhivaya priroda HD (1080p)",Zhivaya priroda HD (1080p)
+http://stream.mcquack.net/225/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Zvezda Plus (576p)",Zvezda Plus (576p)
+http://45.145.32.13:20440/zvezdaplus/index.m3u8?token=test
+#EXTINF:-1 group-title="Кино" tvg-name="Velvet. Golden Collection (1080p)",Velvet. Golden Collection (1080p)
+https://cdn.rostelekom-tv.xyz/live/v804qFZr0QVQ1s9Z.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Zdorovoe TV (576p)",Zdorovoe TV (576p)
+https://stream8.cinerama.uz/1428/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Zhivaya Planeta (576p)",Zhivaya Planeta (576p)
+https://stream8.cinerama.uz/1250/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Вместе РФ",Вместе РФ
+https://qcpdqumitwf.a.trbcdn.net/livemastersrt/pr4mw_lvie-vmesterf-srt.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Zoopark (576i)",Zoopark (576i)
+https://stream8.cinerama.uz/1417/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Viasat Serial",Viasat Serial
+http://777905.live.tvstitch.com/playlist.m3u8?source=aHR0cDovLzE3Ni4xMjIuMTAzLjI0MTo3MDAwL2NoNDUvdHJhY2tzLXYyYTEvbW9uby5tM3U4P2xpdmU9MSZpcD0xNzguMTM2LjQyLjIyMCZpZD05NDg4NjUmc2VjcmV0PW4xdTd1aTA2JnNzbD0xJjIxeW89MCZlPTE3OTA2MDExNzAmc3Q9VS12czVHQmhOdF9WQXJ4bHVYVzR2dw%3D%3D&master=599
+#EXTINF:-1 group-title="Общие" tvg-name="Vitrina TV (720p)",Vitrina TV (720p)
+https://live-11cinema.cdnvideo.ru/11cinema/11cinema/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Астрахань.Ru Sport (720p)",Астрахань.Ru Sport (720p)
+https://streaming.astrakhan.ru/astrakhanrusporthd/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Velvet. Series Hits (1080p)",Velvet. Series Hits (1080p)
+https://cdn.rostelekom-tv.xyz/live/DeWr3Sgw1Aj2lJd0.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Астрахань 24 (720p)",Астрахань 24 (720p)
+https://streaming.astrakhan.ru/astrakhan24/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Астрахань.Ru TV (480p)",Астрахань.Ru TV (480p)
+https://streaming.astrakhan.ru/astrakhanrulivehd/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Аист ТВ (1080p)",Аист ТВ (1080p)
+http://live2-aisttv.cdnvideo.ru/aisttv2/aisttv.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Дождь (1080p) [Geo-blocked]",Дождь (1080p) [Geo-blocked]
+https://wl.tvrain.tv/transcode/ngrp:ses_all/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Время (720p)",Время (720p)
+https://cdn4.skygo.mn/live/disk1/Vremya/HLSv3-FTA/Vremya.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Ветта 24 (Пермь) (576p) [Not 24/7]",Ветта 24 (Пермь) (576p) [Not 24/7]
+http://serv24.vintera.tv:8081/vetta/vetta_office/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Беларусь 5 Интернет (1080p) [Not 24/7]",Беларусь 5 Интернет (1080p) [Not 24/7]
+https://edge59.dc.beltelecom.by/ngtrk/smil:belarus5int.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Волга (HD)",Волга (HD)
+http://tele2dvrnat01-02.cdnvideo.ru/stream/NAT_Volga/hls/1920x1080@4504/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Большая Азия (720p)",Большая Азия (720p)
+http://live-bigasia.cdnvideo.ru/bigasia/bigasia.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Архыз 24 (1080p)",Архыз 24 (1080p)
+https://live.mediacdn.ru/sr1/arhis24/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Zvezda Plus HD (1080p)",Zvezda Plus HD (1080p)
+http://tvzvezda.bonus-tv.ru/cdn/zvezdaplus/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Zvezda HD (1080p)",Zvezda HD (1080p)
+https://tvzvezda.bonus-tv.ru/cdn/tvzvezda/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Арис 24 (720p) [Not 24/7]",Арис 24 (720p) [Not 24/7]
+http://serv25.vintera.tv:8081/test/aris/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="К16 (Саров) (406p) [Not 24/7]",К16 (Саров) (406p) [Not 24/7]
+http://serv25.vintera.tv:8081/test/k16/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Губерния (Самара) (576p)",Губерния (Самара) (576p)
+http://live.guberniatv.cdnvideo.ru/guberniatv/guberniatv.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Белгород 24 (1080p)",Белгород 24 (1080p)
+https://belnovosti.cdn.easyhoster.ru:8443/stream.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Кино 1 International [Not 24/7]",Кино 1 International [Not 24/7]
+http://kino-1.catcast.tv/content/38617/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="АБАЗА-ТВ (1080p)",АБАЗА-ТВ (1080p)
+https://public.apsny.camera/tv_abaza_tv_to_site/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Известия (1080p)",Известия (1080p)
+http://igi-hls.cdnvideo.ru/igi/igi_tcode/playlist.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="КРИК-ТВ (Екатеринбург) (1080p)",КРИК-ТВ (Екатеринбург) (1080p)
+http://cdn-01.bonus-tv.ru/kriktv_edge/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Дагестан (1080p)",Дагестан (1080p)
+https://dagestan.mediacdn.ru/cdn/dagestan/playlist.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Дон 24 (1080p)",Дон 24 (1080p)
+https://donmedia.bonus-tv.ru/cdn/donmedia/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="БСТ (Башкирское спутниковое телевидение) (576p)",БСТ (Башкирское спутниковое телевидение) (576p)
+https://bsttv.bonus-tv.ru/cdn/bst/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="ЛДПР ТВ (1080p)",ЛДПР ТВ (1080p)
+http://46.46.143.222:1935/live/mp4:ldpr.stream/playlist.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Zo'r TV (576p)",Zo'r TV (576p)
+https://stream8.cinerama.uz/1016/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Курай (Уфа) (576p)",Курай (Уфа) (576p)
+https://bsttv.bonus-tv.ru/cdn/kurai/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Красная линия (480p)",Красная линия (480p)
+http://s55766.cdn.ngenix.net/s55766-media-origin/rline_high/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Евразия (Орск) (720p)",Евразия (Орск) (720p)
+https://infochh.trkeurasia.ru/hlsinfoch/infochhd.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="За!ТВ",За!ТВ
+https://streaming.televizor-24-tochka.ru/live/25.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Мир 24 (1080p)",Мир 24 (1080p)
+http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mir24_2500/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="ЛенТВ24",ЛенТВ24
+https://player.smotrim.ru/iframe/stream/live_id/3e95d201-f87d-4ac1-8897-db2c66bb9657
+#EXTINF:-1 group-title="Общие" tvg-name="Мир +2 (540p) [Not 24/7]",Мир +2 (540p) [Not 24/7]
+http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mirtv2_2500/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Кубань 24 [Geo-blocked]",Кубань 24 [Geo-blocked]
+https://rt-sth-krdar-htlive.cdn.ngenix.net/hls/CH_R04_KUBAN24/variant.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Мир +7 (540p)",Мир +7 (540p)
+http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mirtv7_2500/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Магнат ТВ (1080p)",Магнат ТВ (1080p)
+https://s1.tv-nano.com/Magnat_HD_5119705/video.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Музыка Кино International [Not 24/7]",Музыка Кино International [Not 24/7]
+https://kino-1.catcast.tv/content/37739/index.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Музыка 1 International [Not 24/7]",Музыка 1 International [Not 24/7]
+https://kino-1.catcast.tv/content/37745/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="НТС (Севастополь) (1080p) [Not 24/7]",НТС (Севастополь) (1080p) [Not 24/7]
+https://peqk71plnjy.a.trbcdn.net/livemaster/w4kz7pki62_nts_tv/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Луганск 24",Луганск 24
+https://streaming.televizor-24-tochka.ru/live/29.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Неизвестная Россия (1080p)",Неизвестная Россия (1080p)
+https://cdn.ntv.ru/unknown_russia/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Ингушетия ТВ (1080p)",Ингушетия ТВ (1080p)
+https://ingushetia.mediacdn.ru/cdn/ingushetia/playlist.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Муз союз (576p)",Муз союз (576p)
+https://hls-tvsoyuz.cdnvideo.ru/tvsoyuz2/muzsoyuz.6fw0-58xp-acts-esy0/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Мир (720p)",Мир (720p)
+https://cdn4.skygo.mn/live/disk1/MIR/HLSv3-FTA/MIR.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="НВК Саха (1080p) [Not 24/7]",НВК Саха (1080p) [Not 24/7]
+https://live-saha.cdnvideo.ru/saha/saha/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Мир Белагорья (720p) [Geo-blocked]",Мир Белагорья (720p) [Geo-blocked]
+http://mirbelogorya.ru:8080/mirbelogorya/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="НТВ +1 (576p)",НТВ +1 (576p)
+https://cdn.ntv.ru/ntv1/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="НТВ +2 (576p)",НТВ +2 (576p)
+https://cdn.ntv.ru/ntv2/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Надежда (720p)",Надежда (720p)
+https://live-tvhope.cdnvideo.ru/tvhope-pull/tvhope_1/playlist.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Общественное Независимое Телевидение (576p)",Общественное Независимое Телевидение (576p)
+http://85.238.112.40:8810/hls_sec/239.33.75.33-.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="НТВ +7 (576p)",НТВ +7 (576p)
+https://cdn.ntv.ru/ntv7/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="ОСН",ОСН
+http://osnmedia.servicecdn.ru/streams/17603_88089/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="НТВ +4 (576p)",НТВ +4 (576p)
+https://cdn.ntv.ru/ntv4/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Новгородское областное телевидение [Geo-blocked]",Новгородское областное телевидение [Geo-blocked]
+https://rt-nw-novg-htlive.cdn.ngenix.net/hls/CH_R02_NOVGORODTV/variant.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="ОТВ Приморье",ОТВ Приморье
+https://jz2lo90hnpy.a.trbcdn.net/livemaster/yo8gr_live-5gorrrfpouq.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Ника ТВ (576p) [Not 24/7]",Ника ТВ (576p) [Not 24/7]
+https://live-nikatv.cdnvideo.ru/nikatv/nikatv.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="МТВ (Волгоград) (720p) [Not 24/7]",МТВ (Волгоград) (720p) [Not 24/7]
+http://hls.volgograd1vtv.cdnvideo.ru/volgograd1vtv/volgograd1vtv.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Первый Городской (Одесса) (576p)",Первый Городской (Одесса) (576p)
+http://91.194.79.46:8081/stream2/channel2/playlist.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Первый Музыкальный Канал HD (1080p)",Первый Музыкальный Канал HD (1080p)
+http://rtmp.one.by:1300
+#EXTINF:-1 group-title="Общие" tvg-name="НТК 21 (Биробиджан) [Geo-blocked]",НТК 21 (Биробиджан) [Geo-blocked]
+https://s97982.cdn.ngenix.net/hls/CH_R79_OTT_DV_HVSK_NTK/variant.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="НТМ (Народное телевидение Мордовии) (720p) [Not 24/7]",НТМ (Народное телевидение Мордовии) (720p) [Not 24/7]
+https://live-ntm13.cdnvideo.ru/ntm13/smil:ntm13.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Прима (1080p)",Прима (1080p)
+https://tele2dvrnat01-02.cdnvideo.ru/stream/NAT_Prima/hls/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Север (Нарьян-Мар)",Север (Нарьян-Мар)
+https://2vko9pchwon.a.trbcdn.net/livemaster/8ilgc_cw63ucn03p.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Салям (Уфа) (576p)",Салям (Уфа) (576p)
+https://bsttv.bonus-tv.ru/cdn/salyam/playlist.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Радио Говорит Москва (Веб-камера) (720p)",Радио Говорит Москва (Веб-камера) (720p)
+https://video.govoritmoskva.ru/rufm/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Открытый мир. Здоровье (576p)",Открытый мир. Здоровье (576p)
+https://v4.proofix.ru/0mir/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="РЖД ТВ (1080p) [Geo-blocked]",РЖД ТВ (1080p) [Geo-blocked]
+http://hls.tva.cdnvideo.ru/tva/tvahd.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Радио Шансон (720p) [Not 24/7]",Радио Шансон (720p) [Not 24/7]
+http://chanson-video.hostingradio.ru:8080/hls/chansonabr/live.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Осетия Ирыстон (1080p)",Осетия Ирыстон (1080p)
+https://osir.mediacdn.ru/cdn/osetia/playlist.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Сити Эдем Бирма Play [Not 24/7]",Сити Эдем Бирма Play [Not 24/7]
+https://cityeden.catcast.tv/content/34364/index.m3u8
+#EXTINF:-1 group-title="Познавательные" tvg-name="Сити Эдем АвтоГид [Not 24/7]",Сити Эдем АвтоГид [Not 24/7]
+https://cityeden.catcast.tv/content/47515/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноАрт [Not 24/7]",Сити Эдем КиноАрт [Not 24/7]
+https://cityeden.catcast.tv/content/38398/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Первый Ярославский (1080p)",Первый Ярославский (1080p)
+https://yaroslavl.mediacdn.ru/cdn/pervyaroslavsk/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноАзия [Not 24/7]",Сити Эдем КиноАзия [Not 24/7]
+https://cityeden.catcast.tv/content/34393/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноДетектив [Not 24/7]",Сити Эдем КиноДетектив [Not 24/7]
+https://cityeden.catcast.tv/content/41327/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноДок [Not 24/7]",Сити Эдем КиноДок [Not 24/7]
+https://cityeden.catcast.tv/content/38354/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Самара ГИС (1080p) [Not 24/7]",Самара ГИС (1080p) [Not 24/7]
+https://tv.samaragis.ru/new/new/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Россия-РТР",Россия-РТР
+https://streaming.televizor-24-tochka.ru/live/211.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Настоящее Время (1080p)",Настоящее Время (1080p)
+https://rfe-ingest.akamaized.net/hls/live/2033043/tvmc05/master.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноДрама [Not 24/7]",Сити Эдем КиноДрама [Not 24/7]
+https://cityeden.catcast.tv/content/45269/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноКлассика [Not 24/7]",Сити Эдем КиноКлассика [Not 24/7]
+https://cityeden.catcast.tv/content/34185/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Своё ТВ (Ставрополь) (1080p)",Своё ТВ (Ставрополь) (1080p)
+https://svoetv.mediacdn.ru/cdn/svoetv/playlist.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноКомедия [Not 24/7]",Сити Эдем КиноКомедия [Not 24/7]
+https://cityeden.catcast.tv/content/41331/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноМистика [Not 24/7]",Сити Эдем КиноМистика [Not 24/7]
+https://cityeden.catcast.tv/content/40783/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноФантастика [Not 24/7]",Сити Эдем КиноФантастика [Not 24/7]
+https://cityeden.catcast.tv/content/45268/index.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Сочи 24 HD (720p)",Сочи 24 HD (720p)
+http://serv30.vintera.tv:8081/sochi/sochi24_tv/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Сити Эдем МедЗдрав [Not 24/7]",Сити Эдем МедЗдрав [Not 24/7]
+https://cityeden.catcast.tv/content/47519/index.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Сити Эдем Play Христианский Музыкальный [Not 24/7]",Сити Эдем Play Христианский Музыкальный [Not 24/7]
+https://cityeden.catcast.tv/content/34100/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем КиноЭкшен [Not 24/7]",Сити Эдем КиноЭкшен [Not 24/7]
+https://cityeden.catcast.tv/content/41333/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="С1 (Сургут) (1080p) [Not 24/7]",С1 (Сургут) (1080p) [Not 24/7]
+https://sitv.ru/hls/stv.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Первый Республиканский",Первый Республиканский
+https://streaming.televizor-24-tochka.ru/live/27.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Сити Эдем Рецепты Гурмана [Not 24/7]",Сити Эдем Рецепты Гурмана [Not 24/7]
+https://cityeden.catcast.tv/content/47516/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Твое ТВ Юмор (1080p)",Твое ТВ Юмор (1080p)
+http://tvoetv.space:8080/tvoetv_humor/index.m3u8
+#EXTINF:-1 group-title="Развлекательные" tvg-name="Твое TV HD (1080p)",Твое TV HD (1080p)
+http://tvoetv.space:8080/tvoetv/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Сити Эдем ТелеНовелла [Not 24/7]",Сити Эдем ТелеНовелла [Not 24/7]
+https://cityeden.catcast.tv/content/46209/index.m3u8
+#EXTINF:-1 group-title="Кино" tvg-name="Смотрим Честный Детектив (1080p)",Смотрим Честный Детектив (1080p)
+https://live-vgtrksmotrim.cdnvideo.ru/vgtrksmotrim/smotrim-live-01.smil/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Сити Эдем ТВ Христианский [Not 24/7]",Сити Эдем ТВ Христианский [Not 24/7]
+https://cityeden.catcast.tv/content/34246/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Союз (576p)",Союз (576p)
+https://hls-tvsoyuz.cdnvideo.ru/tvsoyuz/soyuz/playlist.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Сити Эдем Сиртаки ТВ [Not 24/7]",Сити Эдем Сиртаки ТВ [Not 24/7]
+https://cityeden.catcast.tv/content/46421/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="СургутИнформТВ",СургутИнформТВ
+https://sitv.ru/vgtrk/stv.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Телекафе (720p)",Телекафе (720p)
+https://cdn4.skygo.mn/live/disk1/Telecafe/HLSv3-FTA/Telecafe.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Телеканал 86 (Сургут) (1080p) [Not 24/7]",Телеканал 86 (Сургут) (1080p) [Not 24/7]
+https://sitv.ru/hls/s86.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Телплюс ТВ (Астрахань) (360p) [Not 24/7]",Телплюс ТВ (Астрахань) (360p) [Not 24/7]
+https://streaming.astrakhan.ru/telplushd/playlist.m3u8
+#EXTINF:-1 group-title="Музыка" tvg-name="Страна ФМ",Страна ФМ
+https://live-stranafm.cdnvideo.ru/stranafm/smil:stranafm.smil/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="5Sport (1080p)",5Sport (1080p)
+http://stream.mcquack.net/41/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ACC Network (720p)",ACC Network (720p)
+http://23.239.31.26:8989/accnetwork/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Телеканал Краснодар (1080p)",Телеканал Краснодар (1080p)
+https://live-tvkrasnodar.cdnvideo.ru/tvkrasnodar/tvkrasnodar.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Новостные" tvg-name="Толк HD (720p)",Толк HD (720p)
+http://live-tolknews.cdnvideo.ru/tolknews/stream/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ACCDN (1080p)",ACCDN (1080p)
+https://raycom-accdn-firetv.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Таврия",Таврия
+https://streaming.televizor-24-tochka.ru/live/24.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="ТКР (Рязань) (1080p) [Not 24/7]",ТКР (Рязань) (1080p) [Not 24/7]
+http://live.tkr.cdnvideo.ru/tkr/tkr.sdp/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="30A Golf Kingdom (720p)",30A Golf Kingdom (720p)
+https://30a-tv.com/feeds/vidaa/golf.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Телерадиокомпания 555 (Алушта) (720p)",Телерадиокомпания 555 (Алушта) (720p)
+http://trk555.tv:8888/live
+#EXTINF:-1 group-title="Общие" tvg-name="Шаян ТВ (Татарстан) (1080p)",Шаян ТВ (Татарстан) (1080p)
+https://shayan.bonus-tv.ru/cdn/shayan/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ACI Sport TV (1080p)",ACI Sport TV (1080p)
+https://webstream.multistream.it/memfs/e2cb3629-c1a2-495b-b43a-9eb386f04ed8.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Югра (1080p)",Югра (1080p)
+https://live-ugratv.cdnvideo.ru/ugratv/ugratv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ADO TV (720p)",ADO TV (720p)
+https://strhls.streamakaci.tv/ortb/ortb2-multi/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Три Ангела (720p)",Три Ангела (720p)
+https://hls.tv.3angels.ru/stream.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Arena Sport 1",Arena Sport 1
+http://88.212.15.19/live/test_arenasport/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="A Spor (1080p)",A Spor (1080p)
+https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/aspor/aspor.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Хузур ТВ (1080p) [Not 24/7]",Хузур ТВ (1080p) [Not 24/7]
+https://hls-mycdn08724960135.cdnvideo.ru/mycdn08724960135/stream1/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Arena Sport 2",Arena Sport 2
+http://88.212.15.19/live/test_arenasport_dva/playlist.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Ювелирочка ТВ (576p)",Ювелирочка ТВ (576p)
+https://live-uvelirochka.cdnvideo.ru/uvelirochka/uvelirochka_720p3/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Arena Sport 4 (1081p)",Arena Sport 4 (1081p)
+https://7nyaler.streamhostingcdn.top/stream/67/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Arryadia",Arryadia
+http://149.100.11.252:8000/play/a065/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Azteca Deportes Network (1080p)",Azteca Deportes Network (1080p)
+http://181.119.66.28:8081/AZTECA-DEPORTES-HD/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Arena Sport Premium 1 BH (1080p)",Arena Sport Premium 1 BH (1080p)
+https://7nyaler.streamhostingcdn.top/stream/33/index.m3u8
+#EXTINF:-1 group-title="Общие" tvg-name="Щёлковское ТВ (576p) [Not 24/7]",Щёлковское ТВ (576p) [Not 24/7]
+http://stream0.tv41.ru/live.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Arena Sport Premium 2 BH (1080p)",Arena Sport Premium 2 BH (1080p)
+https://7nyaler.streamhostingcdn.top/stream/48/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Belarus-5 HD (1080p)",Belarus-5 HD (1080p)
+http://178.124.179.122:8080/BT5/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="beIN SPORTS XTRA (1080p)",beIN SPORTS XTRA (1080p)
+https://bein-xtra-bein.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Belarus-5 (1080p) [Not 24/7]",Belarus-5 (1080p) [Not 24/7]
+https://ngtrk.dc.beltelecom.by/ngtrk/smil:belarus5.smil/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="AS3 Sport TV (1080p)",AS3 Sport TV (1080p)
+https://streamtv.as3sport.online:3394/hybrid/play.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="CCTV-16 (1080p)",CCTV-16 (1080p)
+http://74.91.26.218:82/live/cctv16hd.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Billiard TV (1080p) [Geo-blocked]",Billiard TV (1080p) [Geo-blocked]
+https://pb-wm04vonaerv0k.akamaized.net/billi.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Bahrain Sports 2 (720p) [Not 24/7]",Bahrain Sports 2 (720p) [Not 24/7]
+https://5c7b683162943.streamlock.net/live/ngrp:bahrainsportstwo_all/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Bahrain Sports 1 (720p) [Not 24/7]",Bahrain Sports 1 (720p) [Not 24/7]
+https://5c7b683162943.streamlock.net/live/ngrp:sportsone_all/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Canal Showsport (720p)",Canal Showsport (720p)
+https://livestream.lumpentv.com.ar/hls/lumpen.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="BEK TV Sports West (720p)",BEK TV Sports West (720p)
+https://cdn3.wowza.com/5/ZWQ1K2NYTmpFbGsr/BEK-WOWZA-1/smil:BEKPRIMEW.smil/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ČT Sport (720p)",ČT Sport (720p)
+http://88.212.15.19/live/test_ctsport_25p/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="CDN Deportes (720p) [Not 24/7]",CDN Deportes (720p) [Not 24/7]
+https://hls.tvabierta.net/hls/036.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="CCTV-Billiards (1080p)",CCTV-Billiards (1080p)
+http://38.75.136.137:98/gslb/dsdqpub/ystq.m3u8?auth=testpub
+#EXTINF:-1 group-title="Спорт" tvg-name="CCTV-Golf & Tennis (1080p)",CCTV-Golf & Tennis (1080p)
+http://38.75.136.137:98/gslb/dsdqpub/gefwq.m3u8?auth=testpub
+#EXTINF:-1 group-title="Спорт" tvg-name="CCTV-Storm Football (1080p)",CCTV-Storm Football (1080p)
+http://38.75.136.137:98/gslb/dsdqpub/fyzq.m3u8?auth=testpub
+#EXTINF:-1 group-title="Спорт" tvg-name="CRTV (720p)",CRTV (720p)
+https://stmv2.voxtvhd.com.br/crtvchile/crtvchile/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Cricket Gold (1080p)",Cricket Gold (1080p)
+https://streams2.sofast.tv/ptnr-yupptv/title-cricketgold/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/b2048bb8-1686-4432-aa50-647245383e0c/manifest.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Deportes por Movistar Plus+",Deportes por Movistar Plus+
+https://7nyaler.streamhostingcdn.top/stream/18/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Digi Sport 1",Digi Sport 1
+https://7nyaler.streamhostingcdn.top/stream/79/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Africa 24 Sport (1080p)",Africa 24 Sport (1080p)
+https://africa24.vedge.infomaniak.com/livecast/ik:africa24sport/manifest.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="DiviSport (1080p)",DiviSport (1080p)
+http://stream.mcquack.net/457/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="CCTV-5+",CCTV-5+
+https://myip.pdtvhd.com/Sports/streams/CCTV5pul.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="DD Sports SD (1080p)",DD Sports SD (1080p)
+https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/b17adfe543354fdd8d189b110617cddd/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="CBS Sports Golazo Network (720p)",CBS Sports Golazo Network (720p)
+https://dai.google.com/linear/hls/event/7f3Wv6f7QEKfQna22jHqLQ/master.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Dynamo Kyiv TV (1080p)",Dynamo Kyiv TV (1080p)
+http://stream.mcquack.net/396/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Equalympic (1080p)",Equalympic (1080p)
+http://stream.mcquack.net/485/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="DraftKings Network (1080p)",DraftKings Network (1080p)
+https://na.linear.zype.com/e0bd0e23-a958-4e43-8164-4f2fef8876a8/fd3614bd-90bf-4530-a277-65ae3a1720c8-zype/live.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ESPNU (720p)",ESPNU (720p)
+http://23.237.104.106:8080/USA_ESPNU/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Equidia (1080p)",Equidia (1080p)
+https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/equidia/live2.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ESPN (1080p)",ESPN (1080p)
+http://181.78.197.59:8000/play/a07z/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ESPN 4 (1080p)",ESPN 4 (1080p)
+http://181.78.197.59:8000/play/a07n/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="CBS Sports HQ (720p)",CBS Sports HQ (720p)
+https://jmp2.uk/plu-5e9f2c05172a0f0007db4786.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ESPNU HD (720p)",ESPNU HD (720p)
+http://85.237.89.160:9590/usa-s/ESPN-U-HD/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ESPNews (720p)",ESPNews (720p)
+http://41.205.93.154/ESPNNEWS/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Eurosport 4K Czechia",Eurosport 4K Czechia
+http://88.212.15.19/live/esp_4k_atk/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ATG Live (720p)",ATG Live (720p)
+https://kanal75xto-llhls.akamaized.net/live/Data/atg-kanal-15-02a-rr/HLS-Legacy-HL/atg-kanal-15-02a-rr.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="DAZN Combat (684p)",DAZN Combat (684p)
+https://jmp2.uk/plu-64d626ac9b414d000820e2fc.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="El-Heddaf TV (1080p)",El-Heddaf TV (1080p)
+https://live.elheddaftv.com:8081/elheddaftv/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="F1 Channel (1080p) [Geo-blocked]",F1 Channel (1080p) [Geo-blocked]
+https://amg12058-c15studio-amg12058c1-lg-us-5787.playouts.now.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ESPN8 The Ocho (1080p)",ESPN8 The Ocho (1080p)
+https://d3b6q2ou5kp8ke.cloudfront.net/ESPNTheOcho.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Fast&FunBox",Fast&FunBox
+https://dash3.antik.sk/live/test_fast_and_funbox_medium_atk/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Esport3 (1080p) [Not 24/7]",Esport3 (1080p) [Not 24/7]
+https://directes-tv-int.3catdirectes.cat/live-content/esport3-hls/master.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ German (720p)",FIFA+ German (720p)
+https://4397879b.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWRlX0ZJRkFQbHVzR2VybWFuX0hMUw/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ Italy (720p)",FIFA+ Italy (720p)
+https://5d95f7d7.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWl0X0ZJRkFQbHVzSXRhbGlhbl9ITFM/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Fox Deportes (720p)",Fox Deportes (720p)
+http://23.237.104.106:8080/USA_FOX_DEPORTES/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ Portuguese (720p)",FIFA+ Portuguese (720p)
+https://e3be9ac5.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/TEctYnJfRklGQVBsdXNQb3J0dWd1ZXNlX0hMUw/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ Spain (720p)",FIFA+ Spain (720p)
+https://d63fabad.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWVzX0ZJRkFQbHVzU3BhbmlzaF9ITFM/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ French (720p)",FIFA+ French (720p)
+https://37b4c228.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWZyX0ZJRkFQbHVzRnJlbmNoX0hMUw/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ Women (720p)",FIFA+ Women (720p)
+https://cffda8ff.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/U2Ftc3VuZy1nYl9GSUZBUGx1c3dvbWVuX0hMUw/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ (720p)",FIFA+ (720p)
+https://jmp2.uk/plu-660c29b5aec9680008f5b4a4.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ United States (720p)",FIFA+ United States (720p)
+https://d2w9q46ikgrcwx.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-of5cbk3sav3w5/v1/sysdata_s_p_a_fifa_7/samsungheadend_us/latest/main/hls/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FITE 24/7 (1080p)",FITE 24/7 (1080p)
+https://d3d85c7qkywguj.cloudfront.net/scheduler/scheduleMaster/263.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Fox Sports 1 (720p)",Fox Sports 1 (720p)
+http://85.237.89.160:9590/usa-s/FOX-SPORTS-1/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FloRacing 24/7 (1080p)",FloRacing 24/7 (1080p)
+https://amg02278-amg02278c1-flosports-worldwide-7592.playouts.now.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FloHockey 24/7 (1080p)",FloHockey 24/7 (1080p)
+https://amg02278-amg02278c2-flosports-worldwide-9916.playouts.now.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FightBox",FightBox
+https://webtvstream.bhtelecom.ba/fightbox.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FTF Sports (720p)",FTF Sports (720p)
+https://1593604785.rsc.cdn77.org/FTF/FTF_SCTE.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FB TV",FB TV
+http://1hskrdto.rocketcdn.com/fenerbahcetv.smil/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FUTV",FUTV
+http://190.61.90.17:40000/play/a03v/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FCK Løvinderne",FCK Løvinderne
+https://jmp2.uk/plu-68ac5403de4a734954b5ab75.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Bellator MMA",Bellator MMA
+https://jmp2.uk/plu-5ebc8688f3697d00072f7cf8.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ Hispanic America (720p)",FIFA+ Hispanic America (720p)
+https://6c849fb3.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/TEctbXhfRklGQVBsdXNTcGFuaXNoLTFfSExT/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FTV (720p)",FTV (720p)
+https://master.tucableip.com/ftvhd/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Fuel TV (1080p)",Fuel TV (1080p)
+https://amg01074-fueltv-fueltvau-samsungau-g09kq.amagi.tv/playlist/amg01074-fueltv-fueltvau-samsungau/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="fubo Sports Network (1080p)",fubo Sports Network (1080p)
+https://dnf08l6u6uxnz.cloudfront.net/master.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Go3 Sport 1 (1080p)",Go3 Sport 1 (1080p)
+http://stream.mcquack.net/416/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Fuel TV (1080p) [Geo-blocked]",Fuel TV (1080p) [Geo-blocked]
+https://amg01074-fueltv-amg01074c1-firetv-us-3150.playouts.now.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Fuel TV (1080p)",Fuel TV (1080p)
+https://amg01074-fueltv-amg01074c1-stirr-us-4214.playouts.now.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ge Fast (1080p)",ge Fast (1080p)
+https://amg00716-globo-amg00716c1-tcl-br-9495.playouts.now.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="GolTV Latin America (720p)",GolTV Latin America (720p)
+http://177.234.249.178:8888/GOLTV/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Game+ (720p)",Game+ (720p)
+https://a-cdn.klowdtv.com/live2/fntsy_720p/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="GLORY Kickboxing (720p)",GLORY Kickboxing (720p)
+https://6f972d29.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0dsb3J5S2lja2JveGluZ19ITFM/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Golf Channel",Golf Channel
+https://dash4.antik.sk/live/test_golf_channel/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Fox Sports 2 (720p)",Fox Sports 2 (720p)
+https://tvsen7.aynascope.net/foxsports2/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Brøndby TV",Brøndby TV
+https://jmp2.uk/plu-685029cda1e091e16ff57fc8.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Horse TV (720p)",Horse TV (720p)
+https://a-cdn.klowdtv.com/live2/horsetv_720p/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Jordan Sport (1080p)",Jordan Sport (1080p)
+http://93.184.10.248/JordanSport/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="FUEL TV (1080p)",FUEL TV (1080p)
+https://amg01074-fueltv-fueltvemeaen-rakuten-b6j62.amagi.tv/hls/amagi_hls_data_rakutenAA-fueltvemeaen/CDN/master.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Golazo Network (720p)",Golazo Network (720p)
+https://jmp2.uk/plu-63a0e33a45264d000850ed7e.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="KHL Prime (1080p)",KHL Prime (1080p)
+http://stream.mcquack.net/178/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Inter TV (1080p)",Inter TV (1080p)
+https://d3k8wzt41aflvx.cloudfront.net/INTERTV/Live.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Kozoom TV (1080p)",Kozoom TV (1080p)
+https://streams2.sofast.tv/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/fdd6f243-f971-4a1a-9510-97ac01d6b37f/manifest.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Kabaddi 24x7 (576p)",Kabaddi 24x7 (576p)
+http://180.188.254.253/live/KABADDI24X7.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="L1 Max (1080p)",L1 Max (1080p)
+http://190.93.224.42/LIGA-1-MAX/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="INTROUBLE (1080p)",INTROUBLE (1080p)
+https://amg00861-amg00861c6-stirr-us-8229.playouts.now.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="ITV Deportes (720p)",ITV Deportes (720p)
+https://thm-it-roku.otteravision.com/thm/it/it.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="LRT Plius (1080p)",LRT Plius (1080p)
+http://stream.mcquack.net/353/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="M4 Sport (1080p)",M4 Sport (1080p)
+http://88.212.15.19/live/uatlmvixrr/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Liga de Campeones por Movistar Plus+",Liga de Campeones por Movistar Plus+
+https://7nyaler.streamhostingcdn.top/stream/36/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Lacrosse TV (720p)",Lacrosse TV (720p)
+https://a-cdn.klowdtv.com/live2/lsn_720p/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Maincast Cybersport (1080p)",Maincast Cybersport (1080p)
+http://stream.mcquack.net/487/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Maincast Sport (1080p)",Maincast Sport (1080p)
+http://stream.mcquack.net/490/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Match! Boets (576p)",Match! Boets (576p)
+http://stream.mcquack.net/112/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="KTV Sport Plus (1080p)",KTV Sport Plus (1080p)
+https://kwtsplta.cdn.mangomolo.com/spl/smil:spl.stream.smil/chunklist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Match! Ultra (720p)",Match! Ultra (720p)
+http://stream.mcquack.net/169/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="MLB Strike Zone (720p)",MLB Strike Zone (720p)
+http://23.237.104.106:8080/USA_MLB_STRIKE_ZONE/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Futbol TV (1080p)",Futbol TV (1080p)
+http://stream3.cinerama.uz/1010/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Match! Planeta (576p)",Match! Planeta (576p)
+https://fs.uplink.kz/match_planeta/mono.m3u8?token=onlinetv
+#EXTINF:-1 group-title="Спорт" tvg-name="FightBox HD",FightBox HD
+https://nosignal1.antenaplay.ro/hls/fightbox-hd/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="MadeinBO TV (1080p)",MadeinBO TV (1080p)
+https://srvx1.selftv.video/dmchannel/live/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Meridiano TV (576p)",Meridiano TV (576p)
+http://181.78.8.199:8000/play/a0fr/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="HTSpor TV (1080p)",HTSpor TV (1080p)
+https://ciner.daioncdn.net/ht-spor/ht-spor.m3u8?app=web
+#EXTINF:-1 group-title="Спорт" tvg-name="MMA TV.com (1080p)",MMA TV.com (1080p)
+https://streams2.sofast.tv/vglive-sk-462904/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="MSG (720p)",MSG (720p)
+http://23.237.104.106:8080/USA_MSG/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="M Sports (1080p)",M Sports (1080p)
+https://cdn.rabta.stream/M-Sports/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Nautical Channel (720p)",Nautical Channel (720p)
+https://a-cdn.klowdtv.com/live2/nautical_720p/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="NFL Network (720p)",NFL Network (720p)
+http://23.237.104.106:8080/USA_NFL_NETWORK/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="KTV Sport (1080p)",KTV Sport (1080p)
+https://kwtspta.cdn.mangomolo.com/sp/smil:sp.stream.smil/chunklist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="N Sports (1080p)",N Sports (1080p)
+https://ogc-nsprt-tcl-roku-syndication.otteravision.com/ogc/nsprt/nsprt.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="NBC Sports NOW (1080p)",NBC Sports NOW (1080p)
+https://d4whmvwm0rdvi.cloudfront.net/10007/99993008/hls/master.m3u8?ads.xumo_channelId=99993008
+#EXTINF:-1 group-title="Спорт" tvg-name="Okko Futbol (1080p)",Okko Futbol (1080p)
+http://stream.mcquack.net/491/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Okko Sport (1080p)",Okko Sport (1080p)
+http://stream.mcquack.net/492/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="NBA TV (1080p)",NBA TV (1080p)
+https://cdn1.ayitistream.com/NBATV/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Okko Prajm Sport (1080p)",Okko Prajm Sport (1080p)
+http://stream.mcquack.net/493/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="NHL Network (1080p)",NHL Network (1080p)
+https://nhl-firetv.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="NHRA TV (1080p)",NHRA TV (1080p)
+https://d265y4sk8257lt.cloudfront.net/nh.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Oman Sports TV (1080p) [Not 24/7]",Oman Sports TV (1080p) [Not 24/7]
+https://partneta.cdn.mgmlcdn.com/omsport/smil:omsport.stream.smil/chunklist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Monterrico TV",Monterrico TV
+https://h.jcp.live.opencaster.com/play_src/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Ovacion TV (720p) [Not 24/7]",Ovacion TV (720p) [Not 24/7]
+http://cdn2.ujjina.com:1935/iptvovacion1/liveovacion1tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="More Than Sports TV (1080p)",More Than Sports TV (1080p)
+https://mts1.iptv-playoutcenter.de/mts/mts-web/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="PK Sports (720p)",PK Sports (720p)
+https://lbgo.bozztv.com/ssh101/ssh101/pksportshd/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="MNB Sport (1080p)",MNB Sport (1080p)
+https://live.mnb.mn/hls/mnb_sport.stream.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="PGA Tour (1080p)",PGA Tour (1080p)
+https://d11k1mnrgfposz.cloudfront.net/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="NFL Channel (720p)",NFL Channel (720p)
+https://jmp2.uk/plu-5ced7d5df64be98e07ed47b6.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Persiana Fight",Persiana Fight
+https://fighthls.persiana.live/hls/stream.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Monster Jam (720p)",Monster Jam (720p)
+https://jmp2.uk/plu-65bcc9c8d77d450008b34c6b.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV E-Sports",Pluto TV E-Sports
+https://jmp2.uk/plu-5ff3934600d4c7000733ff49.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Deportes",Pluto TV Deportes
+https://jmp2.uk/plu-5dcde07af1c85b0009b18651.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Fishing",Pluto TV Fishing
+https://jmp2.uk/plu-619e1874e0d3a7000729a036.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Håndbold Highlights",Pluto TV Håndbold Highlights
+https://jmp2.uk/plu-68dfa431cc3c6cd904053100.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Snooker 900 (720p)",Pluto TV Snooker 900 (720p)
+https://jmp2.uk/plu-68ac5543a1ac0c90f2c8943e.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pac 12 Insider (1080p)",Pac 12 Insider (1080p)
+https://pac12-firetv.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="PBR RidePass (720p)",PBR RidePass (720p)
+https://jmp2.uk/plu-60d39387706fe50007fda8e8.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="PFL MMA (720p)",PFL MMA (720p)
+https://jmp2.uk/plu-64f6180130ab3300083d896b.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Snooker 900 (720p)",Pluto TV Snooker 900 (720p)
+https://jmp2.uk/plu-66fd35e44ca31f0008060b77.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Overtime (1080p)",Overtime (1080p)
+https://d1a8aq6t30gkqj.cloudfront.net/v1/amc_overtime_1/samsungheadend_us/latest/main/hls/playlist_hd.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Competition",Pluto TV Competition
+https://jmp2.uk/plu-603fde9026ecbf0007752c2c.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Handboll Highlights",Pluto TV Handboll Highlights
+https://jmp2.uk/plu-68dfa3e2cc3c6cd904052c41.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Esportes",Pluto TV Esportes
+https://jmp2.uk/plu-5f32d2db0af67400077f29c4.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Premier Sports 1",Premier Sports 1
+https://7nyaler.streamhostingcdn.top/stream/47/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="MLB (720p)",MLB (720p)
+https://jmp2.uk/plu-5e66968a70f34c0007d050be.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Håndbold Live",Pluto TV Håndbold Live
+https://jmp2.uk/plu-6618f54baec96800081525ec.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Premier Sports 2",Premier Sports 2
+https://7nyaler.streamhostingcdn.top/stream/5/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="QazSport (1080p)",QazSport (1080p)
+http://stream.mcquack.net/72/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Snooker 900 (720p)",Pluto TV Snooker 900 (720p)
+https://jmp2.uk/plu-68ac55fe3efb41cd979a6877.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Snooker 900",Pluto TV Snooker 900
+https://jmp2.uk/plu-639b4f75d3d35c0007d37b30.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Sport",Pluto TV Sport
+https://jmp2.uk/plu-608030eff4b6f70007e1684c.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="HTV Sports",HTV Sports
+https://dethich.pw/htvthethao/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Snooker 900 (720p)",Pluto TV Snooker 900 (720p)
+https://jmp2.uk/plu-68ac56363efb41cd979a8005.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Premier Sports 2 (1080p)",Premier Sports 2 (1080p)
+https://amg19223-amg19223c4-amgplt0351.playout.now3.amagi.tv/playlist/amg19223-amg19223c4-amgplt0351/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Prime (1080p)",Prime (1080p)
+https://mn-nl.mncdn.com/primetv/live/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Racer Network (1080p)",Racer Network (1080p)
+https://amg00378-mavtv-amg00378c2-samsung-au-1790.playouts.now.amagi.tv/playlist/amg00378-mavtvfast-motorsportsnetwork-samsungau/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Snooker 900 (720p)",Pluto TV Snooker 900 (720p)
+https://jmp2.uk/plu-655b7cbb2c46f300086f0afa.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Snooker 900 (720p)",Pluto TV Snooker 900 (720p)
+https://jmp2.uk/plu-69148c76e9dec35c9269a16c.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Racer Select (1080p)",Racer Select (1080p)
+https://amg00378-amg00378c4-freelivesports-emea-5637.playouts.now.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="MRTV Sports [Not 24/7]",MRTV Sports [Not 24/7]
+https://mrtvott.com/cache/MRTV-SPORT/master.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Rai Sport",Rai Sport
+https://7nyaler.streamhostingcdn.top/stream/2/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Snooker 900 (720p)",Pluto TV Snooker 900 (720p)
+https://jmp2.uk/plu-68ac55bb3efb41cd979a65ec.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="RACER International (1080p)",RACER International (1080p)
+https://amg00378-mavtv-amg00378c2-rakuten-us-1048.playouts.now.amagi.tv/playlist/amg00378-mavtvfast-motorsportsnetwork-rakutenus/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Snooker 900 (720p)",Pluto TV Snooker 900 (720p)
+https://jmp2.uk/plu-69148c470155f9b136b5d856.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Real Madrid TV English",Real Madrid TV English
+http://88.212.15.19/live/real_madrid_tv/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Sport",Pluto TV Sport
+https://jmp2.uk/plu-62cd74e38f6f0d000798cd93.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Real Madrid TV (726p)",Real Madrid TV (726p)
+https://rmtv.akamaized.net/hls/live/2043153/rmtv-es-web/master.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Rally TV (1080p)",Rally TV (1080p)
+https://rally-tv-live.akamaized.net/hls/live/2117704/RallyTV-Pri/master.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="RightNow TV (720p)",RightNow TV (720p)
+https://a-cdn.klowdtv.com/live2/rightnowtv_720p/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="PokerGO",PokerGO
+https://jmp2.uk/plu-5fc54366b04b2300072e31af.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Red Bull TV (1080p)",Red Bull TV (1080p)
+https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Red Bull TV (1080p)",Red Bull TV (1080p)
+https://3ea22335.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWdiX1JlZEJ1bGxUVl9ITFM/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Premier Sports (1080p)",Premier Sports (1080p)
+https://amg19223-amg19223c3-amgplt0351.playout.now3.amagi.tv/playlist/amg19223-amg19223c3-amgplt0351/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Red Bull TV US (1080p)",Red Bull TV US (1080p)
+https://0b73ace69ebb45eaa249bb87837cb958.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-644-WORBUSENFAST-LG_US/644/lgtv/hls/master/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Red Bull TV BR (1080p)",Red Bull TV BR (1080p)
+https://d03ae6b5c6724c24867e97a3dc04934a.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-1026-WORBBRPTFAST-WHALETVPLUS/1026/hls/master/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Red Bull TV AU (1080p)",Red Bull TV AU (1080p)
+https://db34cc6127ac459db55cab5f97cd66b9.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-680-WORBAUENFAST-WHALETVPLUS/680/whaletvplus/hls/master/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="RMC Sport 1",RMC Sport 1
+https://7nyaler.streamhostingcdn.top/stream/59/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Setanta Sports (1080p)",Setanta Sports (1080p)
+http://stream.mcquack.net/313/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Rev'n Action (720p)",Rev'n Action (720p)
+https://freecast-lukentvlive.vgcdn.net/out/v1/a4f31f297fc5440f814bd2cffd77e689/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Realitatea Sportiva (720p)",Realitatea Sportiva (720p)
+https://stream.realitatea.net/realitatea/sportiva_md/ts:playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Red Bull TV DE (1080p)",Red Bull TV DE (1080p)
+https://46cfeb23c7f74853bba7a256655a3119.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-582-WORBDACHDEFAST-WHALETVPLUS/582/whaletvplus/hls/master/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Setanta Sports 1 Eurasia (1080p)",Setanta Sports 1 Eurasia (1080p)
+http://stream.mcquack.net/234/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Setanta Sports 2 Eurasia (1080p)",Setanta Sports 2 Eurasia (1080p)
+http://stream.mcquack.net/235/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Setanta Sports+ Ukraine (1080p)",Setanta Sports+ Ukraine (1080p)
+http://stream.mcquack.net/390/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Red Bull TV UK (1080p)",Red Bull TV UK (1080p)
+https://1a3566cb46914c5499fbc86fbc4ac87e.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-932-WORBUKENFAST-WHALETVPLUS/932/whaletvplus/hls/master/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sky Sport F1",Sky Sport F1
+https://7nyaler.streamhostingcdn.top/stream/8/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="San Marino RTV Sport (720p)",San Marino RTV Sport (720p)
+https://d2hrvno5bw6tg2.cloudfront.net/smrtv-ch02/smil:ch-02.smil/master.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Pluto TV Handboll Live",Pluto TV Handboll Live
+https://jmp2.uk/plu-686faf533ffa5e0c912688e7.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 2 (1080p)",Sony Sports Ten 2 (1080p)
+https://cloudplay-sonyliv.pages.dev/ten2.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 2 HD (1080p)",Sony Sports Ten 2 HD (1080p)
+https://cloudplay-sonyliv.pages.dev/ten2hd.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 4 (1080p)",Sony Sports Ten 4 (1080p)
+https://cloudplay-sonyliv.pages.dev/ten4.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 3 Hindi (1080p)",Sony Sports Ten 3 Hindi (1080p)
+https://cloudplay-sonyliv.pages.dev/ten3.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 3 Hindi HD (1080p)",Sony Sports Ten 3 Hindi HD (1080p)
+https://cloudplay-sonyliv.pages.dev/ten3hd.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 4 Telugu (1080p)",Sony Sports Ten 4 Telugu (1080p)
+https://cloudplay-sonyliv.pages.dev/ten4hd.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 1 HD (1080p)",Sony Sports Ten 1 HD (1080p)
+https://cloudplay-sonyliv.pages.dev/ten1hd.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 5 (1080p)",Sony Sports Ten 5 (1080p)
+https://cloudplay-sonyliv.pages.dev/ten5.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 5 HD (1080p)",Sony Sports Ten 5 HD (1080p)
+https://cloudplay-sonyliv.pages.dev/ten5hd.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Spiler 1",Spiler 1
+http://88.212.15.19/live/spiler1/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Slopes TV (720p)",Slopes TV (720p)
+https://stream-us-east-1.getpublica.com/playlist.m3u8?network_id=2241
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport1",Sport1
+http://88.212.15.19/live/test_sport1_25p/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Spiler 2",Spiler 2
+http://88.212.15.19/live/spiler2/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Red Bull TV ES (1080p)",Red Bull TV ES (1080p)
+https://886bd3fbc782459f8de7555d32d7e9ce.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-957-WORBLATAMESFAST-WHALETVPLUS/957/whaletvplus/hls/master/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport 1",Sport 1
+http://88.212.15.19/live/sport1_hun/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport 1 (576p)",Sport 1 (576p)
+http://stream.mcquack.net/391/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport 2 (1080p)",Sport 2 (1080p)
+http://stream.mcquack.net/392/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport 1 Baltic (1080p)",Sport 1 Baltic (1080p)
+http://stream.mcquack.net/461/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport 4 (576p)",Sport 4 (576p)
+http://stream.mcquack.net/394/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport 3 (1080p)",Sport 3 (1080p)
+http://stream.mcquack.net/393/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport 5 (1080p)",Sport 5 (1080p)
+http://stream.mcquack.net/212/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport 2",Sport 2
+http://88.212.15.19/live/sport2_hun/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport2",Sport2
+http://88.212.15.19/live/test_sport_2/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport TV (1080p)",Sport TV (1080p)
+http://178.124.179.122:8080/SportTV/mpegts
+#EXTINF:-1 group-title="Спорт" tvg-name="Sony Sports Ten 1 (1080p)",Sony Sports Ten 1 (1080p)
+https://cloudplay-sonyliv.pages.dev/ten1.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sky Racing 2 (720p)",Sky Racing 2 (720p)
+https://636ffd31f0e12.streamlock.net/RacingStream2/RacingStream2/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="SporTV 3 (720p)",SporTV 3 (720p)
+http://170.83.49.66:8083/SPORTV3HD/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sports Squad Haryana (576p)",Sports Squad Haryana (576p)
+http://180.188.254.253/live/SPORTSSQUADHARYANA.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sporty TV",Sporty TV
+https://dash2.antik.sk/live/sporty_tv/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sportitalia (1080p)",Sportitalia (1080p)
+https://edge-001.streamup.eu/sportitalia/sihd_abr/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sports Television [Not 24/7]",Sports Television [Not 24/7]
+https://kctv.koryofront.org/stream/sports/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="SportsGrid (1080p)",SportsGrid (1080p)
+https://sportsgrid-tribal.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sportivnyy (1080p)",Sportivnyy (1080p)
+https://live-3.otcnet.ru/sportivny/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Star Sports Select 2 HD (720p)",Star Sports Select 2 HD (720p)
+http://tvsen7.aynascope.net/ssport2hd/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Strongman (720p)",Strongman (720p)
+https://rightsboosterltd-scl-1-eu.rakuten.wurl.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Star Sports 2 HD (720p)",Star Sports 2 HD (720p)
+http://tvsen5.aynascope.net/cXPB2LKkErN9/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Strongman Champions League (720p)",Strongman Champions League (720p)
+https://rightsboosterltd-scl-2-eu.rakuten.wurl.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sky Racing 1 (720p)",Sky Racing 1 (720p)
+https://636ffd31f0e12.streamlock.net/RacingStream1/RacingStream1/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Strongman Champions League (720p)",Strongman Champions League (720p)
+https://rightsboosterltd-scl-1-be.samsung.wurl.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Suspilne. Sport (1080p)",Suspilne. Sport (1080p)
+http://stream.mcquack.net/444/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Sport",Sport
+https://stream8.cinerama.uz/1004/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Swerve Sports (720p)",Swerve Sports (720p)
+https://a-cdn.klowdtv.com/live3/swervewomenssports_720p/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="T Sports 7",T Sports 7
+https://live-us1.thaimomo.com/live-as/chtsport-1/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Star Sports 2 Hindi (720p)",Star Sports 2 Hindi (720p)
+https://tvsen5.aynaott.com/cXPB2LKkErN9/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Swerve Combat (1080p)",Swerve Combat (1080p)
+https://linear-253.frequency.stream/mt/roku/253/hls/master/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="SuperTennis (1080p)",SuperTennis (1080p)
+https://live-embed.supertennix.hiway.media/restreamer/supertennix_client/gpu-a-c0-16/restreamer/outgest/aa3673f1-e178-44a9-a947-ef41db73211a/manifest.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Talent TV (720p)",Talent TV (720p)
+http://live.talenttv.lk:8080/hls/x8kd5n3tm8e8lsv/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="T Sports (1080p)",T Sports (1080p)
+https://tvsen5.aynaott.com/TnMn5kZz8aLm/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TennisChannel 2 (720p)",TennisChannel 2 (720p)
+https://jmp2.uk/plu-681109b688b9d85d0938c6ba.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Tennis Channel (1080p)",Tennis Channel (1080p)
+https://cdn-ue1-prod.tsv2.amagi.tv/linear/amg01444-tennischannelth-tennischannelnl-samsungnl/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Trace Sport Stars Russia (720p)",Trace Sport Stars Russia (720p)
+https://stream8.cinerama.uz/1274/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Trace Sport Stars (Australia) (1080p)",Trace Sport Stars (Australia) (1080p)
+https://lightning-tracesport-samsungau.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Teledeporte",Teledeporte
+https://rtve01p.origin.c21livecloud.com/live-origin/tdp-hls/bitrate_1.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TJK TV (1080p)",TJK TV (1080p)
+https://tjktv-live.tjk.org/tjktv.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TV 2 Sport",TV 2 Sport
+https://7nyaler.streamhostingcdn.top/stream/57/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TSN The Ocho (1080p)",TSN The Ocho (1080p)
+https://d3pnbvng3bx2nj.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-rds8g35qfqrnv/TSN_The_Ocho.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Tigo Sports (1080p)",Tigo Sports (1080p)
+https://d3kzwqwnq1f7tq.cloudfront.net/out/v1/0fd608d0807c48edb4713da6b80e8c34/index_6.m3u8?z=b
+#EXTINF:-1 group-title="Спорт" tvg-name="Tigo Sports (720p) [Geo-blocked]",Tigo Sports (720p) [Geo-blocked]
+https://dipdxjic51jcl.cloudfront.net/out/v1/81f769d780694be488d85811331c8a4f/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TV Cuatro 4.3 (1080p)",TV Cuatro 4.3 (1080p)
+https://5ca3e84a76d30.streamlock.net/tv43gto/tv43gto.smil/.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Turf Movil (720p)",Turf Movil (720p)
+https://tvturf4.janus.cl/playlist/stream.m3u8?d=w&id=
+#EXTINF:-1 group-title="Спорт" tvg-name="Trace Sport Stars SD",Trace Sport Stars SD
+https://channels.trace.plus/Traceprod/TRACE_SPORT_STARS_sd/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="talkSPORT (1080p)",talkSPORT (1080p)
+https://af7a8b4e.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/TEctZ2JfdGFsa1NQT1JUX0hMUw/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Türkmenistan Sport (406p) [Not 24/7]",Türkmenistan Sport (406p) [Not 24/7]
+https://alpha.tv.online.tm/hls/ch004.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TVP Sport",TVP Sport
+https://7nyaler.streamhostingcdn.top/stream/28/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="USA Network (1080p)",USA Network (1080p)
+http://190.11.225.124:5000/live/usa_hd/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TyC Sports USA",TyC Sports USA
+http://45.170.130.224:8000/play/a020/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TVS Boxing (360p)",TVS Boxing (360p)
+https://rpn.bozztv.com/gusa/gusa-tvsboxing/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TVS Sports (720p) [Not 24/7]",TVS Sports (720p) [Not 24/7]
+https://rpn.bozztv.com/gusa/gusa-tvssports/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TVS Bowling Network (720p)",TVS Bowling Network (720p)
+https://rpn.bozztv.com/gusa/gusa-tvsbowling/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="UDAR (1080p)",UDAR (1080p)
+http://5.188.159.128:8070/udar/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TVS Turbo (360p)",TVS Turbo (360p)
+https://rpn.bozztv.com/gusa/gusa-tvsturbo/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TVS Classic Sports (360p)",TVS Classic Sports (360p)
+https://rpn.bozztv.com/gusa/gusa-tvs/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="V Sport Golf [Not 24/7]",V Sport Golf [Not 24/7]
+http://315e5a5d.ottrast.com/iptv/8XFKA8883W9M5K/12077/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TVR Sport",TVR Sport
+https://tvr-sport.lg.mncdn.com/tvrsport/smil:tvrsport.smil/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TVS Sports Bureau (720p)",TVS Sports Bureau (720p)
+https://rpn.bozztv.com/gusa/gusa-tvssportsbureau/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Unbeaten (1080p)",Unbeaten (1080p)
+https://lukentvlive.vgcdn.net/v1/master/cef183924f24adfa3d5d7601c3a17769082c0c2b/UnbeatenSports/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Unite8 Sports 2",Unite8 Sports 2
+http://59.103.38.46:8000/play/a126/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="viju+ Sport (576p)",viju+ Sport (576p)
+http://stream.mcquack.net/333/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TR Sport (480p)",TR Sport (480p)
+https://livetr.teleromagna.it/mia/live/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TVS Women Sports (720p)",TVS Women Sports (720p)
+https://rpn.bozztv.com/gusa/gusa-tvswsn/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Tour Spot TV (1280p) [Not 24/7]",Tour Spot TV (1280p) [Not 24/7]
+https://fox.hostlagarto.com:8081/toursporttv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Win Sports (1080p)",Win Sports (1080p)
+http://138.121.15.230:9002/WIN-SPORT/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="XFC TV (720p)",XFC TV (720p)
+https://stream-us-east-1.getpublica.com/playlist.m3u8?network_id=2247
+#EXTINF:-1 group-title="Спорт" tvg-name="World Poker Tour (1080p)",World Poker Tour (1080p)
+https://d39g1vxj2ef6in.cloudfront.net/v1/master/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/playlist.m3u8?ads.xumo_channelId=88883102
+#EXTINF:-1 group-title="Спорт" tvg-name="Willow (720p)",Willow (720p)
+http://tvsen5.aynascope.net/willowhd/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="World Poker Tour (1080p)",World Poker Tour (1080p)
+https://d2e00kr7m9coe4.cloudfront.net/scheduler/scheduleMaster/406.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Willow Sports (1080p)",Willow Sports (1080p)
+https://d36r8jifhgsk5j.cloudfront.net/Willow_TV.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="World of Freesports (1080p)",World of Freesports (1080p)
+https://mainstreammedia-worldoffreesportsintl-rakuten.amagi.tv/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Zona DAZN",Zona DAZN
+https://7nyaler.streamhostingcdn.top/stream/24/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="World Poker Tour (1080p)",World Poker Tour (1080p)
+https://amg00477-samsungelectron-worldpokertour-samsunguk-81igb.amagi.tv/playlist/amg00477-samsungelectron-worldpokertour-samsunguk/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Беларусь 5 Интернет (1080p) [Not 24/7]",Беларусь 5 Интернет (1080p) [Not 24/7]
+https://edge59.dc.beltelecom.by/ngtrk/smil:belarus5int.smil/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="TRT Spor Yildiz (1440p) [Geo-blocked]",TRT Spor Yildiz (1440p) [Geo-blocked]
+https://trt.daioncdn.net/trtspor-yildiz/master.m3u8?app=web&platform=trtspor
+#EXTINF:-1 group-title="Спорт" tvg-name="Астрахань.Ru Sport (720p)",Астрахань.Ru Sport (720p)
+https://streaming.astrakhan.ru/astrakhanrusporthd/playlist.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="World Poker Tour",World Poker Tour
+https://jmp2.uk/plu-5ad9b7aae738977e2c312132.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Willow Sports (1080p)",Willow Sports (1080p)
+https://d36r8jifhgsk5j.cloudfront.net/Willow_TV1080p.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="Vinh Long TV 4 (720p)",Vinh Long TV 4 (720p)
+https://dethich.pw/thvl4/index.m3u8
+#EXTINF:-1 group-title="Спорт" tvg-name="World of Freesports (1080p)",World of Freesports (1080p)
+https://mainstreammedia-worldoffreesportsintl-rakuten.amagi.tv/hls/amagi_hls_data_rakutenAA-mainstreammediafreesportsintl-rakuten/CDN/master.m3u8
