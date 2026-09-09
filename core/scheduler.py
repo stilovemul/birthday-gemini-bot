@@ -42,10 +42,11 @@ async def check_and_send_smart_reminders(bot: Bot):
 
 async def run_scheduler(bot: Bot):
     """Central scheduler for background jobs (MSK UTC+3)."""
-    logger.info("Центральный планировщик запущен (напоминания 20с, Drive2 60с, VK 60с, MAX 60с, Погода 10мин, Дайджест 09:00 MSK).")
+    logger.info("Центральный планировщик запущен (напоминания 20с, Drive2 60с, MAX 60с, VK 15мин, Погода 10мин, Дайджест 09:00 MSK).")
     last_daily_check_day = None
     tick_60s = 0
     weather_tick = 0
+    vk_tick = 0
 
     while True:
         try:
@@ -53,16 +54,21 @@ async def run_scheduler(bot: Bot):
             await check_and_send_smart_reminders(bot)
             await evaluate_and_run_custom_rules(bot)
 
-            # 2. Check Drive2, VK, MAX events & subscriptions (every ~60s = 3 ticks of 20s)
+            # 2. Check Drive2, MAX events & subscriptions (every ~60s = 3 ticks of 20s)
             tick_60s += 1
             if tick_60s >= 3:
                 tick_60s = 0
                 asyncio.create_task(check_all_drive2_users(bot))
-                asyncio.create_task(check_all_vk_users(bot))
                 asyncio.create_task(check_all_max_users(bot))
                 asyncio.create_task(check_all_subscription_notifications(bot))
 
-            # 3. Check impending precipitation radar (every ~10 mins = 30 ticks of 20s)
+            # 3. Check VK events (every ~15 mins = 45 ticks of 20s) to prevent any rate limiting / flood control
+            vk_tick += 1
+            if vk_tick >= 45:
+                vk_tick = 0
+                asyncio.create_task(check_all_vk_users(bot))
+
+            # 4. Check impending precipitation radar (every ~10 mins = 30 ticks of 20s)
             weather_tick += 1
             if weather_tick >= 30:
                 weather_tick = 0
