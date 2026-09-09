@@ -1,3 +1,5 @@
+import io
+import re
 import html
 import logging
 from aiogram import Router, types, F
@@ -8,6 +10,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
 from core.states import ActiveModeStates
+from modules.voice_assistant.transcriber import transcribe_audio_gemini
 from modules.freebies_promos.promos import get_curated_delivery_promos
 from modules.freebies_promos.games_freebies import get_active_games_freebies
 
@@ -23,12 +26,15 @@ def get_promos_inline_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="🛍 Купер & Самокат", callback_data="pr_preset_kuper")
             ],
             [
-                InlineKeyboardButton(text="🍕 Додо, Токио & Рестораны", callback_data="pr_preset_dodo"),
+                InlineKeyboardButton(text="🍕 Додо & Рестораны", callback_data="pr_preset_dodo"),
                 InlineKeyboardButton(text="🛒 ВкусВилл & Перекрёсток", callback_data="pr_preset_stores")
             ],
             [
                 InlineKeyboardButton(text="💄 Золотое Яблоко & Ozon", callback_data="pr_preset_shops"),
-                InlineKeyboardButton(text="🍔 Бургер Кинг & Вкусно и точка", callback_data="pr_preset_fastfood")
+                InlineKeyboardButton(text="🍔 Бургер Кинг & Фастфуд", callback_data="pr_preset_fastfood")
+            ],
+            [
+                InlineKeyboardButton(text="🎮 PlayStation 5 (PS Plus & Игры)", callback_data="mode_start_games")
             ],
             [
                 InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
@@ -47,7 +53,7 @@ def format_promos_card(data: dict) -> str:
 
     lines = [
         f"🎁 <b>{title.upper()}</b> <i>({cat_type})</i>\n",
-        "🏷 <b>РАБОЧИЕ ПРОМОКОДЫ:</b>"
+        "🏷 <b>РАБОЧИЕ ПРОМОКОДЫ & ВЫГОДА:</b>"
     ]
 
     for idx, c in enumerate(codes, 1):
@@ -59,12 +65,12 @@ def format_promos_card(data: dict) -> str:
         lines.append(
             f"<b>{idx}. 🎟 Промокод:</b> <code>{code_val}</code>\n"
             f"   └ 💰 <b>Выгода:</b> <b>{discount}</b>\n"
-            f"   └ 👥 <b>Для кого:</b> {aud}\n"
+            f"   └ 👥 <b>Для кого:</b> <i>{aud}</i>\n"
             f"   └ 📋 <b>Условия:</b> <i>{cond}</i>\n"
         )
 
     if combos:
-        lines.append(f"🍔 <b>Секретные комбо и акции:</b>\n{combos}\n")
+        lines.append(f"🍔 <b>Секретные комбо и спецпредложения:</b>\n{combos}\n")
 
     if bank:
         lines.append(f"💳 <b>Кэшбэк банков и баллы:</b>\n{bank}\n")
@@ -72,7 +78,7 @@ def format_promos_card(data: dict) -> str:
     if tip:
         lines.append(f"💡 <b>Лайфхак максимальной экономии:</b>\n<i>{tip}</i>\n")
 
-    lines.append("💬 <i>Напишите название ЛЮБОГО ресторана, доставки или магазина (например: «промокод на доставку из Frank», «скидка Спортмастер», «Купер на первый заказ»):</i>")
+    lines.append("💬 <i>Напишите название ЛЮБОГО ресторана, доставки или магазина (например: «промокод на повторный заказ Яндекс Еда», «скидка Спортмастер», «Купер на первый заказ»):</i>")
     return "\n".join(lines)
 
 
@@ -82,7 +88,7 @@ def format_ps5_card(data: dict, filter_mode: str = "all", is_direct_query: bool 
     # Optional direct answer if user asked a specific question
     custom_ans = data.get("custom_answer")
     if is_direct_query and custom_ans and custom_ans.strip():
-        lines.append(f"🤖 <b>Ответ на ваш вопрос:</b>\n{custom_ans.strip()}\n")
+        lines.append(f"🤖 <b>Ответ на ваш вопрос:</b>\n{html.escape(custom_ans.strip())}\n")
 
     # Header
     if filter_mode == "sales":
@@ -98,43 +104,48 @@ def format_ps5_card(data: dict, filter_mode: str = "all", is_direct_query: bool 
     if filter_mode in ["all", "sales"]:
         sales = data.get("sales", {})
         if sales:
-            lines.append(f"🔥 <b>{sales.get('title', 'Распродажа в PS Store')}</b>")
+            lines.append(f"🔥 <b>{html.escape(str(sales.get('title', 'Распродажа в PS Store')))}</b>")
             if sales.get("dates"):
-                lines.append(f"📅 <b>Сроки проведения:</b> {sales.get('dates')}")
+                lines.append(f"📅 <b>Сроки проведения:</b> {html.escape(str(sales.get('dates')))}")
             if sales.get("description"):
-                lines.append(f"💬 <i>{sales.get('description')}</i>")
+                lines.append(f"💬 <i>{html.escape(str(sales.get('description')))}</i>")
             
             deals = sales.get("highlight_deals", [])
             if deals:
                 lines.append("🕹 <b>Главные скидки на хиты PS5:</b>")
                 for d in deals:
-                    lines.append(f"   • <b>{d.get('game')}</b> — <code>{d.get('discount')}</code> ({d.get('note', '')})")
+                    g_name = html.escape(str(d.get('game', '')))
+                    d_val = html.escape(str(d.get('discount', '')))
+                    n_val = html.escape(str(d.get('note', '')))
+                    lines.append(f"   • <b>{g_name}</b> — <code>{d_val}</code> ({n_val})")
             lines.append("")
 
     # 2. PS PLUS ESSENTIAL (MONTHLY GAMES)
     if filter_mode in ["all", "plus"]:
         ess = data.get("ps_plus_essential", {})
         if ess:
-            lines.append(f"🎁 <b>PS Plus Essential ({ess.get('period', 'Игры месяца')}):</b>")
+            lines.append(f"🎁 <b>PS Plus Essential ({html.escape(str(ess.get('period', 'Игры месяца')))}):</b>")
             for g in ess.get("games", []):
-                plat = f"[{g.get('platform', 'PS5')}]"
-                genre = f"({g.get('genre', '')})" if g.get('genre') else ""
-                lines.append(f"   • <b>{g.get('title')}</b> {plat} {genre}")
+                t_val = html.escape(str(g.get('title', '')))
+                plat = f"[{html.escape(str(g.get('platform', 'PS5')))}]"
+                genre = f"({html.escape(str(g.get('genre', '')))})" if g.get('genre') else ""
+                lines.append(f"   • <b>{t_val}</b> {plat} {genre}")
                 if g.get("short_desc"):
-                    lines.append(f"     └ <i>{g.get('short_desc')}</i>")
+                    lines.append(f"     └ <i>{html.escape(str(g.get('short_desc')))}</i>")
             lines.append("")
 
     # 3. PS PLUS EXTRA & DELUXE
     if filter_mode in ["all", "plus"]:
         extra = data.get("ps_plus_extra_deluxe", {})
         if extra:
-            lines.append(f"🌟 <b>Каталог PS Plus Extra / Deluxe ({extra.get('period', 'Новинки')}):</b>")
+            lines.append(f"🌟 <b>Каталог PS Plus Extra / Deluxe ({html.escape(str(extra.get('period', 'Новинки')))}):</b>")
             for g in extra.get("games", []):
-                plat = f"[{g.get('platform', 'PS5')}]"
-                genre = f"({g.get('genre', '')})" if g.get('genre') else ""
-                lines.append(f"   • <b>{g.get('title')}</b> {plat} {genre}")
+                t_val = html.escape(str(g.get('title', '')))
+                plat = f"[{html.escape(str(g.get('platform', 'PS5')))}]"
+                genre = f"({html.escape(str(g.get('genre', '')))})" if g.get('genre') else ""
+                lines.append(f"   • <b>{t_val}</b> {plat} {genre}")
                 if g.get("short_desc"):
-                    lines.append(f"     └ <i>{g.get('short_desc')}</i>")
+                    lines.append(f"     └ <i>{html.escape(str(g.get('short_desc')))}</i>")
             lines.append("")
 
     # 4. LEAVING SOON (LAST CHANCE TO PLAY)
@@ -143,17 +154,19 @@ def format_ps5_card(data: dict, filter_mode: str = "all", is_direct_query: bool 
         if leaving:
             lines.append(f"⚠️ <b>СКОРО УДАЛЯТ ИЗ ПОДПИСКИ (Extra / Deluxe):</b>")
             if leaving.get("leave_date"):
-                lines.append(f"⏳ <b>Дата удаления из каталога:</b> <b>{leaving.get('leave_date')}</b>")
+                lines.append(f"⏳ <b>Дата удаления из каталога:</b> <b>{html.escape(str(leaving.get('leave_date')))}</b>")
             for g in leaving.get("games", []):
-                plat = f"[{g.get('platform', 'PS5')}]"
-                lines.append(f"   ❌ <b>{g.get('title')}</b> {plat} — <i>{g.get('note', '')}</i>")
+                t_val = html.escape(str(g.get('title', '')))
+                plat = f"[{html.escape(str(g.get('platform', 'PS5')))}]"
+                n_val = html.escape(str(g.get('note', '')))
+                lines.append(f"   ❌ <b>{t_val}</b> {plat} — <i>{n_val}</i>")
             if leaving.get("warning"):
-                lines.append(f"\n🚨 <i>{leaving.get('warning')}</i>")
+                lines.append(f"\n🚨 <i>{html.escape(str(leaving.get('warning')))}</i>")
             lines.append("")
 
     # 5. TIP
     if data.get("ps5_tip") and filter_mode in ["all", "sales", "plus", "leaving"]:
-        lines.append(f"{data['ps5_tip']}\n")
+        lines.append(f"{html.escape(str(data['ps5_tip']))}\n")
 
     lines.append("💬 <i>Вы в интерактивном режиме PS5. Спросите про любую игру, цены в Турции/Польше или воспользуйтесь кнопками ниже:</i>")
     return "\n".join(lines)
@@ -169,6 +182,10 @@ def get_ps5_inline_keyboard() -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(text="⚠️ Удалят из подписки", callback_data="ps5_filter_leaving"),
                 InlineKeyboardButton(text="🔄 Полная сводка", callback_data="ps5_filter_all")
+            ],
+            [
+                InlineKeyboardButton(text="🍕 Промокоды на доставку & Еду", callback_data="mode_start_promos"),
+                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
             ]
         ]
     )
@@ -176,22 +193,34 @@ def get_ps5_inline_keyboard() -> InlineKeyboardMarkup:
 
 @router.message(Command("promos"))
 @router.message(Command("games"))
-@router.message(F.text.in_(["🎁 Промо & PS", "🎁 Промокоды & 🎮 Игры", "Промо & PS", "🍕 Промокоды на доставку", "🎮 Раздачи игр", "🎮 Игры PS5", "🎮 PlayStation 5", "Промокоды", "Скидки"]))
+@router.message(Command("freebies"))
+@router.message(Command("ps5"))
+@router.message(F.text.in_([
+    "🎁 Промо & PS", "🎁 Промокоды & 🎮 Игры", "Промо & PS", "🍕 Промокоды на доставку",
+    "🎮 Раздачи игр", "🎮 Игры PS5", "🎮 PlayStation 5", "Промокоды", "Скидки",
+    "Промо", "промокоды", "скидки", "промо", "промокод"
+]))
 async def cmd_freebies_menu(message: types.Message, state: FSMContext):
-    await state.clear()
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🍕 Промокоды (Еда, Рестораны & Магазины)", callback_data="mode_start_promos")],
-            [InlineKeyboardButton(text="🎮 PlayStation 5 (PS5 & PS Plus)", callback_data="mode_start_games")]
-        ]
-    )
+    await state.set_state(ActiveModeStates.promos_mode)
+    user_id = message.from_user.id
+    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+
+    # Automatically fetch top active delivery promos so the user gets instant value
+    data = await get_curated_delivery_promos(user_id, "Яндекс.Еда, Купер, Самокат и популярные рестораны СПб")
+    text = format_promos_card(data)
+
     await message.answer(
-        "🎁 <b>Персональный радар промокодов, скидок и PlayStation:</b>\n\n"
-        "• 🍕 <b>Промокоды на доставку и магазины</b> — Яндекс.Еда, Купер, Самокат, Додо, рестораны, маркетплейсы (Ozon, WB, Золотое Яблоко).\n"
-        "• 🎮 <b>PlayStation 5 (PS5 & PS Plus)</b> — распродажи PS Store, новинки PS Plus и игры на удаление.",
+        "🎁 <b>Режим поиска промокодов, скидок и PlayStation 5 активирован!</b>\n\n"
+        "💡 <i>Напишите в чат ЛЮБОЙ запрос или выберите быстрый пресет:</i>\n"
+        "• <i>«промокод на повторный заказ яндекс еда»</i>\n"
+        "• <i>«скидка на первый заказ купер»</i>\n"
+        "• <i>«промокод додо пицца или токио сити»</i>\n"
+        "• <i>«скидки в золотом яблоке или ozon»</i>\n"
+        "• <i>«игры месяца в ps plus на ps5»</i>",
         parse_mode=ParseMode.HTML,
-        reply_markup=kb
+        reply_markup=get_mode_keyboard("Промокоды & PS")
     )
+    await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_promos_inline_keyboard(), disable_web_page_preview=True)
 
 
 @router.callback_query(F.data == "mode_start_promos")
@@ -202,16 +231,11 @@ async def cb_start_promos(callback: types.CallbackQuery, state: FSMContext):
     data = await get_curated_delivery_promos(user_id, "Яндекс.Еда, Купер, Самокат и популярные рестораны")
     text = format_promos_card(data)
     await callback.message.answer(
-        "🎁 <b>Режим поиска промокодов и скидок активирован!</b>\n\n"
-        "💡 <i>Вы можете нажать кнопку ниже или написать в чат ЛЮБОЙ запрос:</i>\n"
-        "• <i>«промокод на доставку из ресторана Франк»</i>\n"
-        "• <i>«промокод на доставку яндекс еда»</i>\n"
-        "• <i>«скидка в золотом яблоке или спортмастере»</i>\n"
-        "• <i>«купон на первый заказ купер»</i>",
+        text,
         parse_mode=ParseMode.HTML,
-        reply_markup=get_mode_keyboard("Промокоды")
+        reply_markup=get_promos_inline_keyboard(),
+        disable_web_page_preview=True
     )
-    await callback.message.answer(text, parse_mode=ParseMode.HTML, reply_markup=get_promos_inline_keyboard(), disable_web_page_preview=True)
     await callback.answer()
 
 
@@ -255,6 +279,7 @@ async def cb_start_games(callback: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "ps5_filter_sales")
 async def cb_ps5_filter_sales(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.games_mode)
     user_id = callback.from_user.id
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await get_active_games_freebies(user_id, query="актуальные распродажи и скидки в PS Store")
@@ -265,6 +290,7 @@ async def cb_ps5_filter_sales(callback: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "ps5_filter_plus")
 async def cb_ps5_filter_plus(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.games_mode)
     user_id = callback.from_user.id
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await get_active_games_freebies(user_id, query="новинки игр PS Plus Essential и пополнения каталога Extra/Deluxe")
@@ -275,6 +301,7 @@ async def cb_ps5_filter_plus(callback: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "ps5_filter_leaving")
 async def cb_ps5_filter_leaving(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.games_mode)
     user_id = callback.from_user.id
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await get_active_games_freebies(user_id, query="игры которые скоро удалят из подписки PS Plus Extra Deluxe Last Chance to Play")
@@ -285,6 +312,7 @@ async def cb_ps5_filter_leaving(callback: types.CallbackQuery, state: FSMContext
 
 @router.callback_query(F.data == "ps5_filter_all")
 async def cb_ps5_filter_all(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(ActiveModeStates.games_mode)
     user_id = callback.from_user.id
     await callback.bot.send_chat_action(callback.message.chat.id, ChatAction.TYPING)
     data = await get_active_games_freebies(user_id)
@@ -293,17 +321,54 @@ async def cb_ps5_filter_all(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer("🔄 Полная сводка обновлена!")
 
 
+# --- MESSAGE HANDLERS IN ACTIVE PROMOS MODE ---
+
+@router.message(ActiveModeStates.promos_mode, F.voice | F.video_note | F.audio)
 @router.message(ActiveModeStates.promos_mode, F.text)
 async def handle_promos_dialog(message: types.Message, state: FSMContext):
-    raw_text = message.text.strip() if message.text else ""
+    raw_text = ""
+    if message.voice:
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        try:
+            file = await message.bot.get_file(message.voice.file_id)
+            buf = io.BytesIO()
+            await message.bot.download_file(file.file_path, buf)
+            raw_text = await transcribe_audio_gemini(buf.getvalue(), mime_type="audio/ogg")
+            if raw_text:
+                await message.answer(f"🎙 <b>Вы сказали:</b> «<i>{html.escape(raw_text)}</i>»", parse_mode=ParseMode.HTML)
+        except Exception as e:
+            logger.error(f"Error transcribing voice in promos mode: {e}")
+    elif message.video_note:
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        try:
+            file = await message.bot.get_file(message.video_note.file_id)
+            buf = io.BytesIO()
+            await message.bot.download_file(file.file_path, buf)
+            raw_text = await transcribe_audio_gemini(buf.getvalue(), mime_type="video/mp4")
+            if raw_text:
+                await message.answer(f"📹 <b>Вы сказали:</b> «<i>{html.escape(raw_text)}</i>»", parse_mode=ParseMode.HTML)
+        except Exception as e:
+            logger.error(f"Error transcribing video note in promos mode: {e}")
+    else:
+        raw_text = (message.text or "").strip()
+
     if is_exit_command(raw_text):
         await state.clear()
-        if not raw_text.startswith("/"):
-            await message.answer(
-                "🏁 <b>Режим «Промокоды» завершен.</b> Вы вернулись в главное меню.",
-                parse_mode=ParseMode.HTML,
-                reply_markup=get_main_menu()
-            )
+        await message.answer(
+            "🏁 <b>Режим «Промокоды» завершен.</b> Вы вернулись в главное меню.",
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_main_menu()
+        )
+        return
+
+    # Check if user switched intent to PlayStation / Games
+    t_lower = raw_text.lower()
+    if any(k in t_lower for k in ["playstation", "ps5", "ps plus", "пс плюс", "пс5", "раздачи", "игры месяца"]):
+        await state.set_state(ActiveModeStates.games_mode)
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        data = await get_active_games_freebies(message.from_user.id, query=raw_text)
+        reply = format_ps5_card(data, filter_mode="all", is_direct_query=True)
+        await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_ps5_inline_keyboard(), disable_web_page_preview=True)
         return
 
     user_id = message.from_user.id
@@ -313,17 +378,55 @@ async def handle_promos_dialog(message: types.Message, state: FSMContext):
     await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_promos_inline_keyboard(), disable_web_page_preview=True)
 
 
-@router.message(ActiveModeStates.games_mode)
+# --- MESSAGE HANDLERS IN ACTIVE GAMES MODE ---
+
+@router.message(ActiveModeStates.games_mode, F.voice | F.video_note | F.audio)
+@router.message(ActiveModeStates.games_mode, F.text)
 async def handle_games_dialog(message: types.Message, state: FSMContext):
-    text = message.text or ""
-    if text in ["🏁 Закончить режим (Главное меню)", "🏁 Закончить режим", "/stop", "/exit", "Отмена", "отмена"]:
+    raw_text = ""
+    if message.voice:
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        try:
+            file = await message.bot.get_file(message.voice.file_id)
+            buf = io.BytesIO()
+            await message.bot.download_file(file.file_path, buf)
+            raw_text = await transcribe_audio_gemini(buf.getvalue(), mime_type="audio/ogg")
+            if raw_text:
+                await message.answer(f"🎙 <b>Вы сказали:</b> «<i>{html.escape(raw_text)}</i>»", parse_mode=ParseMode.HTML)
+        except Exception as e:
+            logger.error(f"Error transcribing voice in games mode: {e}")
+    elif message.video_note:
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        try:
+            file = await message.bot.get_file(message.video_note.file_id)
+            buf = io.BytesIO()
+            await message.bot.download_file(file.file_path, buf)
+            raw_text = await transcribe_audio_gemini(buf.getvalue(), mime_type="video/mp4")
+            if raw_text:
+                await message.answer(f"📹 <b>Вы сказали:</b> «<i>{html.escape(raw_text)}</i>»", parse_mode=ParseMode.HTML)
+        except Exception as e:
+            logger.error(f"Error transcribing video note in games mode: {e}")
+    else:
+        raw_text = (message.text or "").strip()
+
+    if is_exit_command(raw_text):
         await state.clear()
         await message.answer("🏁 <b>Режим «PlayStation 5» завершен.</b> Вы вернулись в главное меню.", parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
         return
 
+    # Check if user switched intent to food/promos
+    t_lower = raw_text.lower()
+    if any(k in t_lower for k in ["промокод", "промокоды", "скидк", "купон", "яндекс еда", "самокат", "купер", "додо"]):
+        await state.set_state(ActiveModeStates.promos_mode)
+        await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        data = await get_curated_delivery_promos(message.from_user.id, query=raw_text)
+        reply = format_promos_card(data)
+        await message.answer(reply, parse_mode=ParseMode.HTML, reply_markup=get_promos_inline_keyboard(), disable_web_page_preview=True)
+        return
+
     user_id = message.from_user.id
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
-    data = await get_active_games_freebies(user_id, query=text)
+    data = await get_active_games_freebies(user_id, query=raw_text)
     reply = format_ps5_card(data, filter_mode="all", is_direct_query=True)
     await message.answer(
         reply,

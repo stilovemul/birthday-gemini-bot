@@ -591,6 +591,48 @@ async def handle_generic_text(message: types.Message, bot: Bot):
         await render_movie_recommendations(message, result)
         return
 
+    # 8.6. Universal Promo Codes & Discounts NLP Interceptor
+    promo_triggers = [
+        "промокод", "промокоды", "промокодик", "промокод на", "скидка на", "скидку на", "скидки в",
+        "купон на", "купоны", "акции в", "скидочный", "как сэкономить на доставке", "бонусы на заказ"
+    ]
+    is_promo_intent = any(k in t_lower for k in promo_triggers) and not any(k in t_lower for k in ["подписк", "напомни", "погода", "свет", "выключи", "включи", "кбжу", "кредит"])
+    if is_promo_intent:
+        from modules.freebies_promos.promos import get_curated_delivery_promos
+        from modules.freebies_promos.handlers import format_promos_card, get_promos_inline_keyboard
+        from core.states import ActiveModeStates
+        await state.set_state(ActiveModeStates.promos_mode)
+        await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        data = await get_curated_delivery_promos(user_id, query=text)
+        await message.answer(
+            format_promos_card(data),
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_promos_inline_keyboard(),
+            disable_web_page_preview=True
+        )
+        return
+
+    # 8.7. PlayStation 5 & PS Plus NLP Interceptor
+    games_triggers = [
+        "ps plus", "ps5", "playstation", "пс плюс", "пс5", "раздачи игр", "игры месяца ps",
+        "игры в пс плюс", "скидки в ps store", "распродажа ps store", "удалят из ps plus"
+    ]
+    is_games_intent = any(k in t_lower for k in games_triggers) and not any(k in t_lower for k in ["подписк", "напомни", "погода", "свет", "выключи", "включи", "кбжу"])
+    if is_games_intent:
+        from modules.freebies_promos.games_freebies import get_active_games_freebies
+        from modules.freebies_promos.handlers import format_ps5_card, get_ps5_inline_keyboard
+        from core.states import ActiveModeStates
+        await state.set_state(ActiveModeStates.games_mode)
+        await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+        data = await get_active_games_freebies(user_id, query=text)
+        await message.answer(
+            format_ps5_card(data, filter_mode="all", is_direct_query=True),
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_ps5_inline_keyboard(),
+            disable_web_page_preview=True
+        )
+        return
+
     # 9. Custom Rules & Periodic Tasks Natural NLP (with Date Range support & Strict Intent Verification)
     rule_explicit_triggers = [
         "создай правило", "добавь правило", "новое правило", "периодическое правило",
