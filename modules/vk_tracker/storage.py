@@ -58,6 +58,7 @@ def set_user_vk_config(
     user_id: int,
     token: Optional[str] = None,
     user_id_vk: Optional[str] = None,
+    user_name: Optional[str] = None,
     enabled: bool = True
 ) -> Dict[str, Any]:
     configs = load_vk_configs()
@@ -65,17 +66,28 @@ def set_user_vk_config(
     curr = configs.get(uid, {
         "token": "",
         "user_id_vk": "",
+        "user_name": "Олег Уринев",
         "enabled": True,
         "last_messages": 0,
+        "last_messages_unmuted": 0,
         "last_notifications": 0,
         "last_friends": 0,
-        "last_event_ids": []
+        "last_event_ids": [],
+        "unread_details": [],
+        "last_error": None,
+        "last_error_msg": None,
+        "last_error_time": None,
+        "last_check_time": None
     })
 
     if token is not None:
         curr["token"] = token.strip()
+        curr["last_error"] = None
+        curr["last_error_msg"] = None
     if user_id_vk is not None:
-        curr["user_id_vk"] = user_id_vk.strip()
+        curr["user_id_vk"] = str(user_id_vk).strip()
+    if user_name is not None:
+        curr["user_name"] = user_name.strip()
     curr["enabled"] = enabled
 
     configs[uid] = curr
@@ -87,16 +99,35 @@ def set_user_vk_config(
 def update_vk_state(
     user_id: int,
     messages_count: int,
-    notifications_count: int,
+    messages_unmuted_count: int = 0,
+    notifications_count: int = 0,
     friends_count: int = 0,
-    new_event_ids: Optional[list] = None
+    unread_details: Optional[list] = None,
+    new_event_ids: Optional[list] = None,
+    error: Optional[str] = None,
+    error_msg: Optional[str] = None
 ) -> None:
     configs = load_vk_configs()
     uid = str(user_id)
     if uid in configs:
         configs[uid]["last_messages"] = messages_count
+        configs[uid]["last_messages_unmuted"] = messages_unmuted_count
         configs[uid]["last_notifications"] = notifications_count
         configs[uid]["last_friends"] = friends_count
+        if unread_details is not None:
+            configs[uid]["unread_details"] = unread_details
         if new_event_ids is not None:
             configs[uid]["last_event_ids"] = new_event_ids[-50:]
+        configs[uid]["last_error"] = error
+        configs[uid]["last_error_msg"] = error_msg
+        if error:
+            from datetime import datetime
+            from core.config import MSK_TZ
+            configs[uid]["last_error_time"] = datetime.now(MSK_TZ).strftime("%Y-%m-%d %H:%M:%S MSK")
+        else:
+            configs[uid]["last_error_time"] = None
+        
+        from datetime import datetime
+        from core.config import MSK_TZ
+        configs[uid]["last_check_time"] = datetime.now(MSK_TZ).strftime("%H:%M:%S")
         save_vk_configs(configs)

@@ -106,7 +106,11 @@ def build_full_user_context(user_id: int = 157236577) -> str:
     # 5. VKontakte Tracker
     vk = get_user_vk_config(user_id)
     if vk and vk.get("token"):
-        vk_section = f"VK подключен 🟢 ({vk.get('user_name', 'Олег')}, id{vk.get('user_id_vk', '')}). Последние данные: сообщений {vk.get('last_messages', 0)}, уведомлений {vk.get('last_notifications', 0)}."
+        vk_err = vk.get("last_error")
+        if vk_err:
+            vk_section = f"VK привязан ({vk.get('user_name', 'Олег')}), но требует обновления токена ({vk_err})."
+        else:
+            vk_section = f"VK подключен 🟢 ({vk.get('user_name', 'Олег')}, id{vk.get('user_id_vk', '')}). Непрочитанных диалогов: {vk.get('last_messages', 0)}, уведомлений: {vk.get('last_notifications', 0)}, заявок: {vk.get('last_friends', 0)}."
     else:
         vk_section = "VK ожидает настройки."
 

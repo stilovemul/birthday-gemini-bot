@@ -131,10 +131,13 @@ async def generate_morning_digest(user_id: int = 157236577) -> str:
     # VK
     vk = get_user_vk_config(user_id)
     if vk and vk.get("enabled") and vk.get("token"):
+        vk_error = vk.get("last_error")
         vk_msgs = vk.get("last_messages", 0)
         vk_notifs = vk.get("last_notifications", 0)
-        if vk_msgs > 0 or vk_notifs > 0:
-            inbox_items.append(f"🔵 <b>VK:</b> 📩 {vk_msgs} непрочитанных")
+        if vk_error:
+            inbox_items.append("🔵 <b>VK:</b> ⚠️ требуется обновить токен")
+        elif vk_msgs > 0 or vk_notifs > 0:
+            inbox_items.append(f"🔵 <b>VK:</b> 📩 {vk_msgs} непр. диалогов, 🔔 {vk_notifs} увед.")
         else:
             inbox_items.append("🔵 <b>VK:</b> входящих нет ✅")
 

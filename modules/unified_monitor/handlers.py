@@ -57,13 +57,40 @@ async def build_unified_status_card(user_id: int, bot: Bot) -> Tuple[str, Inline
     vk_notifs = vk_cfg.get("last_notifications", 0)
     vk_friends = vk_cfg.get("last_friends", 0)
     vk_name = vk_cfg.get("user_name", "Олег Уринев")
-    vk_status = "🟢 Активен" if (vk_enabled and vk_has_token) else ("⏸ На паузе" if vk_has_token else "⚪ Не настроен")
+    vk_error = vk_cfg.get("last_error")
+    vk_error_msg = vk_cfg.get("last_error_msg")
+    vk_unread_details = vk_cfg.get("unread_details", [])
+
+    if not vk_has_token:
+        vk_status = "⚪ Не настроен"
+        vk_lines = ["   • Токен не привязан. Нажмите «🔵 ВКонтакте» для подключения"]
+    elif vk_error:
+        vk_status = "⚠️ Требуется обновить токен"
+        vk_lines = [
+            f"   • Ошибка: <i>{html.escape(vk_error_msg or 'VK Flood control / истёк срок')}</i>",
+            "   👉 <i>Нажмите «🔵 ВКонтакте» -> «🔑 Обновить токен VK»</i>"
+        ]
+    elif not vk_enabled:
+        vk_status = "⏸ На паузе"
+        vk_lines = [f"   • Непрочитанных диалогов: <b>{vk_msgs}</b> (уведомления приостановлены)"]
+    else:
+        vk_status = "🟢 Активен"
+        if vk_msgs > 0:
+            vk_lines = [f"   • Непрочитанных диалогов: <b>{vk_msgs}</b> | Уведомлений: <b>{vk_notifs}</b> | Заявок: <b>{vk_friends}</b>"]
+            for d in vk_unread_details[:2]:
+                icon = "👥" if d.get("type") == "chat" else ("🤖" if d.get("type") == "group" else "👤")
+                cnt_str = f" [+{d.get('unread_count')}]" if d.get("unread_count", 1) > 1 else ""
+                vk_lines.append(f"   ↳ {icon} <b>{html.escape(d.get('title', ''))}</b>{cnt_str}: <i>«{html.escape(d.get('text', ''))}»</i>")
+        else:
+            vk_lines = [f"   • Личных диалогов: <b>0</b> (все прочитано) | Уведомлений: <b>{vk_notifs}</b> | Заявок: <b>{vk_friends}</b>"]
+        vk_lines.append("   🔗 <a href='https://vk.com/im'>Открыть диалоги VK</a>")
 
     # 3. MAX info
     max_cfg = get_user_max_config(user_id) or {}
     max_enabled = max_cfg.get("enabled", True)
     max_has_token = bool(max_cfg.get("token"))
     max_name = max_cfg.get("user_name", "Олег")
+    max_msgs = max_cfg.get("last_messages", 0)
     max_status = "🟢 Активен" if (max_enabled and max_has_token) else ("⏸ На паузе" if max_has_token else "⚪ Не настроен")
 
     card_lines = [
@@ -74,11 +101,10 @@ async def build_unified_status_card(user_id: int, bot: Bot) -> Tuple[str, Inline
         "   🔗 <a href='https://www.drive2.ru/my/messages/'>Открыть диалоги</a>",
         "",
         f"🔵 <b>ВКонтакте ({html.escape(vk_name)})</b> — {vk_status}",
-        f"   • Личных сообщений: <b>{vk_msgs}</b> | Уведомлений: <b>{vk_notifs}</b> | Заявок: <b>{vk_friends}</b>",
-        "   🔗 <a href='https://vk.com/im'>Открыть диалоги</a>",
+        *vk_lines,
         "",
         f"💬 <b>Мессенджер MAX ({html.escape(max_name)})</b> — {max_status}",
-        f"   • Непрочитанных диалогов: <b>{max_cfg.get('last_messages', 0)}</b>",
+        f"   • Непрочитанных диалогов: <b>{max_msgs}</b>",
         "   🔗 <a href='https://web.max.ru/'>Открыть web.max.ru</a>",
         "",
         "➖➖➖➖➖➖➖➖➖➖",
@@ -104,6 +130,18 @@ async def build_unified_status_card(user_id: int, bot: Bot) -> Tuple[str, Inline
 async def cmd_unified_monitor(message: types.Message, bot: Bot):
     user_id = message.from_user.id
     await bot.send_chat_action(message.chat.id, ChatAction.TYPING)
+    try:
+        await asyncio.wait_for(
+            asyncio.gather(
+                check_user_drive2(user_id, bot, notify_if_no_change=False),
+                check_vk_for_user(user_id, bot, notify_only_new=False),
+                check_max_for_user(user_id, bot, notify_only_new=False),
+                return_exceptions=True
+            ),
+            timeout=3.5
+        )
+    except Exception:
+        pass
     text, kb = await build_unified_status_card(user_id, bot)
     await message.answer(text, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
 
