@@ -443,8 +443,6 @@ http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/9004/inde
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/9156/index.m3u8
 #EXTINF: tvg-name="Trash" 0 group-title="Кино" tvg-id="3361" tvg-logo="http://epg.one/img/3361.png" tvg-rec="3",Trash HD
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/6396/index.m3u8
-#EXTINF: tvg-name="FX" 0 group-title="Кино" tvg-id="1031" tvg-logo="http://epg.one/img/1031.png" tvg-rec="3",FX HD
-http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/9018/index.m3u8
 #EXTINF: tvg-name="Наше" 0 group-title="Кино" tvg-id="2018" tvg-logo="http://epg.one/img/2018.png" tvg-rec="3",Наше HD
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/9046/index.m3u8
 #EXTINF: tvg-name="Страшное" 0 group-title="Кино" tvg-id="2857" tvg-logo="http://epg.one/img/2857.png" tvg-rec="0",Страшное HD
@@ -2099,8 +2097,6 @@ http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/9198/inde
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/9199/index.m3u8
 #EXTINF: tvg-name="Мультиландия" 0 group-title="Детские" tvg-id="2757" tvg-logo="http://epg.one/img/2757.png" tvg-rec="3",Мультиландия
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/9200/index.m3u8
-#EXTINF: tvg-name="О!" 0 group-title="Детские" tvg-id="1757" tvg-logo="http://epg.one/img/1757.png" tvg-rec="3",О!
-http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/9190/index.m3u8
 #EXTINF: tvg-name="CineMan Cartoons 90" 0 group-title="Детские" tvg-id="4728" tvg-logo="http://epg.one/img/4728.png" tvg-rec="7",CineMan Cartoons 90
 http://sewv654wfcsdwfi87fwvgbngh.siauliairsavlt.pw/iptv/LNUZFZ7YFN4ACA/11001/index.m3u8
 #EXTINF: tvg-name="CineMan Cartoons Short" 0 group-title="Детские" tvg-id="4729" tvg-logo="http://epg.one/img/4729.png" tvg-rec="7",CineMan Cartoons Short
@@ -3783,8 +3779,6 @@ http://hls127.freeott.top:8080/1muz_HD/video.m3u8
 http://stream.mcquack.net/182/index.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Channel One HD (720p)",Channel One HD (720p)
 https://edge1.1internet.tv/dash-live2/streams/1tv-dvr/1tvdash.mpd
-#EXTINF:-1 group-title="Развлекательные" tvg-name="Gagsnetwork (576p)",Gagsnetwork (576p)
-http://hls127.freeott.top:8080/Gagsnetwork/video.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Dacha (1080p)",Dacha (1080p)
 https://dash2.antik.sk/live/test_dacha_tv_atktv/playlist.m3u8
 #EXTINF:-1 group-title="Кино" tvg-name="Fox Life (576p)",Fox Life (576p)
@@ -3883,8 +3877,6 @@ https://tvshops.bonus-tv.ru/cdn/shop24/playlist.m3u8
 https://stream8.cinerama.uz/1497/tracks-v1a1/mono.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Groznyj",Groznyj
 https://balancer.facecast.io/evacoder_hls_hi/UUMLQVAYVlZyH14GRENQVV0G/2/720-3.m3u8
-#EXTINF:-1 group-title="Спорт" tvg-name="MMA TV.com (1080p)",MMA TV.com (1080p)
-https://streams2.sofast.tv/vglive-sk-462904/playlist.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Mir HD (1080p) [Not 24/7]",Mir HD (1080p) [Not 24/7]
 http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mirtv_2500/playlist.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Moldova 1 (1080p)",Moldova 1 (1080p)
@@ -3949,8 +3941,6 @@ http://stream.mcquack.net/389/index.m3u8
 http://hls127.freeott.top:8080/NTV_STIL_TV/video.m3u8
 #EXTINF:-1 group-title="Кино" tvg-name="NTV Series (576p)",NTV Series (576p)
 http://stream.mcquack.net/301/index.m3u8
-#EXTINF:-1 group-title="Общие" tvg-name="NTV SD (576p)",NTV SD (576p)
-http://45.153.24.78/NTV/index.m3u8
 #EXTINF:-1 group-title="Кино" tvg-name="Nevskiy (1080p)",Nevskiy (1080p)
 https://cdn-dvr.ntv.ru/Nevskiy/index.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="NTV Mir (576p)",NTV Mir (576p)
@@ -4273,8 +4263,6 @@ https://cdn.rostelekom-tv.xyz/live/v804qFZr0QVQ1s9Z.m3u8
 https://stream8.cinerama.uz/1428/tracks-v1a1/mono.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Zhivaya Planeta (576p)",Zhivaya Planeta (576p)
 https://stream8.cinerama.uz/1250/tracks-v1a1/mono.m3u8
-#EXTINF:-1 group-title="Общие" tvg-name="Вместе РФ",Вместе РФ
-https://qcpdqumitwf.a.trbcdn.net/livemastersrt/pr4mw_lvie-vmesterf-srt.smil/playlist.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Zoopark (576i)",Zoopark (576i)
 https://stream8.cinerama.uz/1417/tracks-v1a1/mono.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Vitrina TV (720p)",Vitrina TV (720p)
@@ -4313,8 +4301,6 @@ https://belnovosti.cdn.easyhoster.ru:8443/stream.m3u8
 http://kino-1.catcast.tv/content/38617/index.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="АБАЗА-ТВ (1080p)",АБАЗА-ТВ (1080p)
 https://public.apsny.camera/tv_abaza_tv_to_site/index.m3u8
-#EXTINF:-1 group-title="Новостные" tvg-name="КРИК-ТВ (Екатеринбург) (1080p)",КРИК-ТВ (Екатеринбург) (1080p)
-http://cdn-01.bonus-tv.ru/kriktv_edge/playlist.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Дагестан (1080p)",Дагестан (1080p)
 https://dagestan.mediacdn.ru/cdn/dagestan/playlist.m3u8
 #EXTINF:-1 group-title="Новостные" tvg-name="Дон 24 (1080p)",Дон 24 (1080p)
@@ -4345,8 +4331,6 @@ https://streaming.televizor-24-tochka.ru/live/29.m3u8
 https://cdn.ntv.ru/unknown_russia/playlist.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Ингушетия ТВ (1080p)",Ингушетия ТВ (1080p)
 https://ingushetia.mediacdn.ru/cdn/ingushetia/playlist.m3u8
-#EXTINF:-1 group-title="Музыка" tvg-name="Муз союз (576p)",Муз союз (576p)
-https://hls-tvsoyuz.cdnvideo.ru/tvsoyuz2/muzsoyuz.6fw0-58xp-acts-esy0/playlist.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="НВК Саха (1080p) [Not 24/7]",НВК Саха (1080p) [Not 24/7]
 https://live-saha.cdnvideo.ru/saha/saha/playlist.m3u8
 #EXTINF:-1 group-title="Общие" tvg-name="Мир Белагорья (720p) [Geo-blocked]",Мир Белагорья (720p) [Geo-blocked]
@@ -4573,8 +4557,6 @@ https://live.elheddaftv.com:8081/elheddaftv/index.m3u8
 https://amg12058-c15studio-amg12058c1-lg-us-5787.playouts.now.amagi.tv/playlist.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="ESPN8 The Ocho (1080p)",ESPN8 The Ocho (1080p)
 https://d3b6q2ou5kp8ke.cloudfront.net/ESPNTheOcho.m3u8
-#EXTINF:-1 group-title="Спорт" tvg-name="Fast&FunBox",Fast&FunBox
-https://dash3.antik.sk/live/test_fast_and_funbox_medium_atk/playlist.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="Esport3 (1080p) [Not 24/7]",Esport3 (1080p) [Not 24/7]
 https://directes-tv-int.3catdirectes.cat/live-content/esport3-hls/master.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="FIFA+ German (720p)",FIFA+ German (720p)
@@ -4823,8 +4805,6 @@ http://88.212.15.19/live/test_sport1_25p/playlist.m3u8
 http://88.212.15.19/live/spiler2/index.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="Red Bull TV ES (1080p)",Red Bull TV ES (1080p)
 https://886bd3fbc782459f8de7555d32d7e9ce.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-957-WORBLATAMESFAST-WHALETVPLUS/957/whaletvplus/hls/master/playlist.m3u8
-#EXTINF:-1 group-title="Спорт" tvg-name="Sport 1",Sport 1
-http://88.212.15.19/live/sport1_hun/index.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="Sport 2 (1080p)",Sport 2 (1080p)
 http://stream.mcquack.net/392/index.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="Sport 4 (576p)",Sport 4 (576p)
@@ -4833,8 +4813,6 @@ http://stream.mcquack.net/394/index.m3u8
 http://stream.mcquack.net/393/index.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="Sport 5 (1080p)",Sport 5 (1080p)
 http://stream.mcquack.net/212/index.m3u8
-#EXTINF:-1 group-title="Спорт" tvg-name="Sport2",Sport2
-http://88.212.15.19/live/test_sport_2/playlist.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="Sport TV (1080p)",Sport TV (1080p)
 http://178.124.179.122:8080/SportTV/mpegts
 #EXTINF:-1 group-title="Спорт" tvg-name="Sky Racing 2 (720p)",Sky Racing 2 (720p)
@@ -4897,8 +4875,6 @@ https://d3kzwqwnq1f7tq.cloudfront.net/out/v1/0fd608d0807c48edb4713da6b80e8c34/in
 https://5ca3e84a76d30.streamlock.net/tv43gto/tv43gto.smil/.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="Turf Movil (720p)",Turf Movil (720p)
 https://tvturf4.janus.cl/playlist/stream.m3u8?d=w&id=
-#EXTINF:-1 group-title="Спорт" tvg-name="Trace Sport Stars SD",Trace Sport Stars SD
-https://channels.trace.plus/Traceprod/TRACE_SPORT_STARS_sd/index.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="talkSPORT (1080p)",talkSPORT (1080p)
 https://af7a8b4e.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/TEctZ2JfdGFsa1NQT1JUX0hMUw/playlist.m3u8
 #EXTINF:-1 group-title="Спорт" tvg-name="Türkmenistan Sport (406p) [Not 24/7]",Türkmenistan Sport (406p) [Not 24/7]
