@@ -18,9 +18,9 @@ router = Router(name="vk_tracker")
 
 user_vk_input_state: dict = {}
 
-OAUTH_ADMIN_URL = "https://oauth.vk.com/authorize?client_id=6121327&scope=friends,messages,photos,video,docs,notes,wall,groups,notifications,offline&response_type=token&v=5.199"
 OAUTH_ANDROID_URL = "https://oauth.vk.com/authorize?client_id=2274003&scope=friends,messages,photos,video,docs,notes,wall,groups,notifications,offline&response_type=token&v=5.199"
 OAUTH_VKME_URL = "https://oauth.vk.com/authorize?client_id=6146827&scope=friends,messages,photos,video,docs,notes,wall,groups,notifications,offline&response_type=token&v=5.199"
+OAUTH_IPAD_URL = "https://oauth.vk.com/authorize?client_id=3140623&scope=friends,messages,photos,video,docs,notes,wall,groups,notifications,offline&response_type=token&v=5.199"
 
 
 def get_vk_keyboard(is_configured: bool = False, enabled: bool = True) -> InlineKeyboardMarkup:
@@ -76,7 +76,7 @@ async def validate_vk_token(token: str) -> tuple[bool, dict, str]:
                     code = err.get("error_code", 0)
                     msg = err.get("error_msg", "Ошибка доступа")
                     if code == 9:
-                        return False, {}, "VK вернул ошибку Flood control (ограничение частоты запросов к токену). Получите новый токен по ссылке в инструкции."
+                        return False, {}, "VK вернул ошибку Flood control (ограничение частоты запросов к токену). Получите новый токен по ссылке VK Android."
                     return False, {}, f"Ошибка VK ({code}): {msg}"
                 items = data.get("response", [])
                 if items and isinstance(items, list):
@@ -129,8 +129,8 @@ async def cmd_set_vk_token(message: types.Message, bot: Bot):
         user_vk_input_state[user_id] = True
         guide_text = (
             "🔑 <b>Привязка токена ВКонтакте (VK):</b>\n\n"
-            "1. Откройте ссылку авторизации: <a href='" + OAUTH_ADMIN_URL + "'><b>Получить токен VK Admin</b></a>\n"
-            "   <i>(Запасная ссылка: <a href='" + OAUTH_ANDROID_URL + "'>VK Android</a>)</i>\n"
+            "1. Откройте ссылку авторизации: <a href='" + OAUTH_ANDROID_URL + "'><b>Получить токен VK Android</b></a>\n"
+            "   <i>(Запасная ссылка: <a href='" + OAUTH_VKME_URL + "'>VK Me</a>)</i>\n"
             "2. Нажмите <b>«Разрешить»</b>\n"
             "3. Скопируйте адрес из адресной строки браузера (там будет <code>access_token=...</code>) и <b>отправьте его сюда в чат</b>:"
         )
@@ -155,9 +155,9 @@ async def process_vk_token_input(message: types.Message, raw_input: str, bot: Bo
         await message.answer(
             f"❌ <b>Ошибка проверки токена:</b>\n\n"
             f"<code>{html.escape(err_desc)}</code>\n\n"
-            f"💡 <b>Попробуйте открыть ссылку VK Admin и нажать «Разрешить»:</b>\n"
-            f"👉 <a href='{OAUTH_ADMIN_URL}'>Ссылка авторизации VK Admin</a>\n"
-            f"👉 <a href='{OAUTH_ANDROID_URL}'>Запасная ссылка VK Android</a>",
+            f"💡 <b>Попробуйте открыть ссылку VK Android и нажать «Разрешить»:</b>\n"
+            f"👉 <a href='{OAUTH_ANDROID_URL}'>Ссылка авторизации VK Android</a>\n"
+            f"👉 <a href='{OAUTH_VKME_URL}'>Запасная ссылка VK Me</a>",
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True
         )
@@ -232,8 +232,8 @@ async def callback_vk_prompt_token(callback: types.CallbackQuery):
     user_vk_input_state[user_id] = True
     guide_text = (
         "🔑 <b>Привязка / Обновление токена ВКонтакте (VK):</b>\n\n"
-        "1. Перейдите по ссылке авторизации: <a href='" + OAUTH_ADMIN_URL + "'><b>Получить токен VK Admin</b></a>\n"
-        "   <i>(Либо <a href='" + OAUTH_ANDROID_URL + "'>VK Android</a>)</i>\n"
+        "1. Перейдите по ссылке авторизации: <a href='" + OAUTH_ANDROID_URL + "'><b>Получить токен VK Android</b></a>\n"
+        "   <i>(Либо <a href='" + OAUTH_VKME_URL + "'>VK Me</a>)</i>\n"
         "2. Нажмите <b>«Разрешить»</b>\n"
         "3. Скопируйте адресную строку из браузера и <b>просто отправьте её ответным сообщением сюда в чат</b>!"
     )
@@ -245,12 +245,12 @@ async def callback_vk_prompt_token(callback: types.CallbackQuery):
 async def callback_vk_guide(callback: types.CallbackQuery):
     guide_text = (
         "📖 <b>Как получить access_token ВКонтакте за 30 секунд:</b>\n\n"
-        "🔹 <b>Вариант 1 (Основной - VK Admin):</b>\n"
-        "👉 <a href='" + OAUTH_ADMIN_URL + "'><b>Нажмите здесь для получения токена VK Admin</b></a>\n\n"
-        "🔹 <b>Вариант 2 (VK Android):</b>\n"
-        "👉 <a href='" + OAUTH_ANDROID_URL + "'><b>Ссылка авторизации VK Android</b></a>\n\n"
-        "🔹 <b>Вариант 3 (VK Me):</b>\n"
+        "🔹 <b>Вариант 1 (Основной - VK Android):</b>\n"
+        "👉 <a href='" + OAUTH_ANDROID_URL + "'><b>Нажмите здесь для получения токена VK Android</b></a>\n\n"
+        "🔹 <b>Вариант 2 (VK Me):</b>\n"
         "👉 <a href='" + OAUTH_VKME_URL + "'><b>Ссылка авторизации VK Me</b></a>\n\n"
+        "🔹 <b>Вариант 3 (VK iPad):</b>\n"
+        "👉 <a href='" + OAUTH_IPAD_URL + "'><b>Ссылка авторизации VK iPad</b></a>\n\n"
         "<b>Шаги:</b>\n"
         "1. Перейдите по любой ссылке выше в браузере.\n"
         "2. Нажмите кнопку <b>«Разрешить»</b>.\n"
