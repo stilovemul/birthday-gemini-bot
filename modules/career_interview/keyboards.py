@@ -45,6 +45,7 @@ def get_interview_action_keyboard(role_key: str = "custom") -> InlineKeyboardMar
                 InlineKeyboardButton(text="📋 Сменить тему", callback_data="int_act_roles")
             ],
             [
+                InlineKeyboardButton(text="🔙 Назад в меню тем", callback_data="int_act_roles"),
                 InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
             ]
         ]

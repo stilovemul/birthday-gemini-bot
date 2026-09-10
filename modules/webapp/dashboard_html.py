@@ -597,7 +597,7 @@ TMA_DASHBOARD_HTML = r"""<!DOCTYPE html>
           <button class="capsule-btn" onclick="sendWebChatQuick('🎂 У кого из близких ближайший день рождения и сколько осталось дней?')">🎂 Дни рождения</button>
           <button class="capsule-btn" onclick="sendWebChatQuick('🎬 Посоветуй отличный сериал или фильм с высоким рейтингом')">🎬 Кино</button>
           <button class="capsule-btn" onclick="sendWebChatQuick('💳 Сколько всего уходит на регулярные подписки в месяц?')">💳 Подписки</button>
-          <button class="capsule-btn" onclick="sendWebChatQuick('🗣 Hello! Let\'s practice friendly street-smart English for travelling!')">🗣 English</button>
+          <button class="capsule-btn" onclick="sendWebChatQuick('🗣 Покажи топ полезных фраз из модуля «Живой English» для поездок с переводом и русской транскрипцией')">🗣 English</button>
           <button class="capsule-btn" onclick="sendWebChatQuick('🍕 Что можно быстро и вкусно приготовить на ужин за 15 минут?')">🍕 Быстрый ужин</button>
           <button class="capsule-btn" onclick="sendWebChatQuick('🔢 Посчитай выгоду досрочного погашения кредита 2 млн руб под 18%')">🔢 Кредиты</button>
         </div>

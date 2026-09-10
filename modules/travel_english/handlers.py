@@ -13,7 +13,7 @@ from aiogram import Router, types, F, Bot
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
+from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command, is_back_command
 from core.states import ActiveModeStates
 from modules.voice_assistant.transcriber import transcribe_audio_gemini
 from modules.travel_english.formatter import send_clean_html, clean_telegram_html
@@ -43,6 +43,7 @@ from modules.travel_english.keyboards import (
     get_travel_english_main_keyboard,
     get_scenarios_keyboard,
     get_dialog_actions_keyboard,
+    get_back_to_english_keyboard,
     get_quiz_categories_keyboard,
     get_quiz_options_keyboard,
     get_quiz_result_keyboard,
@@ -145,7 +146,7 @@ async def cb_create_custom_scenario(callback: types.CallbackQuery, state: FSMCon
         "• 🍕 <i>«Заказ пиццы по телефону»</i>\n\n"
         "💬 <b>Отправь сообщение в чат прямо сейчас</b> (или надиктуй голосом 🎙) — и мы сразу начнем ролевой диалог!"
     )
-    await send_clean_html(callback, prompt_text, reply_markup=get_dialog_actions_keyboard())
+    await send_clean_html(callback, prompt_text, reply_markup=get_back_to_english_keyboard())
 
 
 async def start_custom_scenario(message: types.Message, state: FSMContext, topic: str, is_voice: bool = False):
@@ -580,7 +581,7 @@ async def cb_eng_menu_instant(callback: types.CallbackQuery, state: FSMContext):
         "• <i>«Высади меня на этом углу»</i>\n\n"
         "💬 <b>Отправь сообщение в чат прямо сейчас:</b>"
     )
-    await send_clean_html(callback, text)
+    await send_clean_html(callback, text, reply_markup=get_back_to_english_keyboard())
 
 
 # -------------------------------------------------------------
@@ -657,8 +658,50 @@ async def handle_recovered_english_text(message: types.Message, state: FSMContex
 async def handle_english_text(message: types.Message, state: FSMContext):
     """Обработка текстовых сообщений пользователя в режиме английского."""
     text = message.text.strip()
+    user_id = message.from_user.id
 
-    # 1. Проверка на команду выхода
+    # 1. Проверка на команду назад (возврат на один шаг)
+    if is_back_command(text):
+        data = await state.get_data()
+        current_scenario = data.get("current_scenario")
+        awaiting_custom = data.get("awaiting_custom_topic")
+        awaiting_instant = data.get("awaiting_instant_translate")
+
+        # Если были внутри диалога или режима ввода темы/фразы — возвращаем на шаг назад в меню английского
+        if current_scenario or awaiting_custom or awaiting_instant:
+            await state.update_data(
+                current_scenario=None,
+                awaiting_custom_topic=False,
+                awaiting_instant_translate=False
+            )
+            profile = get_user_profile(user_id)
+            saved = get_saved_dialog(user_id)
+            welcome_text = (
+                "🔙 <b>Возвращаю на шаг назад в меню «Живой English»!</b>\n"
+                "━━━━━━━━━━━━━━━━━━━\n\n"
+            )
+            if saved and saved.get("turns", 0) > 0:
+                sc_info = get_scenario_info(saved["scenario_key"], user_id=user_id)
+                welcome_text += (
+                    f"💡 <i>Твой диалог сохранен: {sc_info.get('icon', '💬')} {sc_info.get('character', 'Собеседник')} (Раунд {saved['turns']}). "
+                    "Ты сможешь продолжить в любой момент!</i>\n\n"
+                )
+            welcome_text += (
+                f"🏆 <b>Твой статус:</b> {profile['level']} (⭐ {profile['xp']} XP)\n\n"
+                "👇 <b>С чего продолжим? Выбери режим ниже или напиши свою ситуацию:</b>"
+            )
+            await send_clean_html(message, welcome_text, reply_markup=get_travel_english_main_keyboard(user_id))
+            return
+
+        # Если уже находились в главном меню английского — выходим на шаг назад в главное меню бота
+        await state.clear()
+        await message.answer(
+            "🔙 <b>Возвращаю в главное меню бота!</b>",
+            reply_markup=get_main_menu()
+        )
+        return
+
+    # 2. Проверка на команду полного выхода
     if is_exit_command(text):
         await state.clear()
         await message.answer(

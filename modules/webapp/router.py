@@ -511,9 +511,47 @@ async def api_webchat_send(req: WebChatMessageRequest):
         return {"success": False, "reply": "Пожалуйста, введите сообщение."}
     
     uid = req.user_id or TELEGRAM_USER_ID
+    lower = msg.lower()
+
+    # Specialized direct handling for Travel English prompt chip / top phrases
+    if ("живой english" in lower or "english" in lower or "английск" in lower) and ("топ" in lower or "шпаргалк" in lower or "полезн" in lower or "поездок" in lower or "фраз" in lower):
+        return {
+            "success": True,
+            "reply": (
+                "🗣 <b>ТРЕНАЖЕР «ЖИВОЙ ENGLISH»: ТОП-ФРАЗЫ ДЛЯ ПУТЕШЕСТВИЙ</b>\n"
+                "<i>Никакой занудной школьной грамматики — только реальный разговорный сленг нейтивов с переводом и транскрипцией:</i>\n\n"
+                "1. <b>«Can I grab an iced latte to go, please?»</b> [Кэн ай грэб эн айст ла́тэ ту го́у, плиз?]\n"
+                "   — <i>Можно мне холодный латте с собой?</i>\n\n"
+                "2. <b>«Can we get the check, please?»</b> [Кэн уи гет зэ чек, плиз?]\n"
+                "   — <i>Можно нам счет, пожалуйста? (в США — check, в UK — bill).</i>\n\n"
+                "3. <b>«Keep the change!»</b> [Кип зэ чэйндж!]\n"
+                "   — <i>Сдачи не надо! (оставить чаевые).</i>\n\n"
+                "4. <b>«Can we split the bill?»</b> [Кэн уи сплит зэ бил?]\n"
+                "   — <i>Можем разделить счет пополам?</i>\n\n"
+                "5. <b>«Just tap water, please»</b> [Джаст тэп уо́тер, плиз]\n"
+                "   — <i>Обычную бесплатную воду из-под крана / графина.</i>\n\n"
+                "6. <b>«Same again, please!»</b> [Сэйм эгэ́йн, плиз!]\n"
+                "   — <i>Повторите то же самое (в баре).</i>\n\n"
+                "7. <b>«What's the damage on this?»</b> [Уо́тс зэ дэ́мидж он зис?]\n"
+                "   — <i>Сколько с меня? (живой разговорный сленг при расчете).</i>\n\n"
+                "8. <b>«On the side, please»</b> [Он зэ сайд, плиз]\n"
+                "   — <i>Соус отдельно в соуснике, а не в тарелке.</i>\n\n"
+                "💡 <i>Напишите любую фразу по-русски (например: «как сказать, что в номере не работает кондиционер») или по-английски — я разберу её с переводом и транскрипцией!</i>"
+            )
+        }
+
     try:
         from core.gemini import ask_gemini
-        reply = await ask_gemini(uid, msg)
+        english_instruction = None
+        if "english" in lower or "английск" in lower or "переведи" in lower:
+            english_instruction = (
+                "Ты — русскоязычный персональный ментор и наставник разговорного английского для путешествий (Живой English). "
+                "ПРАВИЛА:\n"
+                "1. Все пояснения, советы, разбор ошибок и контекст пиши СТРОГО НА РУССКОМ ЯЗЫКЕ!\n"
+                "2. К каждой английской фразе ОБЯЗАТЕЛЬНО добавляй русский перевод и русскую транскрипцию в квадратных скобках с ударениями (например: [Кэн ай грэб эн айст ла́тэ ту го́у, плиз?]).\n"
+                "3. Категорически запрещено отвечать сплошным английским текстом без русского перевода и транскрипции!"
+            )
+        reply = await ask_gemini(uid, msg, system_instruction=english_instruction)
         return {
             "success": True,
             "reply": reply or "Не удалось получить ответ от нейросети. Попробуйте еще раз."

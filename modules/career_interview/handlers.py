@@ -11,7 +11,7 @@ from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command
+from core.keyboards import get_main_menu, get_mode_keyboard, is_exit_command, is_back_command
 from core.states import ActiveModeStates
 from modules.voice_assistant.transcriber import transcribe_audio_gemini
 from modules.career_interview.roles_catalog import INTERVIEW_ROLES, get_role_info
@@ -243,7 +243,23 @@ async def cb_interview_back_to_roles(callback: types.CallbackQuery, state: FSMCo
 @router.message(ActiveModeStates.career_interview_mode, F.text)
 async def handle_interview_text(message: types.Message, state: FSMContext):
     """Обрабатывает ответ кандидата или ввод индивидуального QA-кейса."""
-    raw_text = message.text.strip()
+    raw_text = (message.text or "").strip()
+
+    # 0. Проверка команды назад (на один шаг)
+    if is_back_command(raw_text):
+        data = await state.get_data()
+        if data.get("role_title") or data.get("interview_history") or data.get("awaiting_custom_role"):
+            await state.update_data(role_title="", current_question="", interview_history="", awaiting_custom_role=False)
+            await message.answer("🔙 <b>Возвращаю на шаг назад в меню направлений QA!</b>", reply_markup=get_mode_keyboard("Собеседование QA"))
+            welcome_text = (
+                "🎙 <b>Тренажер собеседований: QA Manager / QA Lead</b>\n\n"
+                "👇 <b>Выберите направление тренировки или введите свой QA-кейс:</b>"
+            )
+            await send_clean_html(message, welcome_text, reply_markup=get_interview_main_keyboard())
+            return
+        await state.clear()
+        await message.answer("🔙 <b>Возвращаю в главное меню бота!</b>", reply_markup=get_main_menu())
+        return
 
     # 1. Проверка команды выхода
     if is_exit_command(raw_text):
