@@ -132,7 +132,7 @@ def is_exit_command(text: str) -> bool:
         "/cancel",
         "/menu"
     }
-    return t in exit_phrases
+    return t in exit_phrases or is_back_command(text)
 
 
 def get_birthday_submenu() -> ReplyKeyboardMarkup:
