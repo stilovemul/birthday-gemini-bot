@@ -21,7 +21,10 @@ from modules.travel_english.storage import (
     get_user_profile,
     add_user_xp,
     increment_dialogs_count,
-    save_phrase
+    save_phrase,
+    save_dialog_session,
+    get_saved_dialog,
+    clear_saved_dialog
 )
 from modules.travel_english.scenarios_catalog import SCENARIOS, get_scenario_info
 from modules.travel_english.quizzes_catalog import (
@@ -57,33 +60,41 @@ router = Router(name="travel_english")
 ]))))
 async def cmd_travel_english(message: types.Message, state: FSMContext):
     """Открывает главное интерактивное меню живого разговорного английского."""
+    user_id = message.from_user.id
     await state.set_state(ActiveModeStates.travel_english_mode)
     await state.update_data(
-        current_scenario="",
-        scenario_history="",
-        turns=0,
-        current_quiz_id="",
         awaiting_instant_translate=False
     )
 
-    profile = get_user_profile(message.from_user.id)
+    profile = get_user_profile(user_id)
+    saved = get_saved_dialog(user_id)
 
     welcome_text = (
         "🗣 <b>Живой English: Разговорный английский без зубрежки</b>\n"
         "━━━━━━━━━━━━━━━━━━━\n\n"
         "Забудь занудные школьные правила, Past Perfect и таблицы времен! "
         "Здесь только <b>реальный язык для путешествий и общения с иностранцами</b>:\n\n"
-        "• 🎭 <b>Ролевой тренажер:</b> реальные диалоги (кофейня, отель, аэропорт, бар, торг на рынке)\n"
+        "• 🎭 <b>Ролевой тренажер:</b> живые диалоги (кофейня, отель, аэропорт, бар, торг на рынке)\n"
         "• 🎙 <b>Голосовая тренировка:</b> говорите в чат голосом или кружочком — ИИ оценит произношение и естественность\n"
         "• 📝 <b>Проверочные квизы:</b> быстрые тесты на уличный сленг и реакции нейтивов (+XP к уровню)\n"
-        "• ⚡️ <b>Перевод на лету:</b> как сказать любую мысль на уличном сленге с русской транскрипцией\n"
+        "• ⚡️ <b>Перевод на лету:</b> как сказать любую мысль на чистом английском с русской транскрипцией\n"
         "• 📋 <b>Золотые шпаргалки:</b> 50+ готовых фраз-выручалочек для поездок\n\n"
+    )
+
+    if saved and saved.get("turns", 0) > 0:
+        sc_info = get_scenario_info(saved["scenario_key"])
+        welcome_text += (
+            f"💡 <b>У тебя есть активный диалог:</b> {sc_info['icon']} <b>{sc_info['character']}</b> (Раунд {saved['turns']}).\n"
+            f"Ты можешь продолжить общение с того же места или выбрать новую ситуацию!\n\n"
+        )
+
+    welcome_text += (
         f"🏆 <b>Твой статус:</b> {profile['level']} (⭐ {profile['xp']} XP)\n\n"
         "👇 <b>С чего начнем тренировку? Выбери режим:</b>"
     )
 
     await message.answer("Вход в режим «🗣 Живой English»...", reply_markup=get_mode_keyboard("Живой English"))
-    await send_clean_html(message, welcome_text, reply_markup=get_travel_english_main_keyboard())
+    await send_clean_html(message, welcome_text, reply_markup=get_travel_english_main_keyboard(user_id))
 
 
 # -------------------------------------------------------------
@@ -92,24 +103,35 @@ async def cmd_travel_english(message: types.Message, state: FSMContext):
 @router.callback_query(F.data == "eng_main_menu")
 async def cb_eng_main_menu(callback: types.CallbackQuery, state: FSMContext):
     """Возврат в главное меню модуля."""
+    user_id = callback.from_user.id
     await state.set_state(ActiveModeStates.travel_english_mode)
     await state.update_data(awaiting_instant_translate=False)
-    profile = get_user_profile(callback.from_user.id)
+    profile = get_user_profile(user_id)
+    saved = get_saved_dialog(user_id)
 
     text = (
         "🗣 <b>Главное меню «Живой English»</b>\n"
         "━━━━━━━━━━━━━━━━━━━\n\n"
         f"🏆 <b>Уровень:</b> {profile['level']}\n"
         f"⭐️ <b>Опыт:</b> {profile['xp']} XP | 🎯 <b>Правильных ответов:</b> {profile['correct_answers']}/{profile['total_questions']}\n\n"
-        "Выбери нужный режим для прокачки разговорного навыка:"
     )
+
+    if saved and saved.get("turns", 0) > 0:
+        sc_info = get_scenario_info(saved["scenario_key"])
+        text += (
+            f"💡 <b>Активный диалог сохранен:</b> {sc_info['icon']} {sc_info['character']} (Раунд {saved['turns']})\n"
+            "Нажми кнопку ниже, чтобы продолжить беседу!\n\n"
+        )
+
+    text += "Выбери нужный режим для прокачки разговорного навыка:"
     await callback.answer()
-    await send_clean_html(callback, text, reply_markup=get_travel_english_main_keyboard())
+    await send_clean_html(callback, text, reply_markup=get_travel_english_main_keyboard(user_id))
 
 
 @router.callback_query(F.data == "eng_menu_scenarios")
 async def cb_eng_menu_scenarios(callback: types.CallbackQuery, state: FSMContext):
     """Открывает список бытовых сценариев для ролевого диалога."""
+    user_id = callback.from_user.id
     await callback.answer()
     text = (
         "🎭 <b>Ролевой тренажер: Реальные ситуации за границей</b>\n"
@@ -118,9 +140,9 @@ async def cb_eng_menu_scenarios(callback: types.CallbackQuery, state: FSMContext
         "Отвечать можно <b>текстом или голосовыми сообщениями 🎙</b>!\n\n"
         "После каждой фразы тренер даст <b>Native Score (1-10)</b>, русскую транскрипцию и подскажет, "
         "как сказать это еще естественнее на живом сленге.\n\n"
-        "👇 <b>Выбери локацию для практики:</b>"
+        "👇 <b>Выбери локацию для практики (значок ▶️ показывает сохраненный прогресс):</b>"
     )
-    await send_clean_html(callback, text, reply_markup=get_scenarios_keyboard())
+    await send_clean_html(callback, text, reply_markup=get_scenarios_keyboard(user_id))
 
 
 # -------------------------------------------------------------
@@ -156,6 +178,74 @@ async def cb_start_scenario(callback: types.CallbackQuery, state: FSMContext):
     await send_clean_html(callback, opening_msg, reply_markup=get_dialog_actions_keyboard())
 
 
+@router.callback_query(F.data.startswith("eng_resume_"))
+async def cb_resume_scenario(callback: types.CallbackQuery, state: FSMContext):
+    """Возобновляет сохраненный диалог с того места, где остановился пользователь."""
+    sc_key = callback.data.replace("eng_resume_", "").strip()
+    user_id = callback.from_user.id
+    saved = get_saved_dialog(user_id, sc_key)
+    sc_info = get_scenario_info(sc_key)
+
+    if not saved or saved.get("turns", 0) == 0:
+        await cb_start_scenario(callback, state)
+        return
+
+    turns = saved.get("turns", 1)
+    history = saved.get("history", "")
+    last_char_en = saved.get("last_char_reply_en", sc_info["opening_line"])
+    last_char_ru = saved.get("last_char_reply_ru", "")
+    last_sugg = saved.get("last_suggestions", [])
+
+    await state.set_state(ActiveModeStates.travel_english_mode)
+    await state.update_data(
+        current_scenario=sc_key,
+        scenario_history=history,
+        turns=turns,
+        last_suggestions=last_sugg,
+        awaiting_instant_translate=False
+    )
+
+    await callback.answer(f"Возобновляем диалог (Раунд {turns})!")
+
+    char_name = sc_info["character"]
+    resume_msg = (
+        f"{sc_info['icon']} <b>С возвращением в диалог!</b>\n"
+        f"📍 <i>{sc_info['situation']} (Раунд {turns})</i>\n"
+        "━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 <b>{char_name}:</b>\n"
+        f"«<b>{last_char_en}</b>»\n"
+    )
+    if last_char_ru:
+        resume_msg += f"<i>({last_char_ru})</i>\n\n"
+    else:
+        resume_msg += "\n"
+
+    if last_sugg:
+        resume_msg += "💡 <b>Напоминаю варианты, что можно ответить:</b>\n"
+        for idx, s in enumerate(last_sugg, 1):
+            if isinstance(s, dict):
+                en_t = s.get('en', '')
+                ru_t = s.get('ru', '')
+                tr_t = s.get('transcription', '')
+                resume_msg += f"{idx}. <b>«{en_t}»</b>\n"
+                if tr_t:
+                    resume_msg += f"   🗣 <i>{tr_t}</i>\n"
+                if ru_t:
+                    resume_msg += f"   — <i>{ru_t}</i>\n\n"
+            else:
+                resume_msg += f"{idx}. <b>«{s}»</b>\n\n"
+    else:
+        replies = sc_info.get("suggested_replies", [])
+        if replies:
+            resume_msg += "💡 <b>Варианты ответа:</b>\n"
+            for idx, r in enumerate(replies, 1):
+                resume_msg += f"{idx}. <b>«{r}»</b>\n"
+            resume_msg += "\n"
+
+    resume_msg += "✍️ Напиши свой ответ текстом (по-английски или по-русски) или <b>надиктуй голосом 🎙</b>:"
+    await send_clean_html(callback, resume_msg, reply_markup=get_dialog_actions_keyboard())
+
+
 @router.callback_query(F.data == "eng_action_restart")
 async def cb_restart_scenario(callback: types.CallbackQuery, state: FSMContext):
     """Перезапускает текущий ролевой сценарий с чистого листа."""
@@ -163,6 +253,7 @@ async def cb_restart_scenario(callback: types.CallbackQuery, state: FSMContext):
     sc_key = data.get("current_scenario", "bar_dating")
     sc_info = get_scenario_info(sc_key)
 
+    clear_saved_dialog(callback.from_user.id, sc_key)
     await state.update_data(
         scenario_history="",
         turns=0,
@@ -589,4 +680,16 @@ async def process_english_input(message: types.Message, state: FSMContext, user_
 
     # Сохраняем последние подсказки в state
     await state.update_data(last_suggestions=suggestions)
+
+    # Сохраняем сессию на диск, чтобы диалог никогда не терялся при выходе или перезапуске
+    save_dialog_session(
+        user_id=user_id,
+        scenario_key=current_scenario,
+        history=new_history,
+        turns=turns,
+        last_char_reply_en=sim_result.get("character_reply_en", ""),
+        last_char_reply_ru=sim_result.get("character_reply_ru", ""),
+        last_suggestions=suggestions
+    )
+
     await send_clean_html(message, reply_text, reply_markup=get_dialog_actions_keyboard())

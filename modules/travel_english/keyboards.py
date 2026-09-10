@@ -7,14 +7,37 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from modules.travel_english.scenarios_catalog import SCENARIOS
 from modules.travel_english.quizzes_catalog import QUIZ_CATEGORIES
 from modules.travel_english.cheat_sheets import CHEAT_SHEETS
+from modules.travel_english.storage import get_saved_dialog, get_all_saved_dialogs
 
 
-def get_travel_english_main_keyboard() -> InlineKeyboardMarkup:
-    """Главное интерактивное меню модуля английского языка."""
-    kb = [
-        [
+def get_travel_english_main_keyboard(user_id: int = None) -> InlineKeyboardMarkup:
+    """Главное интерактивное меню модуля английского языка с кнопкой продолжения диалога."""
+    kb = []
+
+    # Проверяем, есть ли у пользователя сохраненный диалог
+    saved = get_saved_dialog(user_id) if user_id else None
+    if saved and saved.get("turns", 0) > 0:
+        sc_key = saved.get("scenario_key", "bar_dating")
+        sc_info = SCENARIOS.get(sc_key, {})
+        char_name = sc_info.get("character", "Собеседник")
+        icon = sc_info.get("icon", "💬")
+        turns = saved.get("turns", 1)
+
+        kb.append([
+            InlineKeyboardButton(
+                text=f"⏯ Продолжить диалог: {icon} {char_name} (Раунд {turns})",
+                callback_data=f"eng_resume_{sc_key}"
+            )
+        ])
+        kb.append([
+            InlineKeyboardButton(text="🍸 Новое знакомство в баре (С нуля)", callback_data="eng_sc_bar_dating")
+        ])
+    else:
+        kb.append([
             InlineKeyboardButton(text="🍸 Знакомство с девушкой в баре (Старт)", callback_data="eng_sc_bar_dating")
-        ],
+        ])
+
+    kb.extend([
         [
             InlineKeyboardButton(text="🎭 Другие ситуации (Отель, Кофе, Такси)", callback_data="eng_menu_scenarios")
         ],
@@ -29,20 +52,30 @@ def get_travel_english_main_keyboard() -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
         ]
-    ]
+    ])
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
 
-def get_scenarios_keyboard() -> InlineKeyboardMarkup:
-    """Клавиатура выбора бытовых ситуаций для ролевой игры."""
+def get_scenarios_keyboard(user_id: int = None) -> InlineKeyboardMarkup:
+    """Клавиатура выбора бытовых ситуаций с отображением сохраненного прогресса."""
+    all_saved = get_all_saved_dialogs(user_id) if user_id else {}
     kb = []
     sc_items = list(SCENARIOS.items())
     for i in range(0, len(sc_items), 2):
         row = []
         for key, data in sc_items[i:i+2]:
+            saved = all_saved.get(key)
+            if saved and saved.get("turns", 0) > 0:
+                t = saved["turns"]
+                btn_title = f"{data['title']} (▶️ Р.{t})"
+                cb_data = f"eng_resume_{key}"
+            else:
+                btn_title = f"{data['title']}"
+                cb_data = f"eng_sc_{key}"
+
             row.append(InlineKeyboardButton(
-                text=f"{data['title']}",
-                callback_data=f"eng_sc_{key}"
+                text=btn_title,
+                callback_data=cb_data
             ))
         kb.append(row)
 

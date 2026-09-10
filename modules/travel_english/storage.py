@@ -103,3 +103,85 @@ def save_phrase(user_id: int, phrase: str, translation: str):
     if entry not in saved:
         saved.append(entry)
         _save_data(data)
+
+
+def save_dialog_session(
+    user_id: int,
+    scenario_key: str,
+    history: str,
+    turns: int,
+    last_char_reply_en: str = "",
+    last_char_reply_ru: str = "",
+    last_suggestions: list = None
+):
+    """
+    Сохраняет прогресс и историю текущего диалога на диск в data/travel_english_stats.json.
+    Диалог никогда не потеряется при выходе в меню или перезапуске бота.
+    """
+    data = _load_data()
+    uid = str(user_id)
+    if uid not in data:
+        get_user_profile(user_id)
+        data = _load_data()
+
+    dialogs = data[uid].setdefault("saved_dialogs", {})
+    dialogs[scenario_key] = {
+        "scenario_key": scenario_key,
+        "history": history,
+        "turns": turns,
+        "last_char_reply_en": last_char_reply_en,
+        "last_char_reply_ru": last_char_reply_ru,
+        "last_suggestions": last_suggestions or []
+    }
+    data[uid]["last_active_scenario"] = scenario_key
+    _save_data(data)
+
+
+def get_saved_dialog(user_id: int, scenario_key: str = None) -> Optional[Dict[str, Any]]:
+    """
+    Возвращает сохраненную сессию диалога.
+    Если scenario_key не передан — возвращает последний активный незавершенный диалог.
+    """
+    data = _load_data()
+    uid = str(user_id)
+    if uid not in data:
+        return None
+
+    dialogs = data[uid].get("saved_dialogs", {})
+    if scenario_key:
+        return dialogs.get(scenario_key)
+
+    last_key = data[uid].get("last_active_scenario")
+    if last_key and last_key in dialogs:
+        session = dialogs[last_key]
+        if session.get("turns", 0) > 0:
+            return session
+
+    # Поиск любого активного диалога с turns > 0
+    for sk, s in dialogs.items():
+        if s.get("turns", 0) > 0:
+            return s
+
+    return None
+
+
+def get_all_saved_dialogs(user_id: int) -> Dict[str, Any]:
+    """Возвращает словарь всех сохраненных сессий пользователя."""
+    data = _load_data()
+    uid = str(user_id)
+    if uid not in data:
+        return {}
+    return data[uid].get("saved_dialogs", {})
+
+
+def clear_saved_dialog(user_id: int, scenario_key: str):
+    """Очищает историю конкретного сценария при нажатии 'Начать сначала'."""
+    data = _load_data()
+    uid = str(user_id)
+    if uid in data and "saved_dialogs" in data[uid]:
+        if scenario_key in data[uid]["saved_dialogs"]:
+            del data[uid]["saved_dialogs"][scenario_key]
+            if data[uid].get("last_active_scenario") == scenario_key:
+                data[uid]["last_active_scenario"] = None
+            _save_data(data)
+
