@@ -27,41 +27,75 @@ async def fetch_vk_updates(token: str) -> Tuple[bool, Dict[str, Any], str]:
 
     try:
         async with aiohttp.ClientSession() as session:
+            messages_total = 0
+            messages_unmuted = 0
+            friends = 0
+            notifications = 0
+            business_notify = 0
+            unread_details = []
+            has_any_success = False
+
             # 1. Fetch counters
             counters_url = f"https://api.vk.com/method/account.getCounters?v={VK_API_VERSION}&access_token={token}"
-            async with session.get(counters_url, headers=headers, timeout=aiohttp.ClientTimeout(total=8)) as resp:
-                if resp.status != 200:
-                    return False, {"error_code": resp.status, "error_type": "http_error"}, f"Ошибка сети VK: HTTP {resp.status}"
+            try:
+                async with session.get(counters_url, headers=headers, timeout=aiohttp.ClientTimeout(total=6)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        if "response" in data:
+                            has_any_success = True
+                            counters = data.get("response", {})
+                            messages_total = counters.get("messages", 0)
+                            messages_unmuted = counters.get("messages_unread_unmuted", 0)
+                            friends = counters.get("friends", 0)
+                            notifications = counters.get("notifications", 0)
+                            business_notify = counters.get("business_notify_all", 0)
+                        elif "error" in data:
+                            err = data["error"]
+                            err_code = err.get("error_code", 0)
+                            err_msg = err.get("error_msg", "Ошибка доступа")
+                            if err_code in [5, 4, 15, 27, 28]:
+                                return False, {"error_code": err_code, "error_type": "auth_failed"}, f"Ошибка авторизации VK ({err_msg}). Требуется обновить токен."
+            except Exception as e:
+                logger.warning(f"Failed to fetch VK counters: {e}")
 
-                data = await resp.json()
-                if "error" in data:
-                    err = data["error"]
-                    err_code = err.get("error_code", 0)
-                    err_msg = err.get("error_msg", "Ошибка доступа")
-                    if err_code == 9:
-                        return False, {"error_code": 9, "error_type": "flood_control"}, "VK Flood control: действие заблокировано VK. Требуется обновить токен."
-                    elif err_code in [5, 4, 15, 27, 28]:
-                        return False, {"error_code": err_code, "error_type": "auth_failed"}, f"Ошибка авторизации VK ({err_msg}). Требуется обновить токен."
-                    return False, {"error_code": err_code, "error_type": "api_error"}, f"Ошибка VK ({err_code}): {err_msg}"
+            # 2. Fetch friends requests if counters was 0 or not available
+            if friends == 0:
+                try:
+                    friends_url = f"https://api.vk.com/method/friends.getRequests?v={VK_API_VERSION}&access_token={token}&need_viewed=1"
+                    async with session.get(friends_url, headers=headers, timeout=aiohttp.ClientTimeout(total=6)) as f_resp:
+                        if f_resp.status == 200:
+                            f_data = await f_resp.json()
+                            if "response" in f_data:
+                                has_any_success = True
+                                friends = f_data["response"].get("count", 0)
+                except Exception:
+                    pass
 
-                counters = data.get("response", {})
-                messages_total = counters.get("messages", 0)
-                messages_unmuted = counters.get("messages_unread_unmuted", 0)
-                friends = counters.get("friends", 0)
-                notifications = counters.get("notifications", 0)
-                business_notify = counters.get("business_notify_all", 0)
+            # 3. Fetch notifications if counters was 0 or not available
+            if notifications == 0:
+                try:
+                    notif_url = f"https://api.vk.com/method/notifications.get?v={VK_API_VERSION}&access_token={token}&count=5"
+                    async with session.get(notif_url, headers=headers, timeout=aiohttp.ClientTimeout(total=6)) as n_resp:
+                        if n_resp.status == 200:
+                            n_data = await n_resp.json()
+                            if "response" in n_data:
+                                has_any_success = True
+                                notifications = n_data["response"].get("count", 0)
+                except Exception:
+                    pass
 
-            # 2. Fetch conversations details if any unread
-            unread_details = []
+            # 4. Fetch conversations details if any unread
             conv_url = f"https://api.vk.com/method/messages.getConversations?filter=unread&extended=1&count=10&v={VK_API_VERSION}&access_token={token}"
-            async with session.get(conv_url, headers=headers, timeout=aiohttp.ClientTimeout(total=8)) as conv_resp:
-                if conv_resp.status == 200:
-                    conv_data = await conv_resp.json()
-                    if "response" in conv_data:
-                        r = conv_data["response"]
-                        conv_count = r.get("count", 0)
-                        if conv_count > messages_total:
-                            messages_total = conv_count
+            try:
+                async with session.get(conv_url, headers=headers, timeout=aiohttp.ClientTimeout(total=6)) as conv_resp:
+                    if conv_resp.status == 200:
+                        conv_data = await conv_resp.json()
+                        if "response" in conv_data:
+                            has_any_success = True
+                            r = conv_data["response"]
+                            conv_count = r.get("count", 0)
+                            if conv_count > messages_total:
+                                messages_total = conv_count
 
                         # Build lookups for profiles and groups
                         profiles = {p["id"]: f"{p.get('first_name', '')} {p.get('last_name', '')}".strip() for p in r.get("profiles", [])}

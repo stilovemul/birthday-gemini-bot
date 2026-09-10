@@ -18,8 +18,8 @@ router = Router(name="vk_tracker")
 
 user_vk_input_state: dict = {}
 
-OAUTH_MAIN_URL = "https://oauth.vk.com/authorize?client_id=7913379&redirect_uri=https://oauth.vk.com/blank.html&scope=friends,messages,photos,video,docs,notes,wall,groups,notifications,offline&response_type=token&v=5.199"
-OAUTH_ALT_URL = "https://oauth.vk.com/authorize?client_id=2685278&redirect_uri=https://oauth.vk.com/blank.html&scope=friends,messages,photos,video,docs,notes,wall,groups,notifications,offline&response_type=token&v=5.199"
+OAUTH_MAIN_URL = "https://oauth.vk.com/authorize?client_id=7913379&redirect_uri=https://oauth.vk.com/blank.html&scope=6238211&response_type=token&v=5.131&revoke=1"
+OAUTH_ALT_URL = "https://oauth.vk.com/authorize?client_id=7913379&redirect_uri=https://oauth.vk.com/blank.html&scope=friends,photos,video,docs,notes,wall,groups,notifications,offline&response_type=token&v=5.131&revoke=1"
 
 
 def get_vk_keyboard(is_configured: bool = False, enabled: bool = True) -> InlineKeyboardMarkup:
