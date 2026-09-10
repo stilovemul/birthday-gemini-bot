@@ -97,74 +97,76 @@ async def fetch_vk_updates(token: str) -> Tuple[bool, Dict[str, Any], str]:
                             if conv_count > messages_total:
                                 messages_total = conv_count
 
-                        # Build lookups for profiles and groups
-                        profiles = {p["id"]: f"{p.get('first_name', '')} {p.get('last_name', '')}".strip() for p in r.get("profiles", [])}
-                        groups = {g["id"]: g.get("name", "Сообщество") for g in r.get("groups", [])}
+                            # Build lookups for profiles and groups
+                            profiles = {p["id"]: f"{p.get('first_name', '')} {p.get('last_name', '')}".strip() for p in r.get("profiles", [])}
+                            groups = {g["id"]: g.get("name", "Сообщество") for g in r.get("groups", [])}
 
-                        items = r.get("items", [])
-                        for it in items:
-                            conv = it.get("conversation", {})
-                            peer = conv.get("peer", {})
-                            peer_id = peer.get("id", 0)
-                            p_type = peer.get("type", "user")
-                            unread_in_conv = conv.get("unread_count", 1)
+                            items = r.get("items", [])
+                            for it in items:
+                                conv = it.get("conversation", {})
+                                peer = conv.get("peer", {})
+                                peer_id = peer.get("id", 0)
+                                p_type = peer.get("type", "user")
+                                unread_in_conv = conv.get("unread_count", 1)
 
-                            # Determine Title
-                            if p_type == "chat":
-                                title = conv.get("chat_settings", {}).get("title", f"Беседа #{peer_id}")
-                            elif p_type == "group" or peer_id < 0:
-                                title = groups.get(abs(peer_id), f"Сообщество {peer_id}")
-                            else:
-                                title = profiles.get(peer_id, f"Пользователь {peer_id}")
+                                # Determine Title
+                                if p_type == "chat":
+                                    title = conv.get("chat_settings", {}).get("title", f"Беседа #{peer_id}")
+                                elif p_type == "group" or peer_id < 0:
+                                    title = groups.get(abs(peer_id), f"Сообщество {peer_id}")
+                                else:
+                                    title = profiles.get(peer_id, f"Пользователь {peer_id}")
 
-                            # Determine Text / Snippet
-                            last_msg = it.get("last_message", {})
-                            text = last_msg.get("text", "").replace("\n", " ").strip()
+                                # Determine Text / Snippet
+                                last_msg = it.get("last_message", {})
+                                text = last_msg.get("text", "").replace("\n", " ").strip()
 
-                            # Check attachments
-                            attachments = last_msg.get("attachments", [])
-                            att_labels = []
-                            for att in attachments:
-                                a_type = att.get("type", "")
-                                if a_type == "photo":
-                                    att_labels.append("📷 Фото")
-                                elif a_type == "video":
-                                    att_labels.append("🎥 Видео")
-                                elif a_type == "audio_message" or a_type == "doc" and att.get("doc", {}).get("type") == 5:
-                                    att_labels.append("🎤 Голосовое")
-                                elif a_type == "doc":
-                                    att_labels.append("📎 Документ")
-                                elif a_type == "audio":
-                                    att_labels.append("🎵 Аудио")
-                                elif a_type == "sticker":
-                                    att_labels.append("👾 Стикер")
-                                elif a_type == "gift":
-                                    att_labels.append("🎁 Подарок")
-                                elif a_type == "wall":
-                                    att_labels.append("📢 Запись")
+                                # Check attachments
+                                attachments = last_msg.get("attachments", [])
+                                att_labels = []
+                                for att in attachments:
+                                    a_type = att.get("type", "")
+                                    if a_type == "photo":
+                                        att_labels.append("📷 Фото")
+                                    elif a_type == "video":
+                                        att_labels.append("🎥 Видео")
+                                    elif a_type == "audio_message" or a_type == "doc" and att.get("doc", {}).get("type") == 5:
+                                        att_labels.append("🎤 Голосовое")
+                                    elif a_type == "doc":
+                                        att_labels.append("📎 Документ")
+                                    elif a_type == "audio":
+                                        att_labels.append("🎵 Аудио")
+                                    elif a_type == "sticker":
+                                        att_labels.append("👾 Стикер")
+                                    elif a_type == "gift":
+                                        att_labels.append("🎁 Подарок")
+                                    elif a_type == "wall":
+                                        att_labels.append("📢 Запись")
 
-                            if last_msg.get("fwd_messages"):
-                                att_labels.append("📩 Пересланные сообщ.")
+                                if last_msg.get("fwd_messages"):
+                                    att_labels.append("📩 Пересланные сообщ.")
 
-                            if att_labels and not text:
-                                snippet = " | ".join(att_labels)
-                            elif att_labels and text:
-                                if len(text) > 40:
-                                    text = text[:40] + "..."
-                                snippet = f"{text} ({', '.join(att_labels)})"
-                            else:
-                                snippet = text or "[Сообщение]"
+                                if att_labels and not text:
+                                    snippet = " | ".join(att_labels)
+                                elif att_labels and text:
+                                    if len(text) > 40:
+                                        text = text[:40] + "..."
+                                    snippet = f"{text} ({', '.join(att_labels)})"
+                                else:
+                                    snippet = text or "[Сообщение]"
 
-                            if len(snippet) > 70:
-                                snippet = snippet[:70] + "..."
+                                if len(snippet) > 70:
+                                    snippet = snippet[:70] + "..."
 
-                            unread_details.append({
-                                "title": title,
-                                "type": p_type,
-                                "peer_id": peer_id,
-                                "unread_count": unread_in_conv,
-                                "text": snippet
-                            })
+                                unread_details.append({
+                                    "title": title,
+                                    "type": p_type,
+                                    "peer_id": peer_id,
+                                    "unread_count": unread_in_conv,
+                                    "text": snippet
+                                })
+            except Exception:
+                pass
 
             return True, {
                 "messages_total": messages_total,
