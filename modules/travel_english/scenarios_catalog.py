@@ -178,6 +178,271 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
     }
 }
 
+CUSTOM_SCENARIOS_CACHE: Dict[str, Dict[str, Any]] = {}
 
-def get_scenario_info(key: str) -> Dict[str, Any]:
-    return SCENARIOS.get(key, SCENARIOS["coffee_shop"])
+
+def register_custom_scenario(key: str, data: Dict[str, Any]):
+    """Регистрирует сгенерированный сценарий в оперативной памяти."""
+    CUSTOM_SCENARIOS_CACHE[key] = data
+
+
+def get_scenario_info(key: str, user_id: int = None, custom_info: Dict[str, Any] = None) -> Dict[str, Any]:
+    """Возвращает информацию о сценарии (включая пользовательские темы)."""
+    if custom_info:
+        return custom_info
+    if key in CUSTOM_SCENARIOS_CACHE:
+        return CUSTOM_SCENARIOS_CACHE[key]
+    if user_id:
+        try:
+            from modules.travel_english.storage import get_saved_dialog
+            saved = get_saved_dialog(user_id, key)
+            if saved and "scenario_info" in saved:
+                return saved["scenario_info"]
+        except Exception:
+            pass
+    if key in SCENARIOS:
+        return SCENARIOS[key]
+    return SCENARIOS.get("custom", SCENARIOS["coffee_shop"])
+
+
+def build_custom_scenario_offline(topic: str) -> Dict[str, Any]:
+    """
+    Быстрый оффлайн-конструктор сценариев на базовом школьном английском (A1-B1)
+    для популярных бытовых ситуаций: магазин, аренда авто, врач, спортзал и др.
+    """
+    t_lower = topic.lower()
+
+    # 1. Магазин / Супермаркет / Продавец-консультант / Одежда
+    if any(w in t_lower for w in ["магазин", "продав", "кассир", "покупк", "одежд", "вещ", "супермаркет", "размер", "store", "shop", "market", "clothes"]):
+        return {
+            "title": "🛒 Общение в магазине с продавцом",
+            "icon": "🛒",
+            "character": "Продавец Крис (Chris / Store Clerk)",
+            "character_role": "Приветливый консультант в магазине одежды и товаров",
+            "situation": "Ты зашел в магазин. К тебе подходит дружелюбный продавец-консультант.",
+            "opening_line": "Hello! Welcome to our store. How can I help you today? Are you looking for anything specific? (Здравствуйте! Добро пожаловать в наш магазин. Чем могу помочь? Ищете что-то конкретное?)",
+            "starter_tip": (
+                "📚 <b>Полезные базовые слова раунда:</b>\n"
+                "• <b>looking for</b> [лу́кин фор] — ищу / подыскиваю\n"
+                "• <b>size</b> [сайз] — размер (S, M, L, XL)\n"
+                "• <b>how much is it?</b> [хау мач из ит?] — сколько это стоит?\n"
+                "• <b>fitting room</b> [фи́тин рум] — примерочная\n\n"
+                "🗣 <b>Как просто ответить (выбери любой вариант или скажи голосом 🎙):</b>\n"
+                "1. <i>«Hello! I am just looking around, thank you.»</i>\n"
+                "   [Хелло́у! Ай эм джаст лу́кин эра́унд, сэнк ю]\n"
+                "   — Здравствуйте! Я просто осматриваюсь, спасибо.\n\n"
+                "2. <i>«Hi! Do you have this in size M or L?»</i>\n"
+                "   [Хай! Ду ю хэв зис ин сайз эм ор эл?]\n"
+                "   — Привет! У вас есть это в размере M или L?\n\n"
+                "3. <i>«Hello! How much does this cost? Can I pay by card?»</i>\n"
+                "   [Хелло́у! Хау мач даз зис кост? Кэн ай пэй бай кард?]\n"
+                "   — Здравствуйте! Сколько это стоит? Могу я оплатить картой?"
+            ),
+            "suggested_replies": [
+                "Hello! I am just looking around, thank you.",
+                "Hi! Do you have this in size M or L?",
+                "Hello! How much does this cost? Can I pay by card?"
+            ]
+        }
+
+    # 2. Аренда авто / Такси / Прокат
+    elif any(w in t_lower for w in ["машин", "авто", "аренд", "прокат", "каршеринг", "такси", "car", "rent"]):
+        return {
+            "title": "🚗 Аренда автомобиля",
+            "icon": "🚗",
+            "character": "Менеджер Марк (Mark / Rental Agent)",
+            "character_role": "Сотрудник стойки проката автомобилей",
+            "situation": "Ты подошел к стойке проката авто в аэропорту, чтобы взять машину на время поездки.",
+            "opening_line": "Hello! Welcome to Car Rental. Do you have a reservation, or are you looking to rent a car today? (Здравствуйте! Добро пожаловать. У вас есть бронь или хотите арендовать автомобиль сегодня?)",
+            "starter_tip": (
+                "📚 <b>Полезные базовые слова раунда:</b>\n"
+                "• <b>reservation</b> [рэзэрвэ́йшн] — бронь\n"
+                "• <b>driver's license</b> [дра́йвэрз ла́йсэнс] — водительские права\n"
+                "• <b>insurance</b> [иншу́рэнс] — страховка\n\n"
+                "🗣 <b>Как просто ответить:</b>\n"
+                "1. <i>«Hi! I want to rent an economy car for three days.»</i>\n"
+                "   [Хай! Ай уонт ту рэнт эн ико́номи кар фор зри дэйз]\n"
+                "   — Привет! Я хочу арендовать эконом-авто на 3 дня.\n\n"
+                "2. <i>«Hello! I have a reservation under Oleg. Here are my documents.»</i>\n"
+                "   [Хелло́у! Ай хэв э рэзэрвэ́йшн а́ндэр Оле́г. Хир ар май до́кьюмэнтс]\n"
+                "   — Здравствуйте! У меня бронь на Олега. Вот мои документы.\n\n"
+                "3. <i>«How much is full insurance per day?»</i>\n"
+                "   [Хау мач из фул иншу́рэнс пёр дэй?]\n"
+                "   — Сколько стоит полная страховка в сутки?"
+            ),
+            "suggested_replies": [
+                "Hi! I want to rent an economy car for three days.",
+                "Hello! I have a reservation under Oleg. Here are my documents.",
+                "How much is full insurance per day?"
+            ]
+        }
+
+    # 3. Врач / Больница / Клиника / Аптека
+    elif any(w in t_lower for w in ["врач", "доктор", "больниц", "клиник", "болит", "живот", "голов", "doctor", "clinic", "hospital"]):
+        return {
+            "title": "🏥 Разговор с врачом в клинике",
+            "icon": "🏥",
+            "character": "Доктор Смит (Dr. Smith)",
+            "character_role": "Внимательный дежурный врач",
+            "situation": "Ты на приеме у врача за границей из-за недомогания.",
+            "opening_line": "Good morning. Please take a seat. What seems to be the problem today? Where does it hurt? (Доброе утро. Присаживайтесь, пожалуйста. На что жалуетесь? Где болит?)",
+            "starter_tip": (
+                "📚 <b>Полезные базовые слова раунда:</b>\n"
+                "• <b>hurt / pain</b> [хёрт / пэйн] — болит / боль\n"
+                "• <b>headache</b> [хэ́дэйк] — головная боль\n"
+                "• <b>fever</b> [фи́вэр] — температура / жар\n\n"
+                "🗣 <b>Как просто ответить:</b>\n"
+                "1. <i>«Hello, doctor. I have a bad headache and fever since yesterday.»</i>\n"
+                "   [Хелло́у, до́ктор. Ай хэв э бэд хэ́дэйк энд фи́вэр синс йе́стэрдэй]\n"
+                "   — Здравствуйте, доктор. У меня сильная головная боль и жар со вчерашнего дня.\n\n"
+                "2. <i>«My stomach hurts after food poisoning. What medicine can I take?»</i>\n"
+                "   [Май ста́мак хёртс а́фтэр фуд по́йзонинг. Уот мэ́дисин кэн ай тэйк?]\n"
+                "   — У меня болит живот после отравления. Какое лекарство мне принять?\n\n"
+                "3. <i>«I feel weak and dizzy. Do you have a prescription for me?»</i>\n"
+                "   [Ай фил уик энд ди́зи. Ду ю хэв э прискри́пшн фор ми?]\n"
+                "   — Я чувствую слабость и головокружение. Выпишете мне рецепт?"
+            ),
+            "suggested_replies": [
+                "Hello, doctor. I have a bad headache and fever since yesterday.",
+                "My stomach hurts after food poisoning. What medicine can I take?",
+                "I feel weak and dizzy. Do you have a prescription for me?"
+            ]
+        }
+
+    # 4. Спортзал / Тренер / Фитнес
+    elif any(w in t_lower for w in ["зал", "спортзал", "тренер", "фитнес", "тренировк", "gym", "workout"]):
+        return {
+            "title": "🏋️‍♂️ В спортзале с тренером",
+            "icon": "🏋️‍♂️",
+            "character": "Тренер Дэн (Coach Dan)",
+            "character_role": "Фитнес-инструктор в тренажерном зале",
+            "situation": "Ты зашел в спортзал на тренировку за границей.",
+            "opening_line": "Hey! Welcome to the gym. First time working out here? Looking for a day pass or a workout session? (Привет! Добро пожаловать в зал. Впервые здесь? Нужен разовый пропуск или тренировка?)",
+            "starter_tip": (
+                "📚 <b>Полезные базовые слова раунда:</b>\n"
+                "• <b>day pass</b> [дэй пас] — разовый абонемент\n"
+                "• <b>locker room</b> [ло́кэр рум] — раздевалка\n"
+                "• <b>weights</b> [уэйтс] — гантели / тренажеры\n\n"
+                "🗣 <b>Как просто ответить:</b>\n"
+                "1. <i>«Hi! I would like a day pass, please. How much is it?»</i>\n"
+                "   [Хай! Ай вуд лайк э дэй пас, плиз. Хау мач из ит?]\n"
+                "   — Привет! Я бы хотел разовый пропуск, пожалуйста. Сколько он стоит?\n\n"
+                "2. <i>«Where is the locker room and water cooler?»</i>\n"
+                "   [Уэр из зэ ло́кэр рум энд уо́тэр ку́лэр?]\n"
+                "   — Где находится раздевалка и кулер с водой?\n\n"
+                "3. <i>«Can you show me where the free weights are?»</i>\n"
+                "   [Кэн ю шо́у ми уэр зэ фри уэйтс ар?]\n"
+                "   — Можете показать, где зона свободных весов?"
+            ),
+            "suggested_replies": [
+                "Hi! I would like a day pass, please. How much is it?",
+                "Where is the locker room and water cooler?",
+                "Can you show me where the free weights are?"
+            ]
+        }
+
+    # 5. Универсальный сценарий для любой произвольной ситуации
+    cleaned_title = topic.strip().capitalize()
+    if len(cleaned_title) > 40:
+        cleaned_title = cleaned_title[:37] + "..."
+
+    return {
+        "title": f"✍️ {cleaned_title}",
+        "icon": "💬",
+        "character": "Собеседник Алекс (Alex)",
+        "character_role": f"Твой англоязычный собеседник в ситуации «{topic}»",
+        "situation": f"Ты за границей. Ситуация: {topic}.",
+        "opening_line": f"Hello! Nice to meet you. We are in this situation: {topic}. How can I help you today? (Здравствуйте! Приятно познакомиться. Наша ситуация: {topic}. Чем я могу помочь вам сегодня?)",
+        "starter_tip": (
+            "📚 <b>Полезные базовые слова раунда:</b>\n"
+            "• <b>nice to meet you</b> [найс ту мит ю] — приятно познакомиться\n"
+            "• <b>help</b> [хэлп] — помогать / помощь\n"
+            "• <b>I would like</b> [ай вуд лайк] — я бы хотел\n\n"
+            "🗣 <b>Как просто ответить (пиши по-английски или по-русски):</b>\n"
+            "1. <i>«Hello! I want to practice this situation with you.»</i>\n"
+            "   [Хелло́у! Ай уонт ту прэ́ктис зис ситьюэ́йшн уиз ю]\n"
+            "   — Здравствуйте! Я хочу потренировать эту ситуацию с вами.\n\n"
+            "2. <i>«Hi! Can you explain how this works, please?»</i>\n"
+            "   [Хай! Кэн ю эксплэ́йн хау зис уоркс, плиз?]\n"
+            "   — Привет! Можете объяснить, как это устроено, пожалуйста?\n\n"
+            "3. <i>«Hello! Let's start, I am ready!»</i>\n"
+            "   [Хелло́у! Лэтс старт, ай эм рэ́ди!]\n"
+            "   — Здравствуйте! Давайте начнем, я готов!"
+        ),
+        "suggested_replies": [
+            "Hello! I want to practice this situation with you.",
+            "Hi! Can you explain how this works, please?",
+            "Hello! Let's start, I am ready!"
+        ]
+    }
+
+
+async def generate_custom_scenario(topic: str) -> Dict[str, Any]:
+    """
+    Генерирует уникальный ролевой сценарий по любой теме пользователя.
+    Использует Gemini API, если доступен, либо мгновенно отдает умный оффлайн-шаблон.
+    """
+    import re
+    import json
+    import logging
+    from core.gemini import get_genai_client, CANDIDATE_MODELS
+
+    logger = logging.getLogger("CustomScenarioGenerator")
+    offline_fallback = build_custom_scenario_offline(topic)
+
+    system_prompt = """Ты — опытный методист разговорного английского языка.
+Пользователь хочет потренировать диалог в конкретной жизненной ситуации.
+ПРАВИЛО: ЧИСТЫЙ ШКОЛЬНЫЙ БАЗОВЫЙ АНГЛИЙСКИЙ (A1-B1)! Никакого заумного сленга и сложной грамматики.
+
+Сгенерируй JSON-карточку нового сценария:
+1. "title": краткое название с эмодзи (например: "🛒 Покупка кроссовок в магазине").
+2. "icon": подходящий эмодзи.
+3. "character": имя и роль персонажа (например: "Продавец Крис (Chris)").
+4. "character_role": краткое описание его роли.
+5. "situation": описание обстановки (1-2 предложения на русском).
+6. "opening_line": первая реплика персонажа на простом школьном английском с русским переводом в скобках.
+7. "starter_tip": HTML-подсказка со словариком полезных слов (3-4 слова с русской транскрипцией и переводом) и 3 простыми вариантами ответа с транскрипцией и переводом.
+8. "suggested_replies": массив из 3 простых фраз ответа на английском.
+
+СТРОГО верни JSON:
+{
+  "title": "...",
+  "icon": "...",
+  "character": "...",
+  "character_role": "...",
+  "situation": "...",
+  "opening_line": "...",
+  "starter_tip": "...",
+  "suggested_replies": ["...", "...", "..."]
+}
+"""
+
+    try:
+        client = get_genai_client()
+        for model_name in CANDIDATE_MODELS:
+            try:
+                resp = await client.aio.models.generate_content(
+                    model=model_name,
+                    contents=f"Создай сценарий для тренировки ситуации: «{topic}»",
+                    config={
+                        "system_instruction": system_prompt,
+                        "temperature": 0.4,
+                        "response_mime_type": "application/json"
+                    }
+                )
+                if resp and resp.text:
+                    cleaned = resp.text.strip()
+                    m = re.search(r"\{.*\}", cleaned, re.DOTALL)
+                    if m:
+                        data = json.loads(m.group(0))
+                        if "title" in data and "opening_line" in data:
+                            return data
+            except Exception as e:
+                err_str = str(e)
+                if "401" in err_str or "UNAUTHENTICATED" in err_str or "ACCOUNT_STATE_INVALID" in err_str:
+                    break
+                logger.warning(f"Model {model_name} failed to generate custom scenario: {e}")
+    except Exception as e:
+        logger.warning(f"Gemini custom scenario generation failed: {e}")
+
+    return offline_fallback

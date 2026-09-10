@@ -112,7 +112,8 @@ def save_dialog_session(
     turns: int,
     last_char_reply_en: str = "",
     last_char_reply_ru: str = "",
-    last_suggestions: list = None
+    last_suggestions: list = None,
+    scenario_info: Optional[Dict[str, Any]] = None
 ):
     """
     Сохраняет прогресс и историю текущего диалога на диск в data/travel_english_stats.json.
@@ -125,7 +126,7 @@ def save_dialog_session(
         data = _load_data()
 
     dialogs = data[uid].setdefault("saved_dialogs", {})
-    dialogs[scenario_key] = {
+    entry = {
         "scenario_key": scenario_key,
         "history": history,
         "turns": turns,
@@ -133,6 +134,12 @@ def save_dialog_session(
         "last_char_reply_ru": last_char_reply_ru,
         "last_suggestions": last_suggestions or []
     }
+    if scenario_info:
+        entry["scenario_info"] = scenario_info
+    elif scenario_key in dialogs and "scenario_info" in dialogs[scenario_key]:
+        entry["scenario_info"] = dialogs[scenario_key]["scenario_info"]
+
+    dialogs[scenario_key] = entry
     data[uid]["last_active_scenario"] = scenario_key
     _save_data(data)
 

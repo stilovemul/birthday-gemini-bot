@@ -450,6 +450,8 @@ async def api_calc_loan(req: LoanCalcRequest):
 
 
 @router.get("/app", response_class=HTMLResponse)
+@router.get("/webapp", response_class=HTMLResponse)
+@router.get("/chat", response_class=HTMLResponse)
 async def serve_mini_app():
     from modules.webapp.dashboard_html import TMA_DASHBOARD_HTML
     return HTMLResponse(
@@ -460,6 +462,68 @@ async def serve_mini_app():
             "Expires": "0",
         }
     )
+
+
+@router.get("/manifest.json")
+async def get_pwa_manifest():
+    return JSONResponse(
+        content={
+            "name": "AiGem Antigravity Super-Bot",
+            "short_name": "AiGem Bot",
+            "description": "Персональный ИИ-ассистент, умный дом, дайджест, трекеры и 39 модулей",
+            "start_url": "/",
+            "scope": "/",
+            "display": "standalone",
+            "orientation": "portrait",
+            "background_color": "#090D16",
+            "theme_color": "#0A84FF",
+            "icons": [
+                {
+                    "src": "https://cdn-icons-png.flaticon.com/512/4712/4712109.png",
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                },
+                {
+                    "src": "https://cdn-icons-png.flaticon.com/512/4712/4712109.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    )
+
+
+class WebChatMessageRequest(BaseModel):
+    message: str
+    user_id: Optional[int] = None
+    session_id: Optional[str] = "web_user"
+
+
+@router.post("/api/webchat/send")
+async def api_webchat_send(req: WebChatMessageRequest):
+    """
+    Sends user message directly to the Gemini AI engine with full real-time user context,
+    enabling live conversation on the standalone website.
+    """
+    msg = req.message.strip()
+    if not msg:
+        return {"success": False, "reply": "Пожалуйста, введите сообщение."}
+    
+    uid = req.user_id or TELEGRAM_USER_ID
+    try:
+        from core.gemini import ask_gemini
+        reply = await ask_gemini(uid, msg)
+        return {
+            "success": True,
+            "reply": reply or "Не удалось получить ответ от нейросети. Попробуйте еще раз."
+        }
+    except Exception as e:
+        logger.error(f"WebChat Gemini error: {e}", exc_info=True)
+        return {
+            "success": False,
+            "reply": f"Ошибка обработки запроса: {str(e)}"
+        }
 
 
 

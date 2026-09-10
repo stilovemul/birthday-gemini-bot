@@ -252,7 +252,7 @@ def generate_smart_offline_turn(scenario_key: str, user_message: str, history: s
         }
 
     # 3. Сценарий: Отель (Портье Майкл)
-    elif scenario_key == "hotel_checkin":
+    elif scenario_key in ["hotel_checkin", "hotel_reception"]:
         return {
             "character_reply_en": "Welcome, sir! I found your booking. Your room is on the 4th floor with a quiet view. May I have your passport for a moment?",
             "character_reply_ru": "Добро пожаловать, сэр! Я нашел вашу бронь. Ваш номер на 4-м этаже с тихим видом. Могу я взглянуть на ваш паспорт на секунду?",
@@ -272,22 +272,118 @@ def generate_smart_offline_turn(scenario_key: str, user_message: str, history: s
             ]
         }
 
-    # 4. Общий резервный ответ для любого сценария
+    # 4. Сценарий: Магазин / Супермаркет / Одежда / Продавец (Store / Shopping)
+    elif "store" in scenario_key or "shop" in scenario_key or any(w in text_lower for w in ["магазин", "продав", "кассир", "покупк", "одежд", "вещ", "размер", "скидк", "купить", "цена", "рубл", "доллар"]):
+        # Тема цены или скидки
+        if any(w in text_lower for w in ["how much", "cost", "price", "discount", "cheap", "expensive", "цена", "стоимост", "скидк", "дорого", "скольк"]):
+            better_phrase = "How much does this cost? Is there any discount?"
+            better_transcr = "[Хау мач даз зис кост? Из зэр э́ни ди́скаунт?]"
+            return {
+                "character_reply_en": "This item is 35 dollars. And if you buy two items today, you get a 10 percent discount! Would you like to try it on?",
+                "character_reply_ru": "Этот товар стоит 35 долларов. А если возьмете две вещи сегодня, получите скидку 10%! Хотите примерить?",
+                "base_score": score,
+                "vocabulary": [
+                    {"word": "item", "transcription": "[а́йтэм]", "translation": "товар / вещь"},
+                    {"word": "discount", "transcription": "[ди́скаунт]", "translation": "скидка"},
+                    {"word": "try it on", "transcription": "[трай ит он]", "translation": "примерить это"}
+                ],
+                "better_base_phrase": better_phrase,
+                "phonetic_transcription_ru": better_transcr,
+                "teacher_feedback": feedback,
+                "suggested_replies": [
+                    {"en": "Yes, where is the fitting room, please?", "ru": "Да, где находится примерочная?", "transcription": "[Йес, уэр из зэ фи́тин рум, плиз?]"},
+                    {"en": "That is a good deal. Can I pay by card?", "ru": "Это выгодное предложение. Могу я оплатить картой?", "transcription": "[Зэт из э гуд дил. Кэн ай пэй бай кард?]"},
+                    {"en": "35 dollars is a bit expensive for me. Do you have a cheaper one?", "ru": "35 долларов дороговато для меня. Есть что-то подешевле?", "transcription": "[Сёти файв до́лларз из э бит экспэ́нсив фор ми. Ду ю хэв э чи́пэр уан?]"}
+                ]
+            }
+
+        # Тема размера или наличия
+        elif any(w in text_lower for w in ["size", "medium", "large", "small", "have", "color", "black", "white", "размер", "цвет", "черн", "бел", "есть"]):
+            better_phrase = "Do you have this shirt in size M or in black color?"
+            better_transcr = "[Ду ю хэв зис шёрт ин сайз эм ор ин блэк ка́лор?]"
+            return {
+                "character_reply_en": "Yes, we have medium and large in stock! Here is the black one. The fitting rooms are right around the corner.",
+                "character_reply_ru": "Да, у нас есть размеры M и L в наличии! Вот черный вариант. Примерочные прямо за углом.",
+                "base_score": score,
+                "vocabulary": [
+                    {"word": "in stock", "transcription": "[ин сток]", "translation": "в наличии / на складе"},
+                    {"word": "fitting room", "transcription": "[фи́тин рум]", "translation": "примерочная кабинка"},
+                    {"word": "around the corner", "transcription": "[эра́унд зэ ко́рнэр]", "translation": "за углом"}
+                ],
+                "better_base_phrase": better_phrase,
+                "phonetic_transcription_ru": better_transcr,
+                "teacher_feedback": feedback,
+                "suggested_replies": [
+                    {"en": "Thank you, I will go try it on.", "ru": "Спасибо, я пойду примерю.", "transcription": "[Сэнк ю, ай уил гоу трай ит он]"},
+                    {"en": "It fits me perfectly! I will take it.", "ru": "Сидит идеально! Я это беру.", "transcription": "[Ит фитс ми пё́рфэктли! Ай уил тэйк ит]"},
+                    {"en": "Do you also have running shoes in size 42?", "ru": "А у вас также есть кроссовки 42 размера?", "transcription": "[Ду ю о́лсоу хэв ра́нин шуз ин сайз фо́ти ту?]"}
+                ]
+            }
+
+        # Тема оплаты на кассе
+        elif any(w in text_lower for w in ["pay", "card", "cash", "receipt", "bag", "касс", "оплат", "карт", "наличн", "пакет", "чек"]):
+            better_phrase = "Can I pay by card, please? And I need a bag."
+            better_transcr = "[Кэн ай пэй бай кард, плиз? Энд ай нид э бэг]"
+            return {
+                "character_reply_en": "Certainly! You can tap your card on the terminal right here. Do you need a receipt in the bag?",
+                "character_reply_ru": "Конечно! Приложите карту к терминалу прямо здесь. Чек положить в пакет?",
+                "base_score": score,
+                "vocabulary": [
+                    {"word": "tap your card", "transcription": "[тэп ёр кард]", "translation": "приложите карту бесконтактно"},
+                    {"word": "terminal", "transcription": "[тё́рминал]", "translation": "терминал оплаты"},
+                    {"word": "receipt", "transcription": "[риси́т]", "translation": "кассовый чек"}
+                ],
+                "better_base_phrase": better_phrase,
+                "phonetic_transcription_ru": better_transcr,
+                "teacher_feedback": feedback,
+                "suggested_replies": [
+                    {"en": "Yes, please put the receipt in the bag. Thank you!", "ru": "Да, пожалуйста, положите чек в пакет. Спасибо!", "transcription": "[Йес, плиз пут зэ риси́т ин зэ бэг. Сэнк ю!]"},
+                    {"en": "No receipt needed. Have a great day!", "ru": "Чек не нужен. Отличного дня!", "transcription": "[Ноу риси́т ни́дэд. Хэв э грэйт дэй!]"},
+                    {"en": "Thank you for your help, goodbye!", "ru": "Спасибо за помощь, до свидания!", "transcription": "[Сэнк ю фор ёр хэлп, гудба́й!]"}
+                ]
+            }
+
+        # Базовый ответ продавца
+        else:
+            better_phrase = "Hello, I am looking for a gift and casual clothes."
+            better_transcr = "[Хелло́у, ай эм лу́кин фор э гифт энд кэ́жуал кло́уз]"
+            return {
+                "character_reply_en": "Great! We have a new collection on the central display. Are you looking for clothes, shoes, or something specific?",
+                "character_reply_ru": "Отлично! У нас новая коллекция на центральной стойке. Вы ищете одежду, обувь или что-то конкретное?",
+                "base_score": score,
+                "vocabulary": [
+                    {"word": "display", "transcription": "[дисплэ́й]", "translation": "витрина / стойка с товаром"},
+                    {"word": "looking for", "transcription": "[лу́кин фор]", "translation": "искать / присматривать"},
+                    {"word": "casual clothes", "transcription": "[кэ́жуал кло́уз]", "translation": "повседневная одежда"}
+                ],
+                "better_base_phrase": better_phrase,
+                "phonetic_transcription_ru": better_transcr,
+                "teacher_feedback": feedback,
+                "suggested_replies": [
+                    {"en": "I am looking for a warm jacket and a t-shirt.", "ru": "Я ищу теплую куртку и футболку.", "transcription": "[Ай эм лу́кин фор э уорм джэ́кэт энд э ти-шёрт]"},
+                    {"en": "I am just browsing, thanks. I will let you know if I need help.", "ru": "Я пока просто смотрю, спасибо. Обращусь, если понадобится помощь.", "transcription": "[Ай эм джаст бра́узин, сэнкс. Ай уил лэт ю ноу иф ай нид хэлп]"},
+                    {"en": "Where can I find the sale section?", "ru": "Где находится отдел со скидками и распродажей?", "transcription": "[Уэр кэн ай файнд зэ сэйл сэ́кшн?]"}
+                ]
+            }
+
+    # 5. Общий умный ответ для любого ролевого сценария
+    char_name = sc_info.get("character", "Собеседник")
     return {
-        "character_reply_en": "I understand! That sounds great. What do you plan to do next?",
-        "character_reply_ru": "Понял тебя! Звучит отлично. Что планируешь делать дальше?",
+        "character_reply_en": f"I understand completely! That makes sense. Tell me, how can we solve this or what do you want to do next?",
+        "character_reply_ru": "Я тебя прекрасно понял! Это логично. Скажи, как мы можем это решить или что ты хочешь сделать дальше?",
         "base_score": score,
         "vocabulary": [
-            {"word": "sounds great", "transcription": "[са́ундз грэйт]", "translation": "звучит отлично"},
-            {"word": "plan to do", "transcription": "[плэн ту ду]", "translation": "планировать сделать"}
+            {"word": "makes sense", "transcription": "[мэйкс сэнс]", "translation": "это имеет смысл / логично"},
+            {"word": "solve", "transcription": "[солв]", "translation": "решить проблему"},
+            {"word": "next", "transcription": "[нэкст]", "translation": "дальше / затем"}
         ],
-        "better_base_phrase": "I understand and I would like to continue.",
-        "phonetic_transcription_ru": "[Ай а́ндэрстэнд энд ай вуд лайк ту конти́нью]",
+        "better_base_phrase": "I understand your point and I am ready to continue.",
+        "phonetic_transcription_ru": "[Ай а́ндэрстэнд ёр пойнт энд ай эм рэ́ди ту конти́нью]",
         "teacher_feedback": feedback,
         "suggested_replies": [
-            {"en": "I want to walk around and see the city.", "ru": "Я хочу прогуляться и посмотреть город.", "transcription": "[Ай уонт ту уок эра́унд энд си зэ си́ти]"},
-            {"en": "I think I will grab something to eat.", "ru": "Думаю, перекушу чем-нибудь.", "transcription": "[Ай синк ай уил грэб са́мсинг ту ит]"},
-            {"en": "I will just relax for a while.", "ru": "Я просто немного отдохну.", "transcription": "[Ай уил джаст рилэ́кс фор э уа́йл]"}
+            {"en": "I want to explain the details clearly.", "ru": "Я хочу подробно объяснить детали.", "transcription": "[Ай уонт ту эксплэ́йн зэ ди́тэйлз кли́рли]"},
+            {"en": "Can you give me your advice on this?", "ru": "Можешь дать мне свой совет по этому поводу?", "transcription": "[Кэн ю гив ми ёр эдва́йс он зис?]"},
+            {"en": "Let's finish this and move forward.", "ru": "Давай закончим с этим и двинемся дальше.", "transcription": "[Лэтс фи́ниш зис энд мув фо́руорд]"}
         ]
     }
 

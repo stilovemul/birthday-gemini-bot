@@ -219,6 +219,20 @@ async def healthz():
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
+    """Serves the full-fledged standalone modern website dashboard."""
+    from modules.webapp.dashboard_html import TMA_DASHBOARD_HTML
+    return HTMLResponse(
+        content=TMA_DASHBOARD_HTML,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    )
+
+
+@app.get("/status", response_class=HTMLResponse)
+async def status_table():
     now_msk = datetime.now(MSK_TZ).strftime("%Y-%m-%d %H:%M:%S MSK")
     birthdays = get_sorted_birthdays()
     notes = load_notes()

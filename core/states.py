@@ -59,6 +59,7 @@ class ActiveModeStates(StatesGroup):
     auto_scam_shield_mode = State()
     dark_kitchen_mode = State()
     travel_english_mode = State()
+    travel_english_awaiting_custom_topic = State()
 
 
 class SubTrackerStates(StatesGroup):

@@ -41,6 +41,9 @@ from modules.gourmet_assistant.food_pairing import (
     get_food_pairing_recommendation
 )
 from modules.gourmet_assistant.storage import set_shelf_session, get_shelf_session
+from core.states import ActiveModeStates
+from modules.travel_english.storage import get_saved_dialog
+from modules.travel_english.handlers import process_english_input
 
 logger = logging.getLogger("AIAssistantHandler")
 router = Router(name="ai_assistant")
@@ -218,10 +221,29 @@ async def handle_photo(message: types.Message, bot: Bot):
 
 
 @router.message(F.text)
-async def handle_generic_text(message: types.Message, bot: Bot):
+async def handle_generic_text(message: types.Message, bot: Bot, state: FSMContext = None):
     text = (message.text or "").strip()
     user_id = message.from_user.id
     t_lower = text.lower()
+
+    # 0. Проверяем, идет ли активный диалог на английском языке (защита от сброса сессии на Render)
+    saved_eng = get_saved_dialog(user_id)
+    if saved_eng and (saved_eng.get("turns", 0) > 0 or saved_eng.get("history")):
+        has_latin = bool(re.search(r"[a-zA-Z]{2,}", text))
+        current_st = await state.get_state() if state else None
+        if has_latin or current_st == ActiveModeStates.travel_english_mode:
+            logger.info(f"Routing English dialogue message from user {user_id} back to Travel English")
+            if state:
+                await state.set_state(ActiveModeStates.travel_english_mode)
+                await state.update_data(
+                    current_scenario=saved_eng.get("scenario_key", "bar_dating"),
+                    scenario_history=saved_eng.get("history", ""),
+                    turns=saved_eng.get("turns", 1),
+                    last_suggestions=saved_eng.get("last_suggestions", []),
+                    custom_scenario_info=saved_eng.get("scenario_info")
+                )
+            await process_english_input(message, state, text)
+            return
 
     # Check if user is asking for Food Pairing ("буду кушать пиццу, какое пиво взять?", "под стейк какое вино?", etc.)
     if is_food_pairing_query(text):

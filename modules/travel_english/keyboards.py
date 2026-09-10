@@ -30,9 +30,15 @@ def get_travel_english_main_keyboard(user_id: int = None) -> InlineKeyboardMarku
             )
         ])
         kb.append([
+            InlineKeyboardButton(text="✍️ Задать свою ситуацию (Магазин, Авто...)", callback_data="eng_create_custom")
+        ])
+        kb.append([
             InlineKeyboardButton(text="🍸 Новое знакомство в баре (С нуля)", callback_data="eng_sc_bar_dating")
         ])
     else:
+        kb.append([
+            InlineKeyboardButton(text="✍️ Задать свою ситуацию (Магазин, Авто...)", callback_data="eng_create_custom")
+        ])
         kb.append([
             InlineKeyboardButton(text="🍸 Знакомство с девушкой в баре (Старт)", callback_data="eng_sc_bar_dating")
         ])
@@ -59,7 +65,11 @@ def get_travel_english_main_keyboard(user_id: int = None) -> InlineKeyboardMarku
 def get_scenarios_keyboard(user_id: int = None) -> InlineKeyboardMarkup:
     """Клавиатура выбора бытовых ситуаций с отображением сохраненного прогресса."""
     all_saved = get_all_saved_dialogs(user_id) if user_id else {}
-    kb = []
+    kb = [
+        [
+            InlineKeyboardButton(text="✍️ Задать свою ситуацию (Магазин, Авто...)", callback_data="eng_create_custom")
+        ]
+    ]
     sc_items = list(SCENARIOS.items())
     for i in range(0, len(sc_items), 2):
         row = []
