@@ -78,6 +78,7 @@ dp.message.outer_middleware(MenuNavigationMiddleware())
 
 # Register modular routers in prioritized logical order:
 # 1. State-filtered specialized interactive mode routers (highest priority)
+dp.include_router(travel_english_router)
 dp.include_router(career_interview_router)
 dp.include_router(gourmet_router)
 dp.include_router(geo_gastro_router)
@@ -96,7 +97,6 @@ dp.include_router(book_sommelier_router)
 dp.include_router(music_sommelier_router)
 dp.include_router(auto_scam_shield_router)
 dp.include_router(dark_kitchen_router)
-dp.include_router(travel_english_router)
 
 # 2. System and specific feature routers
 dp.include_router(digest_router)

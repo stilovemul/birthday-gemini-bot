@@ -455,7 +455,19 @@ async def handle_english_text(message: types.Message, state: FSMContext):
         )
         return
 
-    await process_english_input(message, state, text, is_voice=False)
+    try:
+        await message.bot.send_chat_action(chat_id=message.chat.id, action="typing")
+    except Exception:
+        pass
+
+    try:
+        await process_english_input(message, state, text, is_voice=False)
+    except Exception as e:
+        logger.error(f"Error handling english text input: {e}", exc_info=True)
+        await message.answer(
+            "⚠️ Не удалось обработать ответ. Нажмите кнопку ниже или повторите фразу:",
+            reply_markup=get_dialog_actions_keyboard()
+        )
 
 
 async def process_english_input(message: types.Message, state: FSMContext, user_text: str, is_voice: bool = False):
@@ -466,7 +478,14 @@ async def process_english_input(message: types.Message, state: FSMContext, user_
     awaiting_instant = data.get("awaiting_instant_translate", False)
     history = data.get("scenario_history", "")
 
-    # Если включен режим мгновенного перевода или фраза явно вопросительная
+    # Если сценарий не был выбран, но текст на английском — по умолчанию стартуем сценарий знакомства в баре
+    if not current_scenario and not awaiting_instant:
+        has_latin = bool(re.search(r"[a-zA-Z]{3,}", user_text))
+        if has_latin:
+            current_scenario = "bar_dating"
+            await state.update_data(current_scenario="bar_dating")
+
+    # Если включен режим мгновенного перевода или фраза явно вопросительная на русском
     is_translation_query = awaiting_instant or any(w in user_text.lower() for w in [
         "как сказать", "как по-английски", "переведи", "как будет", "как спросить"
     ])

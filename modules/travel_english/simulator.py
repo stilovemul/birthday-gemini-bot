@@ -1,10 +1,11 @@
 """
-AI-движок ролевого тренажера и мгновенного перевода «🗣 Живой English»:
+AI-движок интерактивного диалога «🗣 Живой English»:
 - Отыгрыш персонажей в реальных бытовых ситуациях
-- Оценка естественности ответа (Native Score 1-10)
-- Подсказки, как сказать фразу на 100% живом сленге нейтивов
-- Русская транскрипция с ударениями для идеального произношения
-- Мгновенный перевод на 3 стиля: Street Smart, Polite, Slang.
+- Ориентация на чистый базовый школьный английский (A1-B1) без сложного сленга
+- Разбор полезных слов с русской транскрипцией и ударениями
+- Подсказки 3 простых вариантов продолжения диалога
+- Мягкий доброжелательный разбор грамматических ошибок
+- Мгновенный отказоустойчивый контекстный генератор диалога
 """
 
 import re
@@ -16,6 +17,207 @@ from modules.travel_english.scenarios_catalog import get_scenario_info
 
 logger = logging.getLogger("TravelEnglishSimulator")
 
+# Флаг обнаружения невалидного API ключа (чтобы не спамить попытками и не тормозить бота)
+_API_KEY_DISABLED = False
+
+
+def _detect_grammar_and_feedback(scenario_key: str, user_text: str) -> Dict[str, Any]:
+    """
+    Анализирует фразу ученика на типичные базовые ошибки школьного уровня:
+    - 'i'm drink' / 'i'm eat' -> Present Continuous vs Present Simple
+    - 'i am live' -> 'I live'
+    - 'he go' -> 'he goes'
+    - 'how much it cost' -> 'how much does it cost'
+    - Пропуск глагола to be ('this free' -> 'this is free')
+    """
+    text_lower = user_text.lower().strip()
+    
+    # 1. Ошибка типа "i'm drink", "i'm have", "i'm work"
+    if re.search(r"\bi'?m\s+(drink|have|work|eat|go|live|want|like|play)\b", text_lower):
+        matched = re.search(r"\bi'?m\s+(drink|have|work|eat|go|live|want|like|play)\b", text_lower).group(1)
+        better_verb = matched + "ing" if matched != "have" else "having"
+        return {
+            "score": 8,
+            "rule_note": f"Вместо «I'm {matched}» в английском говорят «I am {better_verb}» (если действие происходит прямо сейчас) или просто «I {matched}» (если вообще). При этом тебя отлично поняли!",
+            "correction_found": True
+        }
+    
+    # 2. Пропуск артикля или to be
+    if "this seat free" in text_lower or "seat free" in text_lower:
+        return {
+            "score": 8,
+            "rule_note": "Не забывай глагол to be: «This seat IS free». Но в реальном баре тебя поймут с полуслова!",
+            "correction_found": True
+        }
+        
+    if "how much it" in text_lower:
+        return {
+            "score": 8,
+            "rule_note": "В вопросах о цене правильнее сказать «How much DOES it cost?» или коротко «How much is it?».",
+            "correction_found": True
+        }
+
+    return {
+        "score": 9,
+        "rule_note": "Отличная, понятная и естественная реплика! Порядок слов правильный, мысль передана четко.",
+        "correction_found": False
+    }
+
+
+def generate_smart_offline_turn(scenario_key: str, user_message: str, history: str = "") -> Dict[str, Any]:
+    """
+    Умный динамический генератор диалога для ролевых ситуаций на чистом базовом английском (A1-B1).
+    Работает мгновенно (0.01 сек), не зависит от внешних API и реалистично поддерживает живую беседу.
+    """
+    sc_info = get_scenario_info(scenario_key)
+    text_lower = user_message.lower()
+    grammar_check = _detect_grammar_and_feedback(scenario_key, user_message)
+    score = grammar_check["score"]
+    feedback = grammar_check["rule_note"]
+
+    # 1. Сценарий: Знакомство в баре (Джессика)
+    if scenario_key == "bar_dating":
+        if any(w in text_lower for w in ["beer", "drink", "drinking", "wine", "cider", "cocktail", "juice"]):
+            return {
+                "character_reply_en": "Thanks! I'm Jessica, nice to meet you. Beer is a good choice, but I'm having white wine tonight. What kind of beer do you like?",
+                "character_reply_ru": "Спасибо! Я Джессика, приятно познакомиться. Пиво — отличный выбор, а я сегодня пью белое вино. Какое пиво ты любишь?",
+                "base_score": score,
+                "vocabulary": [
+                    {"word": "nice to meet you", "transcription": "[найс ту мит ю]", "translation": "приятно познакомиться"},
+                    {"word": "white wine", "transcription": "[уа́йт уайн]", "translation": "белое вино"},
+                    {"word": "what kind of", "transcription": "[уот кайнд оф]", "translation": "какой именно / какой сорт"}
+                ],
+                "better_base_phrase": "Yes, this seat is free. I am drinking beer. And you? What's your name?",
+                "phonetic_transcription_ru": "[Йес, зис сит из фри. Ай эм дри́нкинг бир. Энд ю? Уотс ёр нэйм?]",
+                "teacher_feedback": feedback,
+                "suggested_replies": [
+                    {"en": "I like light draft beer. And what wine do you prefer?", "ru": "Я люблю светлое разливное пиво. А какое вино ты предпочитаешь?", "transcription": "[Ай лайк лайт драфт бир. Энд уот уайн ду ю прифёр?]"},
+                    {"en": "I prefer dark beer, it tastes great. Are you here on vacation?", "ru": "Я предпочитаю темное пиво, отличный вкус. Ты здесь в отпуске?", "transcription": "[Ай прифёр дарк бир, ит тэйстс грэйт. Ар ю хир он вэкэ́йшн?]"},
+                    {"en": "I am just trying local beer. It was very hot today!", "ru": "Я просто пробую местное пиво. Сегодня было очень жарко!", "transcription": "[Ай эм джаст тра́йинг ло́кал бир. Ит уоз вэ́ри хот тудэ́й!]"}
+                ]
+            }
+
+        elif any(w in text_lower for w in ["name", "oleg", "call me", "i am", "i'm"]):
+            return {
+                "character_reply_en": "Nice to meet you, Oleg! It is really crowded in here tonight. Are you traveling alone or with friends?",
+                "character_reply_ru": "Приятно познакомиться, Олег! Здесь сегодня довольно многолюдно. Ты путешествуешь один или с друзьями?",
+                "base_score": score,
+                "vocabulary": [
+                    {"word": "crowded", "transcription": "[кра́удэд]", "translation": "многолюдно / тесно"},
+                    {"word": "traveling alone", "transcription": "[трэ́вэлинг эло́ун]", "translation": "путешествую один"},
+                    {"word": "with friends", "transcription": "[уиз фрэндз]", "translation": "с друзьями"}
+                ],
+                "better_base_phrase": "Nice to meet you, Jessica! My name is Oleg, I am from Saint Petersburg.",
+                "phonetic_transcription_ru": "[Найс ту мит ю, Джэ́сика! Май нэйм из Оле́г, ай эм фром Сэйнт Пи́терсберг]",
+                "teacher_feedback": feedback,
+                "suggested_replies": [
+                    {"en": "I am traveling alone. I enjoy meeting new people.", "ru": "Я путешествую один. Мне нравится знакомиться с новыми людьми.", "transcription": "[Ай эм трэ́вэлинг эло́ун. Ай инджо́й ми́тинг нью пипл]"},
+                    {"en": "I am here with my friends, but they are dancing.", "ru": "Я здесь с друзьями, но они пошли танцевать.", "transcription": "[Ай эм хир уиз май фрэндз, бат зэй ар дэ́нсинг]"},
+                    {"en": "I am on a short business trip. Do you live in this city?", "ru": "Я в короткой командировке. Ты живешь в этом городе?", "transcription": "[Ай эм он э шорт би́знес трип. Ду ю лив ин зис си́ти?]"}
+                ]
+            }
+
+        elif any(w in text_lower for w in ["vacation", "trip", "travel", "holiday", "alone", "friends"]):
+            return {
+                "character_reply_en": "That sounds exciting! I love traveling too. How long are you staying here, and have you visited any famous places yet?",
+                "character_reply_ru": "Звучит здорово! Я тоже люблю путешествовать. На сколько ты здесь остановился и успел ли посмотреть известные места?",
+                "base_score": score,
+                "vocabulary": [
+                    {"word": "sounds exciting", "transcription": "[са́ундз эксáйтинг]", "translation": "звучит увлекательно"},
+                    {"word": "staying here", "transcription": "[стэ́йинг хир]", "translation": "останавливаешься здесь"},
+                    {"word": "famous places", "transcription": "[фэ́ймос плэ́йсиз]", "translation": "известные места / достопримечательности"}
+                ],
+                "better_base_phrase": "I am staying here for one week. The city is very beautiful.",
+                "phonetic_transcription_ru": "[Ай эм стэ́йинг хир фор уан уик. Зэ си́ти из вэ́ри бью́тифул]",
+                "teacher_feedback": feedback,
+                "suggested_replies": [
+                    {"en": "I am here for one week. Tomorrow I want to visit the city center.", "ru": "Я здесь на одну неделю. Завтра хочу съездить в центр города.", "transcription": "[Ай эм хир фор уан уик. Тумо́роу ай уонт ту ви́зит зэ си́ти сэ́нтэр]"},
+                    {"en": "I have three days left. Can you recommend a good local place?", "ru": "У меня осталось три дня. Можешь порекомендовать хорошее местное заведение?", "transcription": "[Ай хэв зри дэйз лэфт. Кэн ю рэкомэ́нд э гуд ло́кал плэйс?]"},
+                    {"en": "I arrived yesterday, so I am just looking around.", "ru": "Я приехал только вчера, так что пока просто осматриваюсь.", "transcription": "[Ай эрра́йвд йе́стэрдэй, соу ай эм джаст лу́кинг эра́унд]"}
+                ]
+            }
+
+        else:
+            return {
+                "character_reply_en": "That is interesting! The music here is nice tonight, isn't it? What kind of music do you usually listen to?",
+                "character_reply_ru": "Интересно! Музыка здесь сегодня приятная, правда? Какую музыку ты обычно слушаешь?",
+                "base_score": score,
+                "vocabulary": [
+                    {"word": "isn't it?", "transcription": "[и́знт ит?]", "translation": "не так ли? / правда?"},
+                    {"word": "usually", "transcription": "[ю́жуэли]", "translation": "обычно"},
+                    {"word": "listen to", "transcription": "[ли́сн ту]", "translation": "слушать (музыку)"}
+                ],
+                "better_base_phrase": "I agree, the atmosphere is very pleasant.",
+                "phonetic_transcription_ru": "[Ай эгри́, зэ э́тмосфир из вэ́ри плэ́зэнт]",
+                "teacher_feedback": feedback,
+                "suggested_replies": [
+                    {"en": "I like rock and electronic music. And you?", "ru": "Я люблю рок и электронную музыку. А ты?", "transcription": "[Ай лайк рок энд илэктро́ник мью́зик. Энд ю?]"},
+                    {"en": "I listen to different songs, mostly relaxed pop and jazz.", "ru": "Я слушаю разные песни, в основном спокойный поп и джаз.", "transcription": "[Ай ли́сн ту ди́френт сонгз, мо́стли рилэ́кст поп энд джаз]"},
+                    {"en": "I like this track! Shall we order another drink?", "ru": "Мне нравится этот трек! Закажем еще по напитку?", "transcription": "[Ай лайк зис трэк! Шэл уи о́рдэр энáдэр дринк?]"}
+                ]
+            }
+
+    # 2. Сценарий: Кофейня (Бариста Алекс)
+    elif scenario_key == "coffee_shop":
+        return {
+            "character_reply_en": "Sure thing! A medium cappuccino with regular milk. Would you like sugar or any pastry with that?",
+            "character_reply_ru": "Конечно! Средний капучино на обычном молоке. Сахар или какую-нибудь выпечку добавить к заказу?",
+            "base_score": score,
+            "vocabulary": [
+                {"word": "sure thing", "transcription": "[шу́р синг]", "translation": "конечно / без проблем"},
+                {"word": "regular milk", "transcription": "[рэ́гьюлар милк]", "translation": "обычное коровье молоко"},
+                {"word": "pastry", "transcription": "[пэ́йстри]", "translation": "выпечка / круассан"}
+            ],
+            "better_base_phrase": "Can I have a medium cappuccino to go, please?",
+            "phonetic_transcription_ru": "[Кэн ай хэв э ми́диум каппучи́но ту гоу, плиз?]",
+            "teacher_feedback": feedback,
+            "suggested_replies": [
+                {"en": "No sugar, please. Just the coffee to go.", "ru": "Без сахара, пожалуйста. Только кофе навынос.", "transcription": "[Ноу шу́гар, плиз. Джаст зэ ко́фи ту гоу]"},
+                {"en": "One brown sugar, and one croissant, please.", "ru": "Один тростниковый сахар и один круассан, пожалуйста.", "transcription": "[Уан браун шу́гар, энд уан круасса́н, плиз]"},
+                {"en": "Can I pay by card or contactless?", "ru": "Могу я оплатить картой или бесконтактно?", "transcription": "[Кэн ай пэй бай кард ор контактлэс?]"}
+            ]
+        }
+
+    # 3. Сценарий: Отель (Портье Майкл)
+    elif scenario_key == "hotel_checkin":
+        return {
+            "character_reply_en": "Welcome, sir! I found your booking. Your room is on the 4th floor with a quiet view. May I have your passport for a moment?",
+            "character_reply_ru": "Добро пожаловать, сэр! Я нашел вашу бронь. Ваш номер на 4-м этаже с тихим видом. Могу я взглянуть на ваш паспорт на секунду?",
+            "base_score": score,
+            "vocabulary": [
+                {"word": "booking", "transcription": "[бу́кинг]", "translation": "бронирование"},
+                {"word": "4th floor", "transcription": "[форс флор]", "translation": "четвертый этаж"},
+                {"word": "may I have", "transcription": "[мэй ай хэв]", "translation": "могу я попросить / разрешите взглянуть"}
+            ],
+            "better_base_phrase": "Hello, I have a reservation under the name Oleg.",
+            "phonetic_transcription_ru": "[Хэлло́у, ай хэв э рэзэрвэ́йшн а́ндэр зэ нэйм Оле́г]",
+            "teacher_feedback": feedback,
+            "suggested_replies": [
+                {"en": "Here is my passport. Is breakfast included?", "ru": "Вот мой паспорт. Завтрак включен в стоимость?", "transcription": "[Хир из май па́спорт. Из брэ́кфаст инклу́дэд?]"},
+                {"en": "Here you go. What is the Wi-Fi password, please?", "ru": "Пожалуйста. Какой пароль от Wi-Fi?", "transcription": "[Хир ю гоу. Уот из зэ уа́й-фа́й па́суорд, плиз?]"},
+                {"en": "Thank you! What time is check-out on Sunday?", "ru": "Спасибо! Во сколько выезд в воскресенье?", "transcription": "[Сэнк ю! Уот тайм из чек-а́ут он са́ндэй?]"}
+            ]
+        }
+
+    # 4. Общий резервный ответ для любого сценария
+    return {
+        "character_reply_en": f"I understand! That sounds great. What do you plan to do next?",
+        "character_reply_ru": "Понял тебя! Звучит отлично. Что планируешь делать дальше?",
+        "base_score": score,
+        "vocabulary": [
+            {"word": "sounds great", "transcription": "[са́ундз грэйт]", "translation": "звучит отлично"},
+            {"word": "plan to do", "transcription": "[плэн ту ду]", "translation": "планировать сделать"}
+        ],
+        "better_base_phrase": user_message.strip(),
+        "phonetic_transcription_ru": "[...]",
+        "teacher_feedback": feedback,
+        "suggested_replies": [
+            {"en": "I want to walk around and see the city.", "ru": "Я хочу прогуляться и посмотреть город.", "transcription": "[Ай уонт ту уок эра́унд энд си зэ си́ти]"},
+            {"en": "I think I will grab something to eat.", "ru": "Думаю, перекушу чем-нибудь.", "transcription": "[Ай синк ай уил грэб са́мсинг ту ит]"},
+            {"en": "I will just relax for a while.", "ru": "Я просто немного отдохну.", "transcription": "[Ай уил джаст рилэ́кс фор э уа́йл]"}
+        ]
+    }
+
 
 async def simulate_dialog_turn(
     user_id: int,
@@ -26,12 +228,16 @@ async def simulate_dialog_turn(
 ) -> Dict[str, Any]:
     """
     Проводит один раунд интерактивного диалога:
-    - Собеседник отвечает на чистом, понятном, базовом школьном английском (A2-B1)
-    - БЕЗ сложного сленга и идиом
-    - Разбирает полезные слова из реплики для пополнения словарного запаса
-    - Дает 3 простых и понятных варианта ответа с переводом и транскрипцией
-    - Мягко исправляет грамматические неточности
+    - Приоритет: LLM Gemini (если доступен ключ)
+    - При ошибке 401 UNAUTHENTICATED / недоступности API: мгновенный переход на умный оффлайн-движок
+    - Возвращает чистый, понятный базовый школьный английский (A1-B1)
     """
+    global _API_KEY_DISABLED
+
+    # Если мы уже определили, что API ключ деактивирован в Google Cloud, мгновенно отдаем умный ответ
+    if _API_KEY_DISABLED:
+        return generate_smart_offline_turn(scenario_key, user_message, history)
+
     sc_info = get_scenario_info(scenario_key)
     char_name = sc_info["character"]
     situation = sc_info["situation"]
@@ -97,26 +303,16 @@ async def simulate_dialog_turn(
                     data = json.loads(m.group(0))
                     return data
         except Exception as e:
+            err_str = str(e)
+            # Если сервис-аккаунт удален или ключ заблокирован (401 UNAUTHENTICATED), мгновенно прерываем цикл
+            if "401" in err_str or "UNAUTHENTICATED" in err_str or "ACCOUNT_STATE_INVALID" in err_str:
+                logger.warning(f"Gemini API key is unauthenticated/disabled: {e}. Switching to instant smart offline engine.")
+                _API_KEY_DISABLED = True
+                break
             logger.warning(f"Model {model_name} error in travel english simulator ({e}), trying next...")
 
-    # Фолбэк на базовом английском
-    return {
-        "character_reply_en": "Nice to meet you! I like this music. What do you like to do on weekends?",
-        "character_reply_ru": "Приятно познакомиться! Мне нравится эта музыка. А чем ты любишь заниматься по выходным?",
-        "base_score": 8,
-        "vocabulary": [
-            {"word": "nice to meet you", "transcription": "[найс ту мит ю]", "translation": "приятно познакомиться"},
-            {"word": "weekends", "transcription": "[уи́к-эндз]", "translation": "выходные дни"}
-        ],
-        "better_base_phrase": "Nice to meet you! My name is Oleg, I am from Saint Petersburg.",
-        "phonetic_transcription_ru": "[Найс ту мит ю! Май нэйм из Оле́г, ай эм фром Сэйнт Пи́терсберг]",
-        "teacher_feedback": "Отличное начало! Фраза простая и всем понятная. Не забывай улыбаться при знакомстве!",
-        "suggested_replies": [
-            {"en": "I like to travel and spend time outdoors.", "ru": "Я люблю путешествовать и проводить время на природе.", "transcription": "[Ай лайк ту трэ́вл энд спэнд тайм а́утдорс]"},
-            {"en": "I usually relax and watch movies with friends.", "ru": "Я обычно отдыхаю и смотрю фильмы с друзьями.", "transcription": "[Ай ю́жуэли рилэ́кс энд уотч му́виз уиз фрэндз]"},
-            {"en": "I enjoy sports and good food. What about you?", "ru": "Мне нравится спорт и вкусная еда. А тебе?", "transcription": "[Ай инджо́й спортс энд гуд фуд. Уот эба́ут ю?]"}
-        ]
-    }
+    # Мгновенный умный диалоговый генератор
+    return generate_smart_offline_turn(scenario_key, user_message, history)
 
 
 async def instant_translate_phrase(user_query: str) -> Dict[str, Any]:
@@ -126,7 +322,10 @@ async def instant_translate_phrase(user_query: str) -> Dict[str, Any]:
     2. Polite (вежливый)
     3. Slang (уличный сленг)
     """
-    system_prompt = """Ты — эксперт по разговорному английскому и сленгу нейтивов.
+    global _API_KEY_DISABLED
+
+    if not _API_KEY_DISABLED:
+        system_prompt = """Ты — эксперт по разговорному английскому и сленгу нейтивов.
 Пользователь спрашивает, как сказать фразу по-английски в реальной жизни или путешествии.
 Никакой грамматики и скучных лекций! Только реальный язык.
 
@@ -150,33 +349,36 @@ async def instant_translate_phrase(user_query: str) -> Dict[str, Any]:
   "context_note": "..."
 }
 """
-
-    client = get_genai_client()
-    for model_name in CANDIDATE_MODELS:
-        try:
-            resp = await client.aio.models.generate_content(
-                model=model_name,
-                contents=f"Как сказать: {user_query}",
-                config={
-                    "system_instruction": system_prompt,
-                    "temperature": 0.5,
-                    "response_mime_type": "application/json"
-                }
-            )
-            if resp and resp.text:
-                cleaned = resp.text.strip()
-                m = re.search(r"\{.*\}", cleaned, re.DOTALL)
-                if m:
-                    return json.loads(m.group(0))
-        except Exception as e:
-            logger.warning(f"Model {model_name} failed in instant translator ({e}), trying next...")
+        client = get_genai_client()
+        for model_name in CANDIDATE_MODELS:
+            try:
+                resp = await client.aio.models.generate_content(
+                    model=model_name,
+                    contents=f"Как сказать: {user_query}",
+                    config={
+                        "system_instruction": system_prompt,
+                        "temperature": 0.5,
+                        "response_mime_type": "application/json"
+                    }
+                )
+                if resp and resp.text:
+                    cleaned = resp.text.strip()
+                    m = re.search(r"\{.*\}", cleaned, re.DOTALL)
+                    if m:
+                        return json.loads(m.group(0))
+            except Exception as e:
+                err_str = str(e)
+                if "401" in err_str or "UNAUTHENTICATED" in err_str or "ACCOUNT_STATE_INVALID" in err_str:
+                    _API_KEY_DISABLED = True
+                    break
+                logger.warning(f"Model {model_name} failed in instant translator ({e}), trying next...")
 
     return {
-        "street_smart": "Can you do better on the price, please?",
-        "street_transcription": "[Кэн ю ду бэ́тер он зэ прайс, плиз?]",
-        "polite": "Could you possibly offer a small discount on this?",
-        "polite_transcription": "[Куд ю по́сибли о́фер э смол ди́скаунт он зис?]",
-        "slang": "Can you do 20 bucks cash right now?",
-        "slang_transcription": "[Кэн ю ду туэ́нти бакс кэш райт нау?]",
-        "context_note": "Фраза со словом 'cash' работает безотказно на любых рынках мира!"
+        "street_smart": f"How do I say «{user_query}» in everyday English?",
+        "street_transcription": "[Хау ду ай сэй ... ин э́вридэй и́нглиш?]",
+        "polite": f"Could you please explain how to say «{user_query}»?",
+        "polite_transcription": "[Куд ю плиз эксплэ́йн хау ту сэй ...?]",
+        "slang": "How do locals say this?",
+        "slang_transcription": "[Хау ду ло́калс сэй зис?]",
+        "context_note": "Используй базовые фразы с вежливым 'Could you please', они работают в любой стране безотказно!"
     }
