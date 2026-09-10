@@ -156,28 +156,67 @@ async def cb_start_scenario(callback: types.CallbackQuery, state: FSMContext):
     await send_clean_html(callback, opening_msg, reply_markup=get_dialog_actions_keyboard())
 
 
-@router.callback_query(F.data == "eng_action_suggest")
-async def cb_suggest_reply(callback: types.CallbackQuery, state: FSMContext):
-    """Выдает быстрые подсказки для ответа в текущем сценарии."""
+@router.callback_query(F.data == "eng_action_restart")
+async def cb_restart_scenario(callback: types.CallbackQuery, state: FSMContext):
+    """Перезапускает текущий ролевой сценарий с чистого листа."""
     data = await state.get_data()
-    sc_key = data.get("current_scenario", "coffee_shop")
+    sc_key = data.get("current_scenario", "bar_dating")
     sc_info = get_scenario_info(sc_key)
 
-    replies = sc_info.get("suggested_replies", [
-        "Can I get this to go, please?",
-        "How much does it cost?",
-        "Thanks, appreciate it!"
-    ])
+    await state.update_data(
+        scenario_history="",
+        turns=0,
+        awaiting_instant_translate=False
+    )
+    await callback.answer("Начинаем диалог заново!")
+
+    opening_msg = (
+        f"{sc_info['icon']} <b>Ситуация: {sc_info['title']}</b>\n"
+        f"👤 <b>Персонаж:</b> {sc_info['character']}\n"
+        "━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📍 <i>{sc_info['situation']}</i>\n\n"
+        f"💬 <b>Реплика собеседника:</b>\n"
+        f"«<b>{sc_info['opening_line']}</b>»\n\n"
+        f"{sc_info['starter_tip']}\n\n"
+        "✍️ Напиши свой ответ текстом или <b>надиктуй голосом 🎙</b>:"
+    )
+    await send_clean_html(callback, opening_msg, reply_markup=get_dialog_actions_keyboard())
+
+
+@router.callback_query(F.data == "eng_action_suggest")
+async def cb_suggest_reply(callback: types.CallbackQuery, state: FSMContext):
+    """Выдает быстрые подсказки для ответа в текущем сценарии с переводом и транскрипцией."""
+    data = await state.get_data()
+    sc_key = data.get("current_scenario", "bar_dating")
+    sc_info = get_scenario_info(sc_key)
+    last_sugg = data.get("last_suggestions")
 
     tip_text = (
         "💡 <b>Шпаргалка: Что можно ответить прямо сейчас:</b>\n"
         "━━━━━━━━━━━━━━━━━━━\n\n"
     )
-    for idx, r in enumerate(replies, 1):
-        tip_text += f"{idx}. <b>«{r}»</b>\n"
+
+    if last_sugg:
+        for idx, s in enumerate(last_sugg, 1):
+            if isinstance(s, dict):
+                tip_text += (
+                    f"{idx}. <b>«{s.get('en')}»</b>\n"
+                    f"   🗣 <i>{s.get('transcription', '')}</i>\n"
+                    f"   — <i>{s.get('ru', '')}</i>\n\n"
+                )
+            else:
+                tip_text += f"{idx}. <b>«{s}»</b>\n\n"
+    else:
+        replies = sc_info.get("suggested_replies", [
+            "Hello! Yes, the seat is free.",
+            "I am drinking juice. What about you?",
+            "Nice to meet you! My name is Oleg."
+        ])
+        for idx, r in enumerate(replies, 1):
+            tip_text += f"{idx}. <b>«{r}»</b>\n"
 
     tip_text += (
-        "\n💬 Выбери любой вариант или скажи своими словами текстом / <b>голосом 🎙</b>!"
+        "💬 Выбери любой вариант или скажи своими словами текстом / <b>голосом 🎙</b>!"
     )
     await callback.answer()
     await send_clean_html(callback, tip_text, reply_markup=get_dialog_actions_keyboard())
@@ -475,35 +514,64 @@ async def process_english_input(message: types.Message, state: FSMContext, user_
     await state.update_data(scenario_history=new_history, turns=turns)
     increment_dialogs_count(user_id)
 
-    # Рейтинг и эмодзи
-    score = sim_result.get("native_score", 8)
-    if score >= 9:
-        score_badge = f"🟢 <b>Native Score: {score}/10</b> (Звучит как чистый нейтив! 🔥)"
-    elif score >= 7:
-        score_badge = f"🟡 <b>Native Score: {score}/10</b> (Хорошо и понятно, но можно натуральнее 🤙)"
-    else:
-        score_badge = f"🟠 <b>Native Score: {score}/10</b> (Слишком книжно / по-русски, давай упростим 💡)"
-
-    suggestions = sim_result.get("suggested_replies", [])
-    sugg_text = ""
-    if suggestions:
-        sugg_text = "\n🚀 <b>Что можно ответить дальше:</b>\n"
-        for idx, s in enumerate(suggestions, 1):
-            sugg_text += f"{idx}. <b>«{s}»</b>\n"
-
+    # 1. Реплика персонажа
     reply_text = (
         f"👤 <b>{char_name}:</b>\n"
         f"«<b>{sim_result['character_reply_en']}</b>»\n"
         f"<i>({sim_result['character_reply_ru']})</i>\n\n"
         "━━━━━━━━━━━━━━━━━━━\n"
-        f"💡 <b>РАЗБОР ТРЕНЕРА:</b>\n"
-        f"{score_badge}\n\n"
-        f"🗣 <b>Как сказал бы реальный американец/британец:</b>\n"
-        f"• <b>{sim_result['better_native_phrase']}</b>\n"
-        f"• <i>Транскрипция: {sim_result['phonetic_transcription_ru']}</i>\n\n"
-        f"🎯 <b>Фишка:</b> {sim_result['coach_tip']}\n"
-        f"{sugg_text}\n"
-        "💬 Продолжай диалог текстом или <b>надиктуй голосом 🎙</b>!"
     )
 
+    # 2. Словарик полезных слов для базы
+    vocab = sim_result.get("vocabulary", [])
+    if vocab:
+        reply_text += "📚 <b>Полезные слова раунда (для базы):</b>\n"
+        for v in vocab:
+            w = v.get("word", "")
+            tr = v.get("transcription", "")
+            tl = v.get("translation", "")
+            reply_text += f"• <b>{w}</b> {tr} — <i>{tl}</i>\n"
+        reply_text += "\n"
+
+    # 3. Разбор учителя и грамматики
+    score = sim_result.get("base_score", sim_result.get("native_score", 8))
+    feedback = sim_result.get("teacher_feedback", sim_result.get("coach_tip", ""))
+    better_phrase = sim_result.get("better_base_phrase", sim_result.get("better_native_phrase", ""))
+    transcr = sim_result.get("phonetic_transcription_ru", "")
+
+    reply_text += f"💡 <b>Разбор учителя:</b> ⭐️ <b>Оценка: {score}/10</b>\n"
+    if feedback:
+        reply_text += f"{feedback}\n\n"
+
+    if better_phrase:
+        reply_text += (
+            f"✅ <b>Как сказать грамотно на базовом английском:</b>\n"
+            f"• <b>{better_phrase}</b>\n"
+        )
+        if transcr:
+            reply_text += f"• 🗣 <i>Транскрипция: {transcr}</i>\n"
+        reply_text += "\n"
+
+    # 4. Варианты продолжения диалога
+    suggestions = sim_result.get("suggested_replies", [])
+    if suggestions:
+        reply_text += "🚀 <b>Что ты можешь ответить дальше (напиши или скажи голосом 🎙):</b>\n"
+        for idx, s in enumerate(suggestions, 1):
+            if isinstance(s, dict):
+                en_txt = s.get("en", "")
+                ru_txt = s.get("ru", "")
+                s_tr = s.get("transcription", "")
+                reply_text += f"{idx}. <b>«{en_txt}»</b>\n"
+                if s_tr:
+                    reply_text += f"   🗣 <i>{s_tr}</i>\n"
+                if ru_txt:
+                    reply_text += f"   — <i>{ru_txt}</i>\n"
+            else:
+                reply_text += f"{idx}. <b>«{s}»</b>\n"
+        reply_text += "\n"
+
+    reply_text += "💬 Напиши ответ текстом или <b>надиктуй голосом 🎙</b>!"
+
+    # Сохраняем последние подсказки в state
+    await state.update_data(last_suggestions=suggestions)
     await send_clean_html(message, reply_text, reply_markup=get_dialog_actions_keyboard())

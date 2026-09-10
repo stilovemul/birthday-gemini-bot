@@ -13,11 +13,14 @@ def get_travel_english_main_keyboard() -> InlineKeyboardMarkup:
     """Главное интерактивное меню модуля английского языка."""
     kb = [
         [
-            InlineKeyboardButton(text="🎭 Ролевой диалог с иностранцем", callback_data="eng_menu_scenarios")
+            InlineKeyboardButton(text="🍸 Знакомство с девушкой в баре (Старт)", callback_data="eng_sc_bar_dating")
+        ],
+        [
+            InlineKeyboardButton(text="🎭 Другие ситуации (Отель, Кофе, Такси)", callback_data="eng_menu_scenarios")
         ],
         [
             InlineKeyboardButton(text="📝 Проверочный Квиз (Тест)", callback_data="eng_menu_quizzes"),
-            InlineKeyboardButton(text="⚡️ Перевод на сленг", callback_data="eng_menu_instant")
+            InlineKeyboardButton(text="⚡️ Перевод фразы на лету", callback_data="eng_menu_instant")
         ],
         [
             InlineKeyboardButton(text="📋 Золотые шпаргалки", callback_data="eng_menu_cheats"),
@@ -55,10 +58,13 @@ def get_dialog_actions_keyboard() -> InlineKeyboardMarkup:
     kb = [
         [
             InlineKeyboardButton(text="💡 Подскажи, что ответить", callback_data="eng_action_suggest"),
-            InlineKeyboardButton(text="🔄 Другая ситуация", callback_data="eng_menu_scenarios")
+            InlineKeyboardButton(text="🔄 Начать сначала", callback_data="eng_action_restart")
         ],
         [
-            InlineKeyboardButton(text="📝 Пройти квиз", callback_data="eng_menu_quizzes"),
+            InlineKeyboardButton(text="🎭 Сменить диалог", callback_data="eng_menu_scenarios"),
+            InlineKeyboardButton(text="📝 Пройти квиз", callback_data="eng_menu_quizzes")
+        ],
+        [
             InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
         ]
     ]

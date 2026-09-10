@@ -6,6 +6,35 @@
 from typing import Dict, Any
 
 SCENARIOS: Dict[str, Dict[str, Any]] = {
+    "bar_dating": {
+        "title": "🍸 Знакомство с девушкой в баре",
+        "icon": "🍸",
+        "character": "Джессика (Jessica)",
+        "character_role": "Симпатичная, приветливая и открытая девушка за барной стойкой",
+        "situation": "Вечер пятницы в уютном баре с приятной музыкой. Ты сидишь за стойкой. Рядом присаживается симпатичная девушка, улыбается и обращается к тебе.",
+        "opening_line": "Hi! Is this seat free? What a nice place! What are you drinking? (Привет! Это место свободно? Какое приятное место! Что ты пьешь?)",
+        "starter_tip": (
+            "📚 <b>Полезные базовые слова раунда:</b>\n"
+            "• <b>seat</b> [сит] — место, стул\n"
+            "• <b>free</b> [фри] — свободный\n"
+            "• <b>drink / drinking</b> [дринк / дри́нкин] — пить / напиток\n\n"
+            "🗣 <b>Как просто ответить (выбери любой вариант или скажи голосом 🎙):</b>\n"
+            "1. <i>«Hello! Yes, the seat is free, please sit down.»</i>\n"
+            "   [Хелло́у! Йес, зэ сит из фри, плиз сит да́ун]\n"
+            "   — Привет! Да, место свободно, присаживайся, пожалуйста.\n\n"
+            "2. <i>«Hi! Yes, it is free. I am drinking juice. My name is Oleg, and you?»</i>\n"
+            "   [Хай! Йес, ит из фри. Ай эм дри́нкин джус. Май нэйм из Оле́г, энд ю?]\n"
+            "   — Привет! Да, свободно. Я пью сок. Меня зовут Олег, а тебя?\n\n"
+            "3. <i>«Hello! Please take it. It is my first time here, do you like this bar?»</i>\n"
+            "   [Хелло́у! Плиз тэйк ит. Ит из май фёрст тайм хи́ар, ду ю лайк зис бар?]\n"
+            "   — Привет! Занимай. Я тут впервые, тебе нравится этот бар?"
+        ),
+        "suggested_replies": [
+            "Hello! Yes, the seat is free, please sit down. My name is Oleg.",
+            "Hi! I am drinking a cocktail with ice. What would you like to drink?",
+            "Yes, it is free. Are you here alone or with friends?"
+        ]
+    },
     "coffee_shop": {
         "title": "☕️ Кофейня & Стритфуд",
         "icon": "☕️",

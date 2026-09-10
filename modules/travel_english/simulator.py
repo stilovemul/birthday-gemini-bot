@@ -25,46 +25,58 @@ async def simulate_dialog_turn(
     is_voice: bool = False
 ) -> Dict[str, Any]:
     """
-    Проводит один раунд ролевого диалога с иностранцем:
-    1. Иностранец отвечает в рамках ситуации на живом разговорном английском.
-    2. Тренер дает разбор: Native Score (1-10), лучшую версию фразы, русскую транскрипцию и советы.
+    Проводит один раунд интерактивного диалога:
+    - Собеседник отвечает на чистом, понятном, базовом школьном английском (A2-B1)
+    - БЕЗ сложного сленга и идиом
+    - Разбирает полезные слова из реплики для пополнения словарного запаса
+    - Дает 3 простых и понятных варианта ответа с переводом и транскрипцией
+    - Мягко исправляет грамматические неточности
     """
     sc_info = get_scenario_info(scenario_key)
     char_name = sc_info["character"]
     situation = sc_info["situation"]
 
-    system_prompt = f"""Ты — первоклассный носитель языка (Native Speaker) и персональный коуч по уличному разговорному английскому (Street Smart English).
-Никакой занудной академической школьной грамматики! Твоя цель — научить туриста говорить свободно, естественно и без стеснения, как говорят современные американцы и британцы в путешествиях.
+    system_prompt = f"""Ты — заботливый, дружелюбный преподаватель английского языка и собеседник в ролевой игре.
+Ученик попросил: "СТРОГО БЕЗ СЛОЖНОГО СЛЕНГА! Чистый, понятный школьный английский (уровни Elementary / Pre-Intermediate / Intermediate A1-B1), чтобы подтянуть базу, слова и порядок слов".
 
 Сейчас идет ролевая игра:
 Ситуация: {situation}
 Твоя роль персонажа: {char_name} ({sc_info['character_role']}).
 
-Текущий ответ пользователя (ученика): "{user_message}"
-Пользователь ответил голосом: {"Да" if is_voice else "Нет (текст)"}.
+Текущий ответ ученика: "{user_message}"
+Ученик ответил голосом: {"Да (голосовое сообщение)" if is_voice else "Нет (текст)"}.
 
-Инструкция к генерации JSON-ответа:
-1. "character_reply_en": твоя реплика как персонажа на живом естественном английском (1-3 коротких предложения).
-2. "character_reply_ru": перевод твоей реплики на русский язык в скобках.
-3. "native_score": оценка фразы пользователя по шкале от 1 до 10 (где 10 — звучит как стопроцентный нейтив, 5 — понятно, но книжно/по-русски).
-4. "better_native_phrase": как эту же мысль выразил бы реальный американец/британец на улице (живой сленг, сокращения: "Can I grab...", "I'm good", "No worries").
-5. "phonetic_transcription_ru": транскрипция лучшей фразы РУССКИМИ БУКВАМИ с ударениями для легкого чтения, например: "[Кэн ай грэб эн а́йст ла́тэ ту го́у, плиз?]".
-6. "coach_tip": короткий, яркий и дружелюбный совет от тренера (1-2 предложения): в чем была ошибка или почему именно так звучит круче.
-7. "suggested_replies": массив из 2-3 вариантов фраз на английском, которыми пользователь может ответить дальше на твою реплику.
+Правила генерации ответа:
+1. "character_reply_en": твоя реплика как персонажа на ПРОСТОМ, ПРАВИЛЬНОМ и ПОНЯТНОМ базовом английском (1-3 коротких предложения). Никакого сложного сленга! Обязательно закончи встречным простым вопросом, чтобы диалог продолжался.
+2. "character_reply_ru": точный понятный перевод твоей реплики на русский язык.
+3. "base_score": оценка ответа ученика по 10-балльной шкале (1-10) за понятность и базовую грамматику.
+4. "vocabulary": массив из 2-3 полезных базовых слов или словосочетаний из твоей реплики: {{"word": "...", "transcription": "[...]", "translation": "..."}} для пополнения словарного запаса ученика.
+5. "better_base_phrase": как выразить мысль ученика на правильном, чистом базовом английском без ошибок.
+6. "phonetic_transcription_ru": русская транскрипция фразы с ударениями для легкого чтения.
+7. "teacher_feedback": ободряющий, доброжелательный комментарий преподавателя на русском (1-2 предложения): похвалить за смелость, подсказать базовое грамматическое правило (например: глагол to be, Present Simple, правильный предлог).
+8. "suggested_replies": массив из 3 простых вариантов ответа для ученика на чистом базовом английском:
+   [{{"en": "...", "ru": "...", "transcription": "[...]"}}]
 
-Верни СТРОГО валидный JSON следующего формата:
+Верни СТРОГО валидный JSON:
 {{
   "character_reply_en": "...",
   "character_reply_ru": "...",
-  "native_score": 8,
-  "better_native_phrase": "...",
+  "base_score": 9,
+  "vocabulary": [
+    {{"word": "...", "transcription": "[...]", "translation": "..."}}
+  ],
+  "better_base_phrase": "...",
   "phonetic_transcription_ru": "[...]",
-  "coach_tip": "...",
-  "suggested_replies": ["...", "..."]
+  "teacher_feedback": "...",
+  "suggested_replies": [
+    {{"en": "...", "ru": "...", "transcription": "[...]"}},
+    {{"en": "...", "ru": "...", "transcription": "[...]"}},
+    {{"en": "...", "ru": "...", "transcription": "[...]"}}
+  ]
 }}
 """
 
-    user_prompt = f"""История диалога:\n{history}\n\nПользователь сказал: {user_message}"""
+    user_prompt = f"""История диалога:\n{history}\n\nУченик сказал: {user_message}"""
 
     client = get_genai_client()
     for model_name in CANDIDATE_MODELS:
@@ -74,7 +86,7 @@ async def simulate_dialog_turn(
                 contents=user_prompt,
                 config={
                     "system_instruction": system_prompt,
-                    "temperature": 0.6,
+                    "temperature": 0.5,
                     "response_mime_type": "application/json"
                 }
             )
@@ -87,18 +99,22 @@ async def simulate_dialog_turn(
         except Exception as e:
             logger.warning(f"Model {model_name} error in travel english simulator ({e}), trying next...")
 
-    # Фолбэк на случай сбоя
+    # Фолбэк на базовом английском
     return {
-        "character_reply_en": "Gotcha, absolutely! Anything else I can get you?",
-        "character_reply_ru": "Понял тебя, без проблем! Что-то еще для тебя?",
-        "native_score": 7,
-        "better_native_phrase": "Can I grab this to go, please?",
-        "phonetic_transcription_ru": "[Кэн ай грэб зис ту го́у, плиз?]",
-        "coach_tip": "Используй глагол «grab» вместо книжного «order» или «want» — это звучит максимально по-нейтивски!",
+        "character_reply_en": "Nice to meet you! I like this music. What do you like to do on weekends?",
+        "character_reply_ru": "Приятно познакомиться! Мне нравится эта музыка. А чем ты любишь заниматься по выходным?",
+        "base_score": 8,
+        "vocabulary": [
+            {"word": "nice to meet you", "transcription": "[найс ту мит ю]", "translation": "приятно познакомиться"},
+            {"word": "weekends", "transcription": "[уи́к-эндз]", "translation": "выходные дни"}
+        ],
+        "better_base_phrase": "Nice to meet you! My name is Oleg, I am from Saint Petersburg.",
+        "phonetic_transcription_ru": "[Найс ту мит ю! Май нэйм из Оле́г, ай эм фром Сэйнт Пи́терсберг]",
+        "teacher_feedback": "Отличное начало! Фраза простая и всем понятная. Не забывай улыбаться при знакомстве!",
         "suggested_replies": [
-            "No, that's all, thanks! How much is it?",
-            "Can I pay by card or contactless?",
-            "Keep the change, cheers!"
+            {"en": "I like to travel and spend time outdoors.", "ru": "Я люблю путешествовать и проводить время на природе.", "transcription": "[Ай лайк ту трэ́вл энд спэнд тайм а́утдорс]"},
+            {"en": "I usually relax and watch movies with friends.", "ru": "Я обычно отдыхаю и смотрю фильмы с друзьями.", "transcription": "[Ай ю́жуэли рилэ́кс энд уотч му́виз уиз фрэндз]"},
+            {"en": "I enjoy sports and good food. What about you?", "ru": "Мне нравится спорт и вкусная еда. А тебе?", "transcription": "[Ай инджо́й спортс энд гуд фуд. Уот эба́ут ю?]"}
         ]
     }
 
