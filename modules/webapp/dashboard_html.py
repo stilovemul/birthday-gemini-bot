@@ -208,32 +208,60 @@ TMA_DASHBOARD_HTML = r"""<!DOCTYPE html>
     /* Segmented Navigation */
     .nav-segmented-wrap {
       position: sticky; top: 62px; z-index: 45;
-      padding: 6px 14px;
-      background: rgba(0, 0, 0, 0.7);
+      padding: 6px 10px;
+      background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
     }
     .nav-segmented-bar {
-      display: flex; gap: 3px; padding: 3px;
-      background: var(--nav-bg); border-radius: 14px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      padding: 3px;
+      background: var(--nav-bg);
+      border-radius: 14px;
       border: 1px solid var(--card-border);
-      overflow-x: auto; scrollbar-width: none;
+      width: 100%;
+      box-sizing: border-box;
     }
-    .nav-segmented-bar::-webkit-scrollbar { display: none; }
     
     .nav-seg-btn {
-      flex: 1 0 auto;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
-      padding: 7px 11px; border-radius: 11px;
-      border: none; background: transparent;
-      color: var(--text-secondary); font-size: 12px; font-weight: 600;
-      cursor: pointer; white-space: nowrap; transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 6px 2px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      min-width: 0;
+      overflow: hidden;
     }
-    .nav-seg-btn svg { width: 14px; height: 14px; }
+    .nav-seg-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .nav-seg-btn span { overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-size: 10.5px; }
     .nav-seg-btn.active {
       background: var(--nav-active-bg);
       color: var(--nav-active-text);
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    @media (min-width: 600px) {
+      .app-viewport { max-width: 760px; }
+      .nav-seg-btn {
+        flex-direction: row;
+        gap: 5px;
+        padding: 7px 4px;
+        font-size: 11.5px;
+      }
+      .nav-seg-btn span { font-size: 11.5px; }
+      .nav-seg-btn svg { width: 14px; height: 14px; }
     }
 
     /* Content Area */
@@ -545,7 +573,7 @@ TMA_DASHBOARD_HTML = r"""<!DOCTYPE html>
         </button>
         <button class="nav-seg-btn" id="tab-btn-chat" onclick="switchTab('chat')">
           <i data-lucide="message-square"></i>
-          <span>ИИ-Чат</span>
+          <span>Чат</span>
         </button>
         <button class="nav-seg-btn" id="tab-btn-digest" onclick="switchTab('digest')">
           <i data-lucide="cloud-sun"></i>
@@ -553,7 +581,7 @@ TMA_DASHBOARD_HTML = r"""<!DOCTYPE html>
         </button>
         <button class="nav-seg-btn" id="tab-btn-tasks" onclick="switchTab('tasks')">
           <i data-lucide="cake"></i>
-          <span>ДР & Дела</span>
+          <span>ДР</span>
         </button>
         <button class="nav-seg-btn" id="tab-btn-finance" onclick="switchTab('finance')">
           <i data-lucide="credit-card"></i>
