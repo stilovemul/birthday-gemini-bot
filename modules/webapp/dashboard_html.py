@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
-TMA_DASHBOARD_HTML = """<!DOCTYPE html>
+TMA_DASHBOARD_HTML = r"""<!DOCTYPE html>
 <html lang="ru" data-theme="ios">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>AiGem Dashboard</title>
+  <title>AiGem Super-Bot • Web Dashboard & AI Hub</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AiGem Super-Bot">
+  <meta name="theme-color" content="#0A84FF">
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/4712/4712109.png">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/4712/4712109.png">
   <script>
     window.Telegram = window.Telegram || { WebApp: { ready: function(){}, expand: function(){}, HapticFeedback: { impactOccurred: function(){} } } };
   </script>
@@ -413,6 +421,57 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
     .theme-pick-title { font-size: 13px; font-weight: 700; color: #FFF; }
     .theme-pick-sub { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
     .theme-check-mark { font-size: 16px; color: var(--accent); font-weight: 800; }
+
+    /* Web Chat Styles */
+    .chat-bubble-ai {
+      align-self: flex-start;
+      max-width: 92%;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px 18px 18px 4px;
+      padding: 12px 14px;
+      color: var(--text-primary);
+      font-size: 13px;
+      line-height: 1.48;
+      box-shadow: var(--card-shadow);
+      word-break: break-word;
+    }
+    .chat-bubble-user {
+      align-self: flex-end;
+      max-width: 86%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+      border-radius: 18px 18px 4px 18px;
+      padding: 10px 14px;
+      color: #FFF;
+      font-size: 13px;
+      line-height: 1.4;
+      font-weight: 500;
+      box-shadow: 0 4px 14px var(--accent-glow);
+      word-break: break-word;
+    }
+    .chat-typing-dots {
+      display: inline-flex; align-items: center; gap: 4px; padding: 4px 0;
+    }
+    .chat-typing-dots span {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+      animation: typingPulse 1.2s infinite ease-in-out;
+    }
+    .chat-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .chat-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingPulse {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1.1); opacity: 1; }
+    }
+    .btn-pwa-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: 100px;
+      background: rgba(10, 132, 255, 0.15); border: 1px solid rgba(10, 132, 255, 0.35);
+      color: var(--accent); font-size: 11px; font-weight: 700; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-pwa-badge:active { transform: scale(0.95); }
   </style>
 </head>
 <body>
@@ -458,6 +517,11 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
       </div>
 
       <div class="header-actions">
+        <!-- Install App Button -->
+        <button class="header-icon-btn" onclick="promptInstallPWA()" id="btn-pwa-install" title="Установить сайт как приложение на телефон/ПК">
+          <i data-lucide="download"></i>
+        </button>
+
         <!-- Theme Toggle Button -->
         <button class="theme-toggle-btn" onclick="openModal('modal-theme-select')" id="btn-current-theme" title="Сменить тему оформления">
           <span id="cur-theme-emoji">🍏</span>
@@ -478,6 +542,10 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
         <button class="nav-seg-btn active" id="tab-btn-smart_home" onclick="switchTab('smart_home')">
           <i data-lucide="home"></i>
           <span>Дом</span>
+        </button>
+        <button class="nav-seg-btn" id="tab-btn-chat" onclick="switchTab('chat')">
+          <i data-lucide="message-square"></i>
+          <span>ИИ-Чат</span>
         </button>
         <button class="nav-seg-btn" id="tab-btn-digest" onclick="switchTab('digest')">
           <i data-lucide="cloud-sun"></i>
@@ -504,6 +572,65 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
 
     <!-- MAIN VIEW CONTAINER -->
     <main class="app-main">
+
+      <!-- TAB: AI WEB CHAT -->
+      <section id="tab-chat" class="tab-content" style="display:none;flex-direction:column;gap:12px;">
+        <!-- Chat Banner -->
+        <div class="app-card" style="background:linear-gradient(135deg, rgba(10,132,255,0.14), rgba(100,210,255,0.06));border-color:rgba(10,132,255,0.3);display:flex;align-items:center;justify-content:space-between;padding:12px 14px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px var(--accent-glow);">
+              <i data-lucide="bot" style="width:20px;height:20px;"></i>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#FFF;">AiGem Web Assistant</div>
+              <div style="font-size:11px;color:var(--accent-green);">🟢 Gemini 2.5 / 3.0 • Связан с ботом 24/7</div>
+            </div>
+          </div>
+          <button onclick="clearWebChat()" style="background:rgba(255,255,255,0.08);border:1px solid var(--card-border);color:var(--text-secondary);padding:6px 10px;border-radius:10px;font-size:11px;cursor:pointer;">
+            🧹 Очистить
+          </button>
+        </div>
+
+        <!-- Quick Prompt Chips -->
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;">
+          <button class="capsule-btn" onclick="sendWebChatQuick('🌤 Какая сейчас погода в СПб и прогноз на день?')">🌤 Погода</button>
+          <button class="capsule-btn" onclick="sendWebChatQuick('🎂 У кого из близких ближайший день рождения и сколько осталось дней?')">🎂 Дни рождения</button>
+          <button class="capsule-btn" onclick="sendWebChatQuick('🎬 Посоветуй отличный сериал или фильм с высоким рейтингом')">🎬 Кино</button>
+          <button class="capsule-btn" onclick="sendWebChatQuick('💳 Сколько всего уходит на регулярные подписки в месяц?')">💳 Подписки</button>
+          <button class="capsule-btn" onclick="sendWebChatQuick('🗣 Hello! Let\'s practice friendly street-smart English for travelling!')">🗣 English</button>
+          <button class="capsule-btn" onclick="sendWebChatQuick('🍕 Что можно быстро и вкусно приготовить на ужин за 15 минут?')">🍕 Быстрый ужин</button>
+          <button class="capsule-btn" onclick="sendWebChatQuick('🔢 Посчитай выгоду досрочного погашения кредита 2 млн руб под 18%')">🔢 Кредиты</button>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div id="webchat-messages" style="display:flex;flex-direction:column;gap:10px;min-height:340px;max-height:550px;overflow-y:auto;padding:8px 4px;scroll-behavior:smooth;">
+          <!-- Welcome Message -->
+          <div class="chat-bubble-ai">
+            <div style="font-weight:700;margin-bottom:4px;color:var(--accent);display:flex;align-items:center;gap:5px;">
+              <i data-lucide="sparkles" style="width:14px;height:14px;"></i> AiGem Super-Bot
+            </div>
+            <div>
+              Привет! Я ваш всезнающий ИИ-ассистент прямо на сайте. Я подключен к вашим серверам и базам данных:
+              <br><br>
+              • 🏠 <b>Умный дом Яндекса:</b> климат, свет, сценарии<br>
+              • 🎂 <b>Календарь:</b> 23 сохранённых дня рождения семьи и друзей<br>
+              • 🌤 <b>Погода:</b> живые метеосводки и радар осадков СПб<br>
+              • 💳 <b>Финансы:</b> подписки (40k ₽/мес), кредитный симулятор до 30 лет<br>
+              • 🎬 <b>Развлечения:</b> киносомелье, подборки загородного отдыха, English, рецепты
+              <br><br>
+              Напишите любой вопрос или выберите быстрый сценарий выше! 👇
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div style="display:flex;gap:8px;align-items:center;background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:6px 10px;box-shadow:var(--card-shadow);">
+          <input type="text" id="webchat-input" placeholder="Напишите сообщение нейросети..." style="flex:1;background:transparent;border:none;color:#FFF;font-size:13px;outline:none;padding:6px 4px;" onkeydown="handleWebChatKeyDown(event)">
+          <button id="webchat-send-btn" onclick="submitWebChatMessage()" style="width:36px;height:36px;border-radius:12px;background:var(--accent);border:none;color:#000;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 0 10px var(--accent-glow);">
+            <i data-lucide="send" style="width:16px;height:16px;"></i>
+          </button>
+        </div>
+      </section>
 
       <!-- TAB 1: SMART HOME -->
       <section id="tab-smart_home" class="tab-content" style="display:flex;flex-direction:column;gap:12px;">
@@ -1118,7 +1245,8 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
       }
 
       // Close Telegram Mini App smoothly so user returns to active bot chat
-      if (window.Telegram?.WebApp) {
+      const isTelegram = Boolean(window.Telegram?.WebApp?.initData);
+      if (isTelegram) {
         const twa = window.Telegram.WebApp;
         try {
           if (twa.sendData) twa.sendData(cmd);
@@ -1128,7 +1256,150 @@ TMA_DASHBOARD_HTML = """<!DOCTYPE html>
         }, 450);
         return;
       }
-      window.location.href = 'https://t.me/MyAiGem_bot';
+
+      // Running on standalone website! Switch directly to AI Chat tab!
+      sendWebChatQuick('Запусти модуль ' + cmd);
+    }
+
+    // PWA INSTALL LOGIC
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btn-pwa-install');
+      if (btn) btn.style.display = 'flex';
+    });
+
+    function promptInstallPWA() {
+      haptic('medium');
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            showToast('🎉 Приложение установлено на ваш экран!');
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        // Fallback instructions for iOS or desktop
+        showToast('💡 В браузере нажмите "Поделиться" ➔ "На экран Домой"');
+      }
+    }
+
+    // STANDALONE WEB CHAT ENGINE
+    function escapeHtml(text) {
+      if (!text) return '';
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function formatMarkdown(text) {
+      if (!text) return '';
+      let out = text;
+      // Bold **text**
+      out = out.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+      // Italics *text*
+      out = out.replace(/\*(.*?)\*/g, '<i>$1</i>');
+      // Inline code `code`
+      out = out.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.12);padding:2px 6px;border-radius:6px;font-family:monospace;font-size:12px;">$1</code>');
+      // Line breaks
+      out = out.replace(/\n/g, '<br>');
+      return out;
+    }
+
+    async function submitWebChatMessage() {
+      const input = document.getElementById('webchat-input');
+      const text = (input?.value || '').trim();
+      if (!text) return;
+      input.value = '';
+      sendWebChatText(text);
+    }
+
+    function handleWebChatKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitWebChatMessage();
+      }
+    }
+
+    function sendWebChatQuick(text) {
+      switchTab('chat');
+      sendWebChatText(text);
+    }
+
+    function clearWebChat() {
+      haptic('light');
+      const container = document.getElementById('webchat-messages');
+      if (!container) return;
+      container.innerHTML = `
+        <div class="chat-bubble-ai">
+          <div style="font-weight:700;margin-bottom:4px;color:var(--accent);display:flex;align-items:center;gap:5px;">
+            <i data-lucide="sparkles" style="width:14px;height:14px;"></i> AiGem Super-Bot
+          </div>
+          <div>История диалога очищена. Задайте новый вопрос или выберите подсказку! 👇</div>
+        </div>
+      `;
+      safeCreateIcons();
+      showToast('Чат очищен');
+    }
+
+    async function sendWebChatText(text) {
+      haptic('light');
+      const container = document.getElementById('webchat-messages');
+      if (!container) return;
+
+      // Append User message
+      const userEl = document.createElement('div');
+      userEl.className = 'chat-bubble-user';
+      userEl.innerHTML = formatMarkdown(escapeHtml(text));
+      container.appendChild(userEl);
+
+      // Append Typing Indicator
+      const typingEl = document.createElement('div');
+      typingEl.className = 'chat-bubble-ai';
+      typingEl.id = 'chat-typing-indicator';
+      typingEl.innerHTML = `
+        <div style="font-weight:700;margin-bottom:4px;color:var(--accent);display:flex;align-items:center;gap:5px;">
+          <i data-lucide="sparkles" style="width:14px;height:14px;"></i> AiGem думает...
+        </div>
+        <div class="chat-typing-dots"><span></span><span></span><span></span></div>
+      `;
+      container.appendChild(typingEl);
+      safeCreateIcons();
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const resp = await fetch('/api/webchat/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await resp.json();
+        const typing = document.getElementById('chat-typing-indicator');
+        if (typing) typing.remove();
+
+        const aiEl = document.createElement('div');
+        aiEl.className = 'chat-bubble-ai';
+        const replyText = data.reply || (data.success ? 'Готово!' : 'Ошибка генерации ответа.');
+        aiEl.innerHTML = `
+          <div style="font-weight:700;margin-bottom:4px;color:var(--accent);display:flex;align-items:center;gap:5px;">
+            <i data-lucide="sparkles" style="width:14px;height:14px;"></i> AiGem
+          </div>
+          <div>${formatMarkdown(replyText)}</div>
+        `;
+        container.appendChild(aiEl);
+        safeCreateIcons();
+      } catch (err) {
+        const typing = document.getElementById('chat-typing-indicator');
+        if (typing) typing.remove();
+
+        const errEl = document.createElement('div');
+        errEl.className = 'chat-bubble-ai';
+        errEl.style.borderColor = '#FF453A';
+        errEl.innerHTML = `<span style="color:#FF453A;">⚠️ Ошибка соединения с сервером. Повторите попытку через пару секунд.</span>`;
+        container.appendChild(errEl);
+      }
+      container.scrollTop = container.scrollHeight;
     }
 
     function safeCreateIcons() {
