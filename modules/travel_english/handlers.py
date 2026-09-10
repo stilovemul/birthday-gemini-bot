@@ -485,12 +485,8 @@ async def process_english_input(message: types.Message, state: FSMContext, user_
             current_scenario = "bar_dating"
             await state.update_data(current_scenario="bar_dating")
 
-    # Если включен режим мгновенного перевода или фраза явно вопросительная на русском
-    is_translation_query = awaiting_instant or any(w in user_text.lower() for w in [
-        "как сказать", "как по-английски", "переведи", "как будет", "как спросить"
-    ])
-
-    if is_translation_query or not current_scenario:
+    # Если пользователь находится вне сценария или явно нажал кнопку «⚡️ Перевод на лету» в главном меню
+    if awaiting_instant or not current_scenario:
         # Режим мгновенного перевода на сленг
         await state.update_data(awaiting_instant_translate=False)
         res = await instant_translate_phrase(user_text)
