@@ -16,7 +16,7 @@ MAIN_MENU_BUTTONS = [
     "🎁 Промо & PS", "🎬 Кино", "✨ Промпты", "✍️ Текст AI",
     "💬 Знакомства", "🕵️‍♂️ Тайный СПб", "🌲 Выходные", "📍 Рестораны",
     "🏕 Загород", "🎁 Подарки", "🎧 Музыка", "📸 Фото-Споты",
-    "👨‍🍳 Шеф-Ужин"
+    "👨‍🍳 Шеф-Ужин", "🗣 Живой English"
 ]
 
 
@@ -63,7 +63,8 @@ def get_main_menu() -> ReplyKeyboardMarkup:
             KeyboardButton(text="📸 Фото-Споты")
         ],
         [
-            KeyboardButton(text="👨‍🍳 Шеф-Ужин")
+            KeyboardButton(text="👨‍🍳 Шеф-Ужин"),
+            KeyboardButton(text="🗣 Живой English")
         ]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, is_persistent=False)

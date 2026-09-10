@@ -58,6 +58,7 @@ class ActiveModeStates(StatesGroup):
     career_interview_mode = State()
     auto_scam_shield_mode = State()
     dark_kitchen_mode = State()
+    travel_english_mode = State()
 
 
 class SubTrackerStates(StatesGroup):

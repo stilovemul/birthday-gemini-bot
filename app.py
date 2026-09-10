@@ -55,6 +55,7 @@ from modules.photo_spots.handlers import router as photo_spots_router
 from modules.career_interview.handlers import router as career_interview_router
 from modules.auto_scam_shield.handlers import router as auto_scam_shield_router
 from modules.dark_kitchen.handlers import router as dark_kitchen_router
+from modules.travel_english.handlers import router as travel_english_router
 from modules.ai_assistant.handlers import router as ai_router
 
 logging.basicConfig(
@@ -95,6 +96,7 @@ dp.include_router(book_sommelier_router)
 dp.include_router(music_sommelier_router)
 dp.include_router(auto_scam_shield_router)
 dp.include_router(dark_kitchen_router)
+dp.include_router(travel_english_router)
 
 # 2. System and specific feature routers
 dp.include_router(digest_router)
@@ -174,6 +176,7 @@ async def lifespan(app: FastAPI):
             types.BotCommand(command="reminders", description="📋 Мои напоминания"),
             types.BotCommand(command="when", description="🎂 Узнать дату дня рождения"),
             types.BotCommand(command="clear", description="🧹 Очистить диалог с ИИ"),
+            types.BotCommand(command="english", description="🗣 Живой разговорный English"),
             types.BotCommand(command="add", description="🎂 Добавить день рождения"),
             types.BotCommand(command="list", description="🎂 Список дней рождения")
         ]
