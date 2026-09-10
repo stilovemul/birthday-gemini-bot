@@ -108,10 +108,23 @@ def get_dialog_actions_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="📝 Пройти квиз", callback_data="eng_menu_quizzes")
         ],
         [
+            InlineKeyboardButton(text="🔙 Назад в меню английского", callback_data="eng_main_menu"),
             InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=kb)
+
+
+def get_back_to_english_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура с кнопкой возврата в меню английского и выхода в главное меню."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🔙 Назад в меню английского", callback_data="eng_main_menu"),
+                InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
+            ]
+        ]
+    )
 
 
 def get_quiz_categories_keyboard() -> InlineKeyboardMarkup:
@@ -128,7 +141,8 @@ def get_quiz_categories_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🕶 Уличный сленг нейтивов", callback_data="eng_start_quiz_slang_idioms")
         ],
         [
-            InlineKeyboardButton(text="🔙 Назад в меню английского", callback_data="eng_main_menu")
+            InlineKeyboardButton(text="🔙 Назад в меню английского", callback_data="eng_main_menu"),
+            InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=kb)
@@ -186,7 +200,8 @@ def get_cheat_sheets_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🕶 ТОП-10 фраз нейтивов", callback_data="eng_cs_native_slang")
         ],
         [
-            InlineKeyboardButton(text="🔙 Назад в меню английского", callback_data="eng_main_menu")
+            InlineKeyboardButton(text="🔙 Назад в меню английского", callback_data="eng_main_menu"),
+            InlineKeyboardButton(text="🚪 Главное меню", callback_data="mode_exit_to_main")
         ]
     ]
     return InlineKeyboardMarkup(inline_keyboard=kb)

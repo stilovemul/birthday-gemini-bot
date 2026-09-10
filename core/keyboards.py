@@ -72,15 +72,44 @@ def get_main_menu() -> ReplyKeyboardMarkup:
 
 def get_mode_keyboard(mode_title: str = "Режим диалога") -> ReplyKeyboardMarkup:
     """
-    Returns a sleek single-button keyboard to replace the big menu while user is in active category mode.
+    Returns sleek navigation buttons to replace the big menu while user is in active category mode:
+    [ 🔙 Назад ]  [ 🏁 Главное меню ]
     """
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🏁 Закончить режим (Главное меню)")]
+            [
+                KeyboardButton(text="🔙 Назад"),
+                KeyboardButton(text="🏁 Главное меню")
+            ]
         ],
         resize_keyboard=True,
         is_persistent=False
     )
+
+
+def is_back_command(text: str) -> bool:
+    """Checks if the user sent a 'back / step back' command or button."""
+    if not text:
+        return False
+    t = text.strip().lower()
+    back_phrases = {
+        "🔙 назад",
+        "назад",
+        "шаг назад",
+        "на один шаг назад",
+        "назад на один шаг",
+        "вернуться назад",
+        "вернуться",
+        "вернись назад",
+        "вернись",
+        "назад в меню",
+        "предыдущий шаг",
+        "отмена",
+        "отменить",
+        "/back",
+        "back"
+    }
+    return t in back_phrases
 
 
 def is_exit_command(text: str) -> bool:
@@ -92,13 +121,12 @@ def is_exit_command(text: str) -> bool:
         "🏁 закончить режим (главное меню)",
         "🏁 закончить режим",
         "закончить режим",
+        "🏁 главное меню",
         "главное меню",
         "🚪 главное меню",
-        "🔙 главное меню",
         "меню",
         "выход",
         "выйти",
-        "отмена",
         "/stop",
         "/exit",
         "/cancel",
