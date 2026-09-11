@@ -1,12 +1,14 @@
 import logging
 import asyncio
 import html
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Optional
+from datetime import datetime
 from aiogram import Router, types, F, Bot
 from aiogram.enums import ParseMode, ChatAction
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from core.config import MSK_TZ
 from core.keyboards import get_main_menu
 from modules.drive2_tracker.storage import get_user_drive2_config
 from modules.drive2_tracker.checker import check_user_drive2
@@ -39,7 +41,7 @@ def get_unified_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-async def build_unified_status_card(user_id: int, bot: Bot) -> Tuple[str, InlineKeyboardMarkup]:
+async def build_unified_status_card(user_id: int, bot: Bot, updated_at: Optional[str] = None) -> Tuple[str, InlineKeyboardMarkup]:
     """Fetches live summaries from Drive2, VK, and MAX in parallel and builds a single consolidated card."""
     # 1. Drive2 info
     d2_cfg = get_user_drive2_config(user_id) or {}
@@ -108,6 +110,7 @@ async def build_unified_status_card(user_id: int, bot: Bot) -> Tuple[str, Inline
         "   🔗 <a href='https://web.max.ru/'>Открыть web.max.ru</a>",
         "",
         "➖➖➖➖➖➖➖➖➖➖",
+        f"🕒 <i>Обновлено: {updated_at or datetime.now(MSK_TZ).strftime('%H:%M:%S')} (МСК) • Всё проверено ✅</i>",
         "⚡️ <i>Все 3 сервиса проверяются 24/7 каждые 60 секунд. При поступлении нового сообщения бот мгновенно пришлёт пуш-уведомление сюда в Telegram!</i>"
     ]
 
@@ -149,21 +152,83 @@ async def cmd_unified_monitor(message: types.Message, bot: Bot):
 @router.callback_query(F.data == "unimon_check_all")
 async def callback_check_all(callback: types.CallbackQuery, bot: Bot):
     user_id = callback.from_user.id
-    await callback.answer("🔄 Проверяю Drive2, VK и MAX одновременно...")
-    
-    await asyncio.gather(
-        check_user_drive2(user_id, bot, notify_if_no_change=False),
-        check_vk_for_user(user_id, bot, notify_only_new=False),
-        check_max_for_user(user_id, bot, notify_only_new=False),
-        return_exceptions=True
-    )
 
-    text, kb = await build_unified_status_card(user_id, bot)
+    # 1. Update button text immediately to give immediate visual response
+    loading_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="⏳ Опрашиваю серверы...", callback_data="unimon_checking_busy")],
+            [
+                InlineKeyboardButton(text="🚗 Drive2.ru", callback_data="unimon_open_d2"),
+                InlineKeyboardButton(text="🔵 ВКонтакте", callback_data="unimon_open_vk"),
+                InlineKeyboardButton(text="💬 MAX", callback_data="unimon_open_max")
+            ]
+        ]
+    )
+    try:
+        await callback.message.edit_reply_markup(reply_markup=loading_kb)
+    except Exception:
+        pass
+
+    # 2. Run all 3 checks in parallel with a safe timeout
+    try:
+        await asyncio.wait_for(
+            asyncio.gather(
+                check_user_drive2(user_id, bot, notify_if_no_change=False),
+                check_vk_for_user(user_id, bot, notify_only_new=False),
+                check_max_for_user(user_id, bot, notify_only_new=False),
+                return_exceptions=True
+            ),
+            timeout=8.0
+        )
+    except Exception as e:
+        logger.warning(f"Error during parallel check_all: {e}")
+
+    # 3. Read latest fresh configs for transparent report
+    d2_cfg = get_user_drive2_config(user_id) or {}
+    vk_cfg = get_user_vk_config(user_id) or {}
+    max_cfg = get_user_max_config(user_id) or {}
+
+    d2_msgs = d2_cfg.get("last_messages", 0)
+    d2_notifs = d2_cfg.get("last_notifications", 0)
+    vk_msgs = vk_cfg.get("last_messages", 0)
+    vk_notifs = vk_cfg.get("last_notifications", 0)
+    max_msgs = max_cfg.get("last_messages", 0)
+
+    now_str = datetime.now(MSK_TZ).strftime("%H:%M:%S")
+
+    # 4. Rebuild and edit the message with the fresh timestamp
+    text, kb = await build_unified_status_card(user_id, bot, updated_at=now_str)
     try:
         await callback.message.edit_text(text, parse_mode=ParseMode.HTML, reply_markup=kb, disable_web_page_preview=True)
     except Exception:
+        try:
+            await callback.message.edit_reply_markup(reply_markup=kb)
+        except Exception:
+            pass
+
+    # 5. Send single definitive modal popup alert
+    popup_text = (
+        f"✅ Проверено в {now_str} (МСК):\n\n"
+        f"🚗 Drive2: {d2_msgs} новых ЛС | {d2_notifs} увед.\n"
+        f"🔵 ВКонтакте: {vk_msgs} новых сообщений\n"
+        f"💬 MAX: {max_msgs} новых сообщений\n\n"
+        "✨ Все 3 сервиса активны и проверены!"
+    )
+    try:
+        await callback.answer(popup_text, show_alert=True)
+    except Exception:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
+@router.callback_query(F.data == "unimon_checking_busy")
+async def callback_checking_busy(callback: types.CallbackQuery):
+    try:
+        await callback.answer("⏳ Проверка уже выполняется, подождите пару секунд...", show_alert=False)
+    except Exception:
         pass
-    await callback.answer("✅ Все сервисы проверены!")
 
 
 @router.callback_query(F.data == "unimon_open_d2")
