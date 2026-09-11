@@ -47,7 +47,8 @@ async def fetch_vk_updates(token: str) -> Tuple[bool, Dict[str, Any], str]:
                             messages_total = counters.get("messages", 0)
                             messages_unmuted = counters.get("messages_unread_unmuted", 0)
                             friends = counters.get("friends", 0)
-                            notifications = max(counters.get("notifications", 0), counters.get("business_notify_all", 0), counters.get("events", 0))
+                            # Only real notifications or events, never internal business promo counters
+                            notifications = counters.get("notifications", 0) or counters.get("events", 0)
                             business_notify = counters.get("business_notify_all", 0)
                         elif "error" in data:
                             err = data["error"]
@@ -228,13 +229,19 @@ async def check_vk_for_user(user_id: int, bot: Bot, notify_only_new: bool = True
     cur_friends = data.get("friends", 0)
     details = data.get("unread_details", [])
 
-    # Total unread dialogs is either total unread or max of counters
-    effective_msgs = max(cur_total, cur_unmuted, len(details))
+    # Real unread dialogs for user is strictly unmuted chats or explicitly fetched unread details
+    if cur_unmuted > 0:
+        effective_msgs = cur_unmuted
+    elif details:
+        effective_msgs = len(details)
+    else:
+        effective_msgs = 0
 
-    # Alert condition on new events
-    new_messages = max(0, effective_msgs - last_msg) if effective_msgs > last_msg else 0
-    new_notifications = max(0, cur_notif - last_notif) if cur_notif > last_notif else 0
-    new_friends = max(0, cur_friends - last_friends) if cur_friends > last_friends else 0
+    # Alert condition on new events (only trigger on real unmuted personal/group messages)
+    last_unmuted = config.get("last_messages_unmuted", 0)
+    new_messages = max(0, effective_msgs - last_msg) if (effective_msgs > last_msg and effective_msgs > 0) else 0
+    new_notifications = max(0, cur_notif - last_notif) if (cur_notif > last_notif and cur_notif > 0) else 0
+    new_friends = max(0, cur_friends - last_friends) if (cur_friends > last_friends and cur_friends > 0) else 0
 
     has_new = (new_messages > 0 or new_notifications > 0 or new_friends > 0)
 
@@ -271,10 +278,9 @@ async def check_vk_for_user(user_id: int, bot: Bot, notify_only_new: bool = True
 
     # Build clear human-readable status report
     if effective_msgs > 0:
-        if cur_unmuted > 0 and cur_unmuted != effective_msgs:
-            msg_str = f"<b>{effective_msgs}</b> <i>(личных: {cur_unmuted}, групп/чатов: {effective_msgs - cur_unmuted})</i>"
-        else:
-            msg_str = f"<b>{effective_msgs}</b>"
+        msg_str = f"<b>{effective_msgs}</b>"
+    elif cur_total > 0:
+        msg_str = f"<b>0</b> <i>({cur_total} в беззвучных/промо)</i>"
     else:
         msg_str = "<b>0</b> <i>(все диалоги прочитаны)</i>"
 
