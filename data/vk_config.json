@@ -1,12 +1,14 @@
-{
-  "157236577": {
-    "token": "vk1.a.DnpkcFvy--4UQiAXZzzozcY1hyhA36JcaeUid5g_d3Wnc9jMVD5rZEGR1drEfmHAzHutj43asT9Rka9DjInDE1In1POW1hHb18UnUUY47dwKrPhLQ7p3f5v7T8njuxFSx4iDsnghgLrQse42TZRYOSD2kZ9UcnEks_Wy07THJJlQCC1bcWBbnYRzcS5UPuZ4YOXGXitruhA2DfizXSsa4A",
-    "user_id_vk": "14058069",
-    "user_name": "Олег Уринев",
-    "enabled": true,
-    "last_messages": 0,
-    "last_notifications": 0,
-    "last_friends": 0,
-    "last_event_ids": []
-  }
+{
+    "157236577":  {
+                      "user_id_vk":  "14058069",
+                      "last_friends":  0,
+                      "last_messages":  0,
+                      "last_event_ids":  [
+
+                                         ],
+                      "token":  "vk1.a.2C2XRMVLIuyoMYq8qOHgmmo5d1Lzxs3KiX06bEM5mdF3sGSZ_LKtXrhuJs7xNsuIbOTK3EingDF3Ruh9B2EXsb1HiWHPDiiJ2KZLVNV3tek1cKsAcoBMqpurd7Vmjqx4f6nK1RWXOoKSENTN9C4dvi9DnyzWCLQUJws6s_nKqH-BTEmGK75IMfAzq1LoWl4KVee2lJuJIRJ4tqmrWANQxA",
+                      "user_name":  "Олег Уринев",
+                      "enabled":  true,
+                      "last_notifications":  0
+                  }
 }
