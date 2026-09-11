@@ -42,11 +42,11 @@ async def check_and_send_smart_reminders(bot: Bot):
 
 async def run_scheduler(bot: Bot):
     """Central scheduler for background jobs (MSK UTC+3)."""
-    logger.info("Центральный планировщик запущен (напоминания 20с, Drive2 60с, MAX 60с, VK 15мин, Погода 10мин, Дайджест 09:00 MSK).")
+    logger.info("Центральный планировщик запущен (напоминания 20с, Drive2 60с, MAX 60с, VK 3мин, Погода 10мин, Дайджест 09:00 MSK).")
     last_daily_check_day = None
-    tick_60s = 0
+    tick_60s = 2
     weather_tick = 0
-    vk_tick = 0
+    vk_tick = 8
 
     while True:
         try:
@@ -62,9 +62,9 @@ async def run_scheduler(bot: Bot):
                 asyncio.create_task(check_all_max_users(bot))
                 asyncio.create_task(check_all_subscription_notifications(bot))
 
-            # 3. Check VK events (every ~15 mins = 45 ticks of 20s) to prevent any rate limiting / flood control
+            # 3. Check VK events (every ~3 mins = 9 ticks of 20s) to deliver notifications fast
             vk_tick += 1
-            if vk_tick >= 45:
+            if vk_tick >= 9:
                 vk_tick = 0
                 asyncio.create_task(check_all_vk_users(bot))
 

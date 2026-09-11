@@ -47,7 +47,7 @@ async def fetch_vk_updates(token: str) -> Tuple[bool, Dict[str, Any], str]:
                             messages_total = counters.get("messages", 0)
                             messages_unmuted = counters.get("messages_unread_unmuted", 0)
                             friends = counters.get("friends", 0)
-                            notifications = counters.get("notifications", 0)
+                            notifications = max(counters.get("notifications", 0), counters.get("business_notify_all", 0), counters.get("events", 0))
                             business_notify = counters.get("business_notify_all", 0)
                         elif "error" in data:
                             err = data["error"]
