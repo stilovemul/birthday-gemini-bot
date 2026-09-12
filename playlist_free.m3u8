@@ -1,0 +1,82 @@
+#EXTM3U url-tvg="http://epg.it999.ru/epg.xml.gz,https://iptvx.one/epg/epg.xml.gz"
+
+#EXTINF:-1 group-title="[Спорт]" tvg-name="Беларусь 5",Беларусь 5 HD (Спорт, Футбол, Хоккей)
+https://edge55.dc.beltelecom.by/ngtrk/smil:belarus5.smil/playlist.m3u8
+
+#EXTINF:-1 group-title="[Спорт]" tvg-name="Беларусь 5 Интернет",Беларусь 5 Интернет HD
+https://edge55.dc.beltelecom.by/ngtrk/smil:belarus5int.smil/playlist.m3u8
+
+#EXTINF:-1 group-title="[Спорт]" tvg-name="Red Bull TV",Red Bull TV (Экстрим, Гонки, Спорт 1080p)
+https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8
+
+#EXTINF:-1 group-title="[Спорт]" tvg-name="Trace Sport Stars",Trace Sport Stars HD (1080p)
+https://lightning-tracesport-samsungau.amagi.tv/playlist.m3u8
+
+#EXTINF:-1 group-title="[Спорт]" tvg-name="Fuel TV",Fuel TV HD (Экстремальный спорт 1080p)
+https://amg01074-fueltv-fueltvau-samsungau-g09kq.amagi.tv/playlist/amg01074-fueltv-fueltvau-samsungau/playlist.m3u8
+
+#EXTINF:-1 group-title="[Спорт]" tvg-name="QazSport",QazSport HD (Казахстан Спорт)
+http://stream.mcquack.net/72/index.m3u8
+
+#EXTINF:-1 group-title="[Спорт]" tvg-name="Sportitalia Plus",Sportitalia Plus HD (Футбол)
+https://sportsitalia-samsungitaly.amagi.tv/playlist.m3u8
+
+#EXTINF:-1 group-title="[Спорт]" tvg-name="Rai Sport",Rai Sport HD (Италия)
+https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=7&forceUserAgent=rainet/4.0.5
+
+#EXTINF:-1 group-title="[Общие]" tvg-name="Россия 1",Россия 1 HD
+https://live.smotrim.ru/vgtrk/0/russia1-hd/index.m3u8
+
+#EXTINF:-1 group-title="[Общие]" tvg-name="Россия-Культура",Россия-Культура HD
+https://live.smotrim.ru/vgtrk/0/kultura-hd/index.m3u8
+
+#EXTINF:-1 group-title="[Общие]" tvg-name="Мир",Мир ТВ HD
+http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mirtv_2500/playlist.m3u8
+
+#EXTINF:-1 group-title="[Общие]" tvg-name="Беларусь 1",Беларусь 1 HD
+https://edge55.dc.beltelecom.by/ngtrk/smil:belarus1.smil/playlist.m3u8
+
+#EXTINF:-1 group-title="[Общие]" tvg-name="Беларусь 2",Беларусь 2 HD
+https://edge55.dc.beltelecom.by/ngtrk/smil:belarus2.smil/playlist.m3u8
+
+#EXTINF:-1 group-title="[Общие]" tvg-name="Беларусь 3",Беларусь 3 HD (Культура)
+https://edge55.dc.beltelecom.by/ngtrk/smil:belarus3.smil/playlist.m3u8
+
+#EXTINF:-1 group-title="[Общие]" tvg-name="ОНТ",ОНТ HD
+https://ngtrk.dc.beltelecom.by/ngtrk/smil:ont.smil/playlist.m3u8
+
+#EXTINF:-1 group-title="[Общие]" tvg-name="СТВ",СТВ HD
+https://ctv.dc.beltelecom.by/ctv/ctv.stream/playlist.m3u8
+
+#EXTINF:-1 group-title="[Новостные]" tvg-name="РБК",РБК ТВ HD
+http://92.50.128.180/utv/1358/index.m3u8
+
+#EXTINF:-1 group-title="[Новостные]" tvg-name="Первый Информационный",Первый Информационный HD
+https://ngtrk.dc.beltelecom.by/ngtrk/smil:informacionnyy.smil/playlist.m3u8
+
+#EXTINF:-1 group-title="[Новостные]" tvg-name="Соловьёв Live",Соловьёв Live HD
+https://stream.smotrim.ru/hls/solovievlive/playlist.m3u8?entity=channel&id=292&sign=83652f1317ad220efe74a7606d9a7f37
+
+#EXTINF:-1 group-title="[Новостные]" tvg-name="CGTN Русский",CGTN Русский HD
+https://news.cgtn.com/resource/live/russian/cgtn-r.m3u8
+
+#EXTINF:-1 group-title="[Новостные]" tvg-name="Беларусь 24",Беларусь 24 HD
+https://edge55.dc.beltelecom.by/ngtrk/smil:belarus24.smil/playlist.m3u8
+
+#EXTINF:-1 group-title="[Детские]" tvg-name="Карусель",Карусель (Мультфильмы)
+https://streaming102.interskytech.com/live/232.m3u8
+
+#EXTINF:-1 group-title="[Регионы: СПб и РФ]" tvg-name="Белгород 24",Белгород 24 HD
+http://belnovosti.cdn.easyhoster.ru:8080/stream.m3u8
+
+#EXTINF:-1 group-title="[Регионы: СПб и РФ]" tvg-name="Астрахань 24",Астрахань 24 HD
+https://streaming.astrakhan.ru/astrakhan24/playlist.m3u8
+
+#EXTINF:-1 group-title="[Регионы: СПб и РФ]" tvg-name="Архыз 24",Архыз 24 HD
+https://live.mediacdn.ru/sr1/arhis24/playlist_hdhigh.m3u8
+
+#EXTINF:-1 group-title="[Регионы: СПб и РФ]" tvg-name="Ветта 24",Ветта 24 HD
+http://serv24.vintera.tv:8081/vetta/vetta_office/playlist.m3u8
+
+#EXTINF:-1 group-title="[Познавательные]" tvg-name="Честный Детектив",Смотрим: Честный Детектив
+https://live-vgtrksmotrim.cdnvideo.ru/vgtrksmotrim/smotrim-live-01.smil/playlist.m3u8
